@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Care Construction Ramp Project</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f4a63">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CC Ramp">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root{--paper:#fbfaf7;--card:#fff;--ink:#23252b;--muted:#6b7280;--line:#e5e2da;--blue:#2f4a63;--blue2:#3d6089;}
   *{box-sizing:border-box} html,body{margin:0}
@@ -50,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.14</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.15</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -180,7 +186,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.14</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.15</footer>
 
 <script>
 "use strict";
@@ -585,7 +591,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.14",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.15",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -618,5 +624,6 @@ function loadDesign(input){
 
 updateVisibility();
 </script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>
