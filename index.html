@@ -50,7 +50,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.7</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.8</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -136,7 +136,7 @@
 
       <div class="sechead">Drawing</div>
       <label class="checkrow"><input type="checkbox" id="showCorners"> Show corner coordinates</label>
-      <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (elevation)</label>
+      <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (isometric)</label>
 
       <div class="sechead">Notes</div>
       <label class="field"><span class="lab">Notes on the drawing</span>
@@ -156,12 +156,12 @@
       <div class="caption" id="caption"></div>
       <div class="scale-note">1 square = 1 ft &middot; prints to scale (0.5 cm per foot)</div>
       <div id="profileWrap" style="margin-top:16px">
-        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Profile (elevation)</h2>
+        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Profile &mdash; isometric</h2>
         <div class="paper" id="profilePaper"></div>
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.7</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.8</footer>
 
 <script>
 "use strict";
@@ -219,40 +219,65 @@ function switchbackGeometry(p){
 }
 
 function buildProfile(p){
-  if(p.layout!=="straight") return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Profile (elevation) is available for straight runs for now — switchback elevation comes later.</div>';
+  if(p.layout!=="straight") return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Isometric view is available for straight runs for now — switchback comes later.</div>';
   const F=12, deck=p.deckHeight, runs=p.runs, run=p.rampRun, W=p.width, rise=deck/runs, hh=(p.handrailHeight>0?p.handrailHeight:36);
-  const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1;
+  const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1, deckDepth=24;
   const segs=[]; let along=0, z=deck;
   segs.push({top:true,a0:0,a1:p.topD,z0:deck,z1:deck}); along=p.topD;
   for(let i=1;i<=runs;i++){ segs.push({a0:along,a1:along+run,z0:z,z1:z-rise}); along+=run; z-=rise;
     if(i<runs&&p.restAfter.includes(i)){ segs.push({a0:along,a1:along+p.restD,z0:z,z1:z}); along+=p.restD; } }
-  const totalA=along, ODX=W/F*0.6, ODY=W/F*0.5;
-  function zAt(a){ for(const g of segs){ if(a>=g.a0-1e-6&&a<=g.a1+1e-6){ const t=(g.a1>g.a0)?(a-g.a0)/(g.a1-g.a0):0; return g.z0+(g.z1-g.z0)*t; } } return 0; }
-  const nX=a=>a/F, nY=z=>-z/F, fX=a=>a/F+ODX, fY=z=>-z/F-ODY;
-  const slabMax=(Math.max(framR,framT)+deckingT)/F;
-  const vbX=-1.8, vbY=nY(deck+hh)-ODY-1.0, xR=totalA/F+ODX+1.8, vbW=xR-vbX, vbH=(slabMax+1.5)-vbY;
+  const totalA=along;
+  const c=Math.cos(Math.PI/6), sn=Math.sin(Math.PI/6), sc=1/F;
+  const P=(x,y,z)=>[((x+y)*c)*sc, ((x-y)*sn-z)*sc];
+  const k=(x,y,z)=>{const q=P(x,y,z);return q[0].toFixed(3)+","+q[1].toFixed(3);};
+  const poly=(pts,fill,st,sw)=>'<path d="M '+pts.map(q=>k(q[0],q[1],q[2])).join(" L ")+' Z" fill="'+fill+'" stroke="'+st+'" stroke-width="'+(sw||0.03)+'" stroke-linejoin="round"/>';
+  const ln=(a,b,st,sw)=>{const p1=P(a[0],a[1],a[2]),p2=P(b[0],b[1],b[2]);return '<line x1="'+p1[0].toFixed(3)+'" y1="'+p1[1].toFixed(3)+'" x2="'+p2[0].toFixed(3)+'" y2="'+p2[1].toFixed(3)+'" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round"/>';};
+  const txt=(x,y,z,t,col,sz,anch)=>{const q=P(x,y,z);return '<text x="'+q[0].toFixed(2)+'" y="'+q[1].toFixed(2)+'" font-size="'+(sz||0.42)+'" text-anchor="'+(anch||"middle")+'" fill="'+col+'">'+esc(t)+'</text>';};
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  const acc=(x,y,z)=>{const q=P(x,y,z);if(q[0]<minx)minx=q[0];if(q[0]>maxx)maxx=q[0];if(q[1]<miny)miny=q[1];if(q[1]>maxy)maxy=q[1];};
+  for(const X of [-deckDepth-14,totalA+16]) for(const Y of [-16,W+16]) for(const Z of [-10,deck+hh+14]) acc(X,Y,Z);
+  const m=1.4, vbX=minx-m, vbY=miny-m, vbW=(maxx-minx)+2*m, vbH=(maxy-miny)+2*m;
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.5).toFixed(2)+'cm" height="'+(vbH*0.5).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
-  for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#e8edf4" stroke-width="0.02"/>';
-  for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#e8edf4" stroke-width="0.02"/>';
-  s+='<line x1="'+vbX.toFixed(2)+'" y1="0" x2="'+xR.toFixed(2)+'" y2="0" stroke="#7a6a3a" stroke-width="0.06"/>';
-  s+='<text x="'+xR.toFixed(2)+'" y="0.42" font-size="0.35" text-anchor="end" fill="#7a6a3a">GROUND</text>';
-  for(const g of segs){ const slab=((g.top?framT:framR)+deckingT)/F;
-    s+='<path d="M '+nX(g.a0).toFixed(3)+' '+nY(g.z0).toFixed(3)+' L '+nX(g.a1).toFixed(3)+' '+nY(g.z1).toFixed(3)+' L '+nX(g.a1).toFixed(3)+' '+(nY(g.z1)+slab).toFixed(3)+' L '+nX(g.a0).toFixed(3)+' '+(nY(g.z0)+slab).toFixed(3)+' Z" fill="#d8b784" fill-opacity="0.5" stroke="#b08d52" stroke-width="0.03"/>'; }
-  const maxSp=(p.postSpacingMax>0?p.postSpacingMax:72), nSp=Math.max(1,Math.ceil(totalA/maxSp)), PW=3.5/F, postAs=[];
-  for(let i=0;i<=nSp;i++) postAs.push(totalA*i/nSp);
-  for(const a of postAs){ const tz=zAt(a)+hh; s+='<rect x="'+(fX(a)-PW/2).toFixed(3)+'" y="'+fY(tz).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(fY(0)-fY(tz)).toFixed(3)+'" fill="#cbb98f" stroke="#8a7448" stroke-width="0.03"/>'; }
-  { let d='M '+fX(0).toFixed(3)+' '+fY(zAt(0)+hh).toFixed(3); for(const g of segs) d+=' L '+fX(g.a1).toFixed(3)+' '+fY(g.z1+hh).toFixed(3); s+='<path d="'+d+'" fill="none" stroke="#8a7448" stroke-width="0.07"/>'; }
-  for(const a of [0,totalA]){ const tz=zAt(a)+hh;
-    s+='<line x1="'+nX(a).toFixed(3)+'" y1="'+nY(tz).toFixed(3)+'" x2="'+fX(a).toFixed(3)+'" y2="'+fY(tz).toFixed(3)+'" stroke="#8a7448" stroke-width="0.03"/>';
-    s+='<line x1="'+nX(a).toFixed(3)+'" y1="0" x2="'+fX(a).toFixed(3)+'" y2="'+fY(0).toFixed(3)+'" stroke="#a99a7d" stroke-width="0.02" stroke-dasharray="0.1 0.08"/>'; }
-  for(const a of postAs){ const tz=zAt(a)+hh; s+='<rect x="'+(nX(a)-PW/2).toFixed(3)+'" y="'+nY(tz).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(nY(0)-nY(tz)).toFixed(3)+'" fill="#ece0c6" stroke="#5a5142" stroke-width="0.04"/>'; }
-  for(const rh of [hh, hh*0.5, 3]){ let d='M '+nX(0).toFixed(3)+' '+nY(zAt(0)+rh).toFixed(3); for(const g of segs) d+=' L '+nX(g.a1).toFixed(3)+' '+nY(g.z1+rh).toFixed(3); s+='<path d="'+d+'" fill="none" stroke="#3a3f47" stroke-width="'+(rh===hh?0.1:0.07)+'"/>'; }
-  { let d='M '+nX(segs[0].a0).toFixed(3)+' '+nY(segs[0].z0).toFixed(3); for(const g of segs) d+=' L '+nX(g.a1).toFixed(3)+' '+nY(g.z1).toFixed(3); s+='<path d="'+d+'" fill="none" stroke="#8a6a2a" stroke-width="0.05"/>'; }
-  s+='<text x="'+nX(0).toFixed(2)+'" y="'+(nY(deck)-0.35).toFixed(2)+'" font-size="0.42" text-anchor="start" fill="#2f4a63" font-weight="700">DECK '+esc(dimText(deck))+'</text>';
-  s+='<text x="'+(vbX+0.2).toFixed(2)+'" y="'+(vbY+vbH-0.35).toFixed(2)+'" font-size="0.34" text-anchor="start" fill="#6b7280">Framing 2x6 + 1" decking'+(p.topOnExistingDeck?", top landing 2x4 on existing deck":"")+'  \u00b7  handrail '+dimText(hh)+'</text>';
+  function zAt(a){ for(const g of segs){ if(a>=g.a0-1e-6&&a<=g.a1+1e-6){ const t=(g.a1>g.a0)?(a-g.a0)/(g.a1-g.a0):0; return g.z0+(g.z1-g.z0)*t; } } return 0; }
+  // existing deck block (gray, behind)
+  s+=poly([[-deckDepth,0,deck],[0,0,deck],[0,W,deck],[-deckDepth,W,deck]],"#ccd0d6","#9aa0a8",0.03);
+  s+=poly([[-deckDepth,0,deck],[0,0,deck],[0,0,0],[-deckDepth,0,0]],"#bcc1c8","#9aa0a8",0.03);
+  s+=poly([[-deckDepth,0,deck],[-deckDepth,W,deck],[-deckDepth,W,0],[-deckDepth,0,0]],"#c4c9d0","#9aa0a8",0.03);
+  // existing steps (gray), descending under the first run
+  if(p.showSteps && p.numSteps>=1 && p.stepDepth>0){
+    const ns=Math.round(p.numSteps), sd=p.stepDepth/ns, sh=deck/ns, sw=(p.stepWidth>0?p.stepWidth:W);
+    for(let i=0;i<ns;i++){ const x0=i*sd,x1=(i+1)*sd,zt=deck-i*sh,zb=deck-(i+1)*sh;
+      s+=poly([[x0,0,zt],[x1,0,zt],[x1,sw,zt],[x0,sw,zt]],"#ccd0d6","#9aa0a8",0.025);
+      s+=poly([[x1,0,zt],[x1,0,zb],[x1,sw,zb],[x1,sw,zt]],"#b6bbc2","#9aa0a8",0.025);
+    }
+  }
+  const postSp=(p.postSpacingMax>0?p.postSpacingMax:72);
+  function railSide(yE,col,pw){
+    let o=""; const gL=segs[segs.length-1];
+    for(const rh of [hh, hh*0.5, 3]){ const w=(rh===hh?0.1:0.06);
+      for(const g of segs) o+=ln([g.a0,yE,g.z0+rh],[g.a1,yE,g.z1+rh],col,w); }
+    o+=ln([0,yE,deck+hh],[-9,yE,deck+hh-9],col,0.1);
+    o+=ln([gL.a1,yE,gL.z1+hh],[gL.a1+9,yE,gL.z1+hh-9],col,0.1);
+    const nSp=Math.max(1,Math.ceil(totalA/postSp));
+    for(let i=0;i<=nSp;i++){ const a=totalA*i/nSp, zs=zAt(a); o+=ln([a,yE,zs],[a,yE,zs+hh],col,pw); }
+    return o;
+  }
+  s+=railSide(W,"#8a6a3a",0.24);            // far rail (behind)
+  for(const g of segs){ const slab=((g.top?framT:framR)+deckingT);
+    s+=poly([[g.a0,0,g.z0],[g.a1,0,g.z1],[g.a1,W,g.z1],[g.a0,W,g.z0]],"#e3c690","#b08d52",0.03);      // walking surface
+    s+=poly([[g.a0,0,g.z0],[g.a1,0,g.z1],[g.a1,0,g.z1-slab],[g.a0,0,g.z0-slab]],"#c7a367","#b08d52",0.03); }  // near slab face
+  { const gL=segs[segs.length-1], slab=(framR+deckingT);
+    s+=poly([[gL.a1,0,gL.z1],[gL.a1,W,gL.z1],[gL.a1,W,gL.z1-slab],[gL.a1,0,gL.z1-slab]],"#cba86c","#b08d52",0.03); }  // ground end cap
+  s+=railSide(0,"#7a5a2e",0.26);            // near rail (front)
+  // dimensions
+  s+=ln([0,0,-5],[totalA,0,-5],"#555",0.03);
+  s+=txt(totalA/2,0,-11, dimText(totalA), "#333", 0.5, "middle");
+  s+=ln([0,0,deck+hh+7],[0,W,deck+hh+7],"#2f6fb0",0.03);
+  s+=txt(0,W/2,deck+hh+13, dimText(W), "#2f6fb0", 0.46, "middle");
+  s+=ln([-deckDepth-5,0,0],[-deckDepth-5,0,deck],"#555",0.03);
+  s+=txt(-deckDepth-11,0,deck/2, dimText(deck), "#333", 0.42, "end");
   s+='</svg>'; return s;
 }
-
 function buildSVG(p,g){
   const F=12;
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
@@ -451,7 +476,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.7",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.8",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
