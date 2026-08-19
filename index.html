@@ -50,7 +50,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.8</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.11</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -136,12 +136,17 @@
 
       <div class="sechead">Drawing</div>
       <label class="checkrow"><input type="checkbox" id="showCorners"> Show corner coordinates</label>
-      <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (isometric)</label>
+      <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (side view)</label>
 
       <div class="sechead">Notes</div>
       <label class="field"><span class="lab">Notes on the drawing</span>
         <textarea id="notes" rows="3" placeholder="One per line:   x, y: text&#10;e.g.   6, 2: existing tree"></textarea>
         <span class="hint">position in feet from the 0,0 datum (tick &ldquo;Show corner coordinates&rdquo; to see where 0,0 is)</span></label>
+
+      <div class="sechead">FreeCAD export</div>
+      <p class="hint" style="margin:0 0 8px">Paste these into your FreeCAD macro's parameter block. Updates live as you edit.</p>
+      <textarea id="fcexport" rows="7" readonly style="font-size:12px;line-height:1.3"></textarea>
+      <button class="sec" id="fccopy" onclick="copyFreecad()" style="margin-top:8px">Copy for FreeCAD</button>
 
       <div class="readouts">
         <div class="ro" id="roSlopeBox"><div class="k">Total slope</div><div class="v mono" id="roSlope">–</div><div class="flag mono" id="roFlag"></div></div>
@@ -156,12 +161,12 @@
       <div class="caption" id="caption"></div>
       <div class="scale-note">1 square = 1 ft &middot; prints to scale (0.5 cm per foot)</div>
       <div id="profileWrap" style="margin-top:16px">
-        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Profile &mdash; isometric</h2>
+        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Profile &mdash; side view</h2>
         <div class="paper" id="profilePaper"></div>
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.8</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.11</footer>
 
 <script>
 "use strict";
@@ -219,63 +224,47 @@ function switchbackGeometry(p){
 }
 
 function buildProfile(p){
-  if(p.layout!=="straight") return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Isometric view is available for straight runs for now — switchback comes later.</div>';
+  if(p.layout!=="straight") return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Side profile is available for straight runs for now — switchback comes later.</div>';
   const F=12, deck=p.deckHeight, runs=p.runs, run=p.rampRun, W=p.width, rise=deck/runs, hh=(p.handrailHeight>0?p.handrailHeight:36);
-  const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1, deckDepth=24;
+  const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1, slabMax=Math.max(framR,framT)+deckingT;
+  const midH=hh*0.5, toeH=3;
   const segs=[]; let along=0, z=deck;
   segs.push({top:true,a0:0,a1:p.topD,z0:deck,z1:deck}); along=p.topD;
   for(let i=1;i<=runs;i++){ segs.push({a0:along,a1:along+run,z0:z,z1:z-rise}); along+=run; z-=rise;
     if(i<runs&&p.restAfter.includes(i)){ segs.push({a0:along,a1:along+p.restD,z0:z,z1:z}); along+=p.restD; } }
   const totalA=along;
-  const c=Math.cos(Math.PI/6), sn=Math.sin(Math.PI/6), sc=1/F;
-  const P=(x,y,z)=>[((x+y)*c)*sc, ((x-y)*sn-z)*sc];
-  const k=(x,y,z)=>{const q=P(x,y,z);return q[0].toFixed(3)+","+q[1].toFixed(3);};
-  const poly=(pts,fill,st,sw)=>'<path d="M '+pts.map(q=>k(q[0],q[1],q[2])).join(" L ")+' Z" fill="'+fill+'" stroke="'+st+'" stroke-width="'+(sw||0.03)+'" stroke-linejoin="round"/>';
-  const ln=(a,b,st,sw)=>{const p1=P(a[0],a[1],a[2]),p2=P(b[0],b[1],b[2]);return '<line x1="'+p1[0].toFixed(3)+'" y1="'+p1[1].toFixed(3)+'" x2="'+p2[0].toFixed(3)+'" y2="'+p2[1].toFixed(3)+'" stroke="'+st+'" stroke-width="'+sw+'" stroke-linecap="round"/>';};
-  const txt=(x,y,z,t,col,sz,anch)=>{const q=P(x,y,z);return '<text x="'+q[0].toFixed(2)+'" y="'+q[1].toFixed(2)+'" font-size="'+(sz||0.42)+'" text-anchor="'+(anch||"middle")+'" fill="'+col+'">'+esc(t)+'</text>';};
-  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
-  const acc=(x,y,z)=>{const q=P(x,y,z);if(q[0]<minx)minx=q[0];if(q[0]>maxx)maxx=q[0];if(q[1]<miny)miny=q[1];if(q[1]>maxy)maxy=q[1];};
-  for(const X of [-deckDepth-14,totalA+16]) for(const Y of [-16,W+16]) for(const Z of [-10,deck+hh+14]) acc(X,Y,Z);
-  const m=1.4, vbX=minx-m, vbY=miny-m, vbW=(maxx-minx)+2*m, vbH=(maxy-miny)+2*m;
-  let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.5).toFixed(2)+'cm" height="'+(vbH*0.5).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   function zAt(a){ for(const g of segs){ if(a>=g.a0-1e-6&&a<=g.a1+1e-6){ const t=(g.a1>g.a0)?(a-g.a0)/(g.a1-g.a0):0; return g.z0+(g.z1-g.z0)*t; } } return 0; }
-  // existing deck block (gray, behind)
-  s+=poly([[-deckDepth,0,deck],[0,0,deck],[0,W,deck],[-deckDepth,W,deck]],"#ccd0d6","#9aa0a8",0.03);
-  s+=poly([[-deckDepth,0,deck],[0,0,deck],[0,0,0],[-deckDepth,0,0]],"#bcc1c8","#9aa0a8",0.03);
-  s+=poly([[-deckDepth,0,deck],[-deckDepth,W,deck],[-deckDepth,W,0],[-deckDepth,0,0]],"#c4c9d0","#9aa0a8",0.03);
-  // existing steps (gray), descending under the first run
-  if(p.showSteps && p.numSteps>=1 && p.stepDepth>0){
-    const ns=Math.round(p.numSteps), sd=p.stepDepth/ns, sh=deck/ns, sw=(p.stepWidth>0?p.stepWidth:W);
-    for(let i=0;i<ns;i++){ const x0=i*sd,x1=(i+1)*sd,zt=deck-i*sh,zb=deck-(i+1)*sh;
-      s+=poly([[x0,0,zt],[x1,0,zt],[x1,sw,zt],[x0,sw,zt]],"#ccd0d6","#9aa0a8",0.025);
-      s+=poly([[x1,0,zt],[x1,0,zb],[x1,sw,zb],[x1,sw,zt]],"#b6bbc2","#9aa0a8",0.025);
-    }
-  }
-  const postSp=(p.postSpacingMax>0?p.postSpacingMax:72);
-  function railSide(yE,col,pw){
-    let o=""; const gL=segs[segs.length-1];
-    for(const rh of [hh, hh*0.5, 3]){ const w=(rh===hh?0.1:0.06);
-      for(const g of segs) o+=ln([g.a0,yE,g.z0+rh],[g.a1,yE,g.z1+rh],col,w); }
-    o+=ln([0,yE,deck+hh],[-9,yE,deck+hh-9],col,0.1);
-    o+=ln([gL.a1,yE,gL.z1+hh],[gL.a1+9,yE,gL.z1+hh-9],col,0.1);
-    const nSp=Math.max(1,Math.ceil(totalA/postSp));
-    for(let i=0;i<=nSp;i++){ const a=totalA*i/nSp, zs=zAt(a); o+=ln([a,yE,zs],[a,yE,zs+hh],col,pw); }
-    return o;
-  }
-  s+=railSide(W,"#8a6a3a",0.24);            // far rail (behind)
-  for(const g of segs){ const slab=((g.top?framT:framR)+deckingT);
-    s+=poly([[g.a0,0,g.z0],[g.a1,0,g.z1],[g.a1,W,g.z1],[g.a0,W,g.z0]],"#e3c690","#b08d52",0.03);      // walking surface
-    s+=poly([[g.a0,0,g.z0],[g.a1,0,g.z1],[g.a1,0,g.z1-slab],[g.a0,0,g.z0-slab]],"#c7a367","#b08d52",0.03); }  // near slab face
-  { const gL=segs[segs.length-1], slab=(framR+deckingT);
-    s+=poly([[gL.a1,0,gL.z1],[gL.a1,W,gL.z1],[gL.a1,W,gL.z1-slab],[gL.a1,0,gL.z1-slab]],"#cba86c","#b08d52",0.03); }  // ground end cap
-  s+=railSide(0,"#7a5a2e",0.26);            // near rail (front)
-  // dimensions
-  s+=ln([0,0,-5],[totalA,0,-5],"#555",0.03);
-  s+=txt(totalA/2,0,-11, dimText(totalA), "#333", 0.5, "middle");
-  s+=ln([0,0,deck+hh+7],[0,W,deck+hh+7],"#2f6fb0",0.03);
-  s+=txt(0,W/2,deck+hh+13, dimText(W), "#2f6fb0", 0.46, "middle");
-  s+=ln([-deckDepth-5,0,0],[-deckDepth-5,0,deck],"#555",0.03);
-  s+=txt(-deckDepth-11,0,deck/2, dimText(deck), "#333", 0.42, "end");
+  const X=a=>a/F, Y=z=>-z/F;
+  const vbX=-3.2, xR=totalA/F+2.4, vbW=xR-vbX;
+  const vbY=Y(deck+hh)-1.4, yBot=(slabMax/F)+3.0, vbH=yBot-vbY;
+  let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.5).toFixed(2)+'cm" height="'+(vbH*0.5).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
+  for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  // slab (framing + decking) to scale
+  for(const g of segs){ const sl=((g.top?framT:framR)+deckingT)/F;
+    s+='<path d="M '+X(g.a0).toFixed(3)+' '+Y(g.z0).toFixed(3)+' L '+X(g.a1).toFixed(3)+' '+Y(g.z1).toFixed(3)+' L '+X(g.a1).toFixed(3)+' '+(Y(g.z1)+sl).toFixed(3)+' L '+X(g.a0).toFixed(3)+' '+(Y(g.z0)+sl).toFixed(3)+' Z" fill="#e3c690" stroke="#b08d52" stroke-width="0.03"/>'; }
+  // ground
+  s+='<line x1="'+vbX.toFixed(2)+'" y1="0" x2="'+xR.toFixed(2)+'" y2="0" stroke="#7a6a3a" stroke-width="0.05"/>';
+  s+='<text x="'+xR.toFixed(2)+'" y="0.42" font-size="0.35" text-anchor="end" fill="#7a6a3a">GROUND</text>';
+  // posts 4x4 to the ground
+  const postSp=(p.postSpacingMax>0?p.postSpacingMax:72), nSp=Math.max(1,Math.ceil(totalA/postSp)), PW=3.5/F;
+  for(let i=0;i<=nSp;i++){ const a=totalA*i/nSp, top=zAt(a)+hh;
+    s+='<rect x="'+(X(a)-PW/2).toFixed(3)+'" y="'+Y(top).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(Y(0)-Y(top)).toFixed(3)+'" fill="#8a6a3a" stroke="#5a4326" stroke-width="0.03"/>'; }
+  // rails: toe & mid on edge (3.5"), top flat (1.5")
+  function rail(rh, thick){ let d="M "+X(0).toFixed(3)+" "+Y(zAt(0)+rh).toFixed(3); for(const g of segs) d+=" L "+X(g.a1).toFixed(3)+" "+Y(g.z1+rh).toFixed(3); return '<path d="'+d+'" fill="none" stroke="#7a5a2e" stroke-width="'+thick+'" stroke-linecap="round" stroke-linejoin="round"/>'; }
+  s+=rail(toeH, 3.5/F);
+  s+=rail(midH, 3.5/F);
+  s+=rail(hh, 1.5/F);
+  // small beveled returns at the top-rail ends (chamfer down to end posts)
+  const gL=segs[segs.length-1];
+  s+='<line x1="'+X(0).toFixed(3)+'" y1="'+Y(deck+hh).toFixed(3)+'" x2="'+X(-6).toFixed(3)+'" y2="'+Y(deck+hh-6).toFixed(3)+'" stroke="#7a5a2e" stroke-width="'+(1.5/F)+'" stroke-linecap="round"/>';
+  s+='<line x1="'+X(totalA).toFixed(3)+'" y1="'+Y(gL.z1+hh).toFixed(3)+'" x2="'+X(totalA+6).toFixed(3)+'" y2="'+Y(gL.z1+hh-6).toFixed(3)+'" stroke="#7a5a2e" stroke-width="'+(1.5/F)+'" stroke-linecap="round"/>';
+  // dims
+  s+='<line x1="'+X(0).toFixed(3)+'" y1="'+(1.5).toFixed(3)+'" x2="'+X(totalA).toFixed(3)+'" y2="'+(1.5).toFixed(3)+'" stroke="#555" stroke-width="0.03"/>';
+  s+='<text x="'+X(totalA/2).toFixed(2)+'" y="'+(1.95).toFixed(2)+'" font-size="0.5" text-anchor="middle" fill="#333">'+esc(dimText(totalA))+'</text>';
+  s+='<line x1="'+X(-1.8).toFixed(3)+'" y1="0" x2="'+X(-1.8).toFixed(3)+'" y2="'+Y(deck).toFixed(3)+'" stroke="#555" stroke-width="0.03"/>';
+  s+='<text x="'+X(-2.1).toFixed(2)+'" y="'+(Y(deck/2)+0.15).toFixed(2)+'" font-size="0.42" text-anchor="end" fill="#333">'+esc(dimText(deck))+'</text>';
+  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">2x6 framing + 1" decking'+(p.topOnExistingDeck?", top landing 2x4 on existing deck":"")+"  \u00b7  posts 4x4, rails 2x4  \u00b7  shown one side</text>";
   s+='</svg>'; return s;
 }
 function buildSVG(p,g){
@@ -290,7 +279,7 @@ function buildSVG(p,g){
   for(let gx=Math.floor(vbX);gx<=Math.ceil(vbX+vbW);gx++){const M=(gx%5===0);grid+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
   for(let gy=Math.floor(vbY);gy<=Math.ceil(vbY+vbH);gy++){const M=(gy%5===0);grid+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
   s+='<g>'+grid+'</g>';
-  let lastR=null;
+  let lastR=null, lastRampPiece=null; for(const q of g.pieces) if(q.ramp) lastRampPiece=q;
   for(const pc of g.pieces){
     const x=pc.x0/F,w=(pc.x1-pc.x0)/F,y=pc.y0/F,h=(pc.y1-pc.y0)/F,cx=x+w/2,cy=y+h/2;
     const fill=pc.ramp?"#d8b784":"#a8c8a0",stroke=pc.ramp?"#b08d52":"#79a771";
@@ -317,7 +306,8 @@ function buildSVG(p,g){
     s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.42)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47">'+esc(sizeTxt)+'</text>';
     if(pc.ramp){const dir=pc.dir||1, hiX=(dir>0?pc.x0:pc.x1)/F+dir*0.55, loX=(dir>0?pc.x1:pc.x0)/F-dir*0.55;
       s+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">Down</text>';
-      s+='<text x="'+f3(loX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(loX)+' '+f3(cy)+')">Straight</text>';}
+      const loLbl=(pc===lastRampPiece && p.taper)?"Taper 0\u0338":"Straight";
+      s+='<text x="'+f3(loX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(loX)+' '+f3(cy)+')">'+loLbl+'</text>';}
   }
   const ramps=g.pieces.filter(pc=>pc.ramp);
   for(const L of g.pieces){
@@ -336,7 +326,7 @@ function buildSVG(p,g){
     s+='<path d="M '+f3(ex)+' '+f3(ry0)+' L '+f3(ex+dir*0.7)+' '+f3(cy)+' L '+f3(ex)+' '+f3(ry1)+' Z" fill="#d8b784" fill-opacity="0.45" stroke="#b08d52" stroke-width="0.03"/>';
   }
   if(lastR){const dir=lastR.dir||1,gx=(dir>0?lastR.x1/F:lastR.x0/F)+dir*(p.taper?0.95:0.35),gy=(lastR.y0+lastR.y1)/2/F;
-    s+='<text x="'+f3(gx)+'" y="'+f3(gy+0.15)+'" font-size="0.46" text-anchor="'+(dir>0?"start":"end")+'" fill="#7a6a3a" font-weight="700">GROUND'+(p.taper?" · taper 0":"")+'</text>';}
+    s+='<text x="'+f3(gx)+'" y="'+f3(gy+0.15)+'" font-size="0.46" text-anchor="'+(dir>0?"start":"end")+'" fill="#7a6a3a" font-weight="700">GROUND'+(p.taper?" · taper 0\u0338":"")+'</text>';}
   const label="Slope 1:"+g.slopeRatio.toFixed(1)+(sc.word?("   "+sc.word):""), hasFlag=sc.key!=="ok";
   const bw=label.length*0.34+0.7+(hasFlag?0.9:0), bx=vbX+0.3, by=vbY+0.45, bh=1.0;
   s+='<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.18" fill="#22242b"/>';
@@ -347,14 +337,35 @@ function buildSVG(p,g){
   s+='<text x="'+tx0.toFixed(2)+'" y="'+(by+bh/2+0.2).toFixed(2)+'" font-size="0.56" text-anchor="start" fill="'+sc.color+'" font-weight="700">'+esc(label)+'</text>';
   s+='<text x="'+(vbX+0.4).toFixed(2)+'" y="'+(vbY+vbH-0.5).toFixed(2)+'" font-size="0.4" text-anchor="start" fill="#6b7280">Deck '+esc(dimText(p.deckHeight))+'  \u00b7  ramp width '+esc(dimText(p.width))+'  \u00b7  footprint '+esc(ftCompact(g.footW))+' \u00d7 '+esc(ftCompact(g.footH))+(p.showSteps?'  \u00b7  notch frame for existing steps':'')+'</text>';
   if(p.showHandrails){
-    const PW=3.5/F, maxSp=(p.postSpacingMax>0?p.postSpacingMax:72);
-    for(const pc of g.pieces){
-      if(pc.ref) continue;
-      for(const ye of [pc.y0, pc.y1]){
-        const yf=ye/F, x0=pc.x0/F, x1=pc.x1/F, L=pc.x1-pc.x0, n=Math.max(1,Math.ceil(L/maxSp));
-        s+='<rect x="'+f3(x0)+'" y="'+f3(yf-PW/2)+'" width="'+f3(x1-x0)+'" height="'+f3(PW)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
-        for(let i=0;i<=n;i++){ const px=(pc.x0+L*i/n)/F; s+='<rect x="'+f3(px-PW/2)+'" y="'+f3(yf-PW/2)+'" width="'+f3(PW)+'" height="'+f3(PW)+'" fill="#efe7d6" stroke="#5a5142" stroke-width="0.05"/>'; }
+    const PW=3.5/F, HI=1.75, maxSp=(p.postSpacingMax>0?p.postSpacingMax:72);
+    const railable=g.pieces.filter(pc=>!pc.ref);
+    let lastRamp=null; for(const pc of g.pieces) if(pc.ramp) lastRamp=pc;
+    const tl=g.pieces[0]; let deckPh=null;
+    if(tl){ const cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, D=24, L=120;
+      if(p.deckRefSide==="right") deckPh={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
+      else if(p.deckRefSide==="top") deckPh={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
+      else if(p.deckRefSide==="bottom") deckPh={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
+      else deckPh={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2,y1:cy+L/2};
+    }
+    const adj=railable.concat(deckPh?[deckPh]:[]);
+    const exposed=(lo,hi,covers)=>{ let sg=[[lo,hi]]; for(const cv of covers){ const c0=cv[0],c1=cv[1],ns=[]; for(const q of sg){ const s0=q[0],s1=q[1]; if(c1<=s0||c0>=s1) ns.push([s0,s1]); else { if(c0>s0)ns.push([s0,c0]); if(c1<s1)ns.push([c1,s1]); } } sg=ns; } return sg.filter(q=>q[1]-q[0]>0.5); };
+    const drawRail=(x0,y0,x1,y1)=>{
+      const horiz=Math.abs(y1-y0)<Math.abs(x1-x0);
+      if(horiz){ const xa=Math.min(x0,x1),xb=Math.max(x0,x1);
+        s+='<rect x="'+f3(xa/F)+'" y="'+f3((y0-HI)/F)+'" width="'+f3((xb-xa)/F)+'" height="'+f3(PW)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
+      } else { const ya=Math.min(y0,y1),yb=Math.max(y0,y1);
+        s+='<rect x="'+f3((x0-HI)/F)+'" y="'+f3(ya/F)+'" width="'+f3(PW)+'" height="'+f3((yb-ya)/F)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
       }
+      const len=Math.hypot(x1-x0,y1-y0), n=Math.max(1,Math.ceil(len/maxSp));
+      for(let i=0;i<=n;i++){ const t=i/n, px=x0+(x1-x0)*t, py=y0+(y1-y0)*t;
+        s+='<rect x="'+f3((px-HI)/F)+'" y="'+f3((py-HI)/F)+'" width="'+f3(PW)+'" height="'+f3(PW)+'" fill="#efe7d6" stroke="#5a5142" stroke-width="0.05"/>'; }
+    };
+    for(const A of railable){
+      const gnd=(A===lastRamp), dir=A.dir||1;
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x0-A.x1)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir>0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x1,e[0],A.x1,e[1]); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x1-A.x0)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir<0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x0,e[0],A.x0,e[1]); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y1-A.y0)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y0,e[1],A.y0); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y0-A.y1)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y1,e[1],A.y1); }
     }
   }
   if(p.showSteps){
@@ -437,6 +448,49 @@ function mirrorX(g){
   for(const pc of g.pieces){const a=pc.x0; pc.x0=-pc.x1; pc.x1=-a; if(pc.dir)pc.dir=-pc.dir;}
   return g;
 }
+function buildFreecad(p,g){
+  const q=v=>Math.round(v*100)/100;
+  const L=[];
+  L.push("# Care Construction ramp — "+(p.client||"(client)")+" "+(p.projectType||""));
+  L.push("# Paste into your FreeCAD macro's parameter block. Units: inches.");
+  if(p._preview) L.push("# NOTE: preview — some fields blank, values are placeholders.");
+  L.push("");
+  L.push('LAYOUT         = "'+p.layout+'"');
+  L.push("DECK_HEIGHT    = "+q(p.deckHeight));
+  L.push("RAMP_WIDTH     = "+q(p.width));
+  L.push("RUN_LENGTH     = "+q(p.rampRun));
+  if(p.layout==="switchback") L.push("LEGS           = ["+p.legs.join(", ")+"]");
+  else L.push("NUM_RUNS       = "+p.runs);
+  L.push("SLOPE_RATIO    = "+q(g.slopeRatio)+"   # 1 : SLOPE_RATIO");
+  L.push('START_SIDE     = "'+p.startSide+'"');
+  L.push('ALIGN          = "'+p.align+'"');
+  L.push("TOP_LANDING_W  = "+q(p.topW));
+  L.push("TOP_LANDING_D  = "+q(p.topD));
+  L.push("REST_LANDING_W = "+q(p.restW));
+  L.push("REST_LANDING_D = "+q(p.restD));
+  L.push("REST_AFTER     = ["+p.restAfter.join(", ")+"]");
+  if(p.layout==="switchback"){ L.push("GAP            = "+q(p.gap)); L.push("TURN_DEPTH     = "+q(p.turnDepth)); }
+  L.push("HANDRAIL_H     = "+q(p.handrailHeight||36));
+  L.push("POST_SPACING   = "+q(p.postSpacingMax||72));
+  L.push('FRAMING        = "2x6"');
+  L.push("DECKING        = 1.0");
+  L.push("TOP_ON_DECK    = "+(p.topOnExistingDeck?"True":"False"));
+  L.push("TAPER_LAST     = "+(p.taper?"True":"False")+"   # last ramp tapers to grade (taper 0)");
+  L.push('DECK_REF_SIDE  = "'+p.deckRefSide+'"');
+  L.push("NOTCH          = "+(p.notchEnable?"True":"False"));
+  if(p.notchEnable){ L.push("NOTCH_W        = "+q(p.notchWidth)); L.push("NOTCH_D        = "+q(p.notchDepth)); L.push("NOTCH_OFFSET   = "+q(p.notchOffset)); }
+  L.push("STEPS          = "+(p.showSteps?"True":"False"));
+  if(p.showSteps){ L.push("STEP_COUNT     = "+p.numSteps); L.push("STEP_DEPTH     = "+q(p.stepDepth)); L.push("STEP_WIDTH     = "+q(p.stepWidth)); }
+  return L.join("\n");
+}
+function copyFreecad(){
+  const ta=document.getElementById("fcexport"); if(!ta) return;
+  ta.focus(); ta.select(); try{ta.setSelectionRange(0,999999);}catch(e){}
+  let ok=false;
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value); ok=true; } }catch(e){}
+  if(!ok){ try{ ok=document.execCommand("copy"); }catch(e){} }
+  const b=document.getElementById("fccopy"); if(b){ b.textContent=ok?"Copied!":"Selected \u2014 press \u2318C"; setTimeout(function(){b.textContent="Copy for FreeCAD";},1700); }
+}
 function render(){
   const p=readParams();
   if(p.targetSlope!=="manual"){
@@ -466,6 +520,7 @@ function render(){
   document.getElementById("paper").innerHTML=buildSVG(p,g);
   document.getElementById("profileWrap").style.display=p.showProfile?"":"none";
   if(p.showProfile) document.getElementById("profilePaper").innerHTML=buildProfile(p);
+  try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
   document.getElementById("caption").innerHTML=
     (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+'Deck <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
     g.totalRamps+' runs &middot; footprint <span class="mono">'+esc(ftFrac(g.footW))+' \u00d7 '+esc(ftFrac(g.footH))+'</span>';
@@ -476,7 +531,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.8",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.11",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
