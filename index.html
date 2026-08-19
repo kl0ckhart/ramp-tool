@@ -49,26 +49,7 @@
 </style>
 </head>
 <body>
-<script>
-(function(){
-  try{
-    var d=document.createElement("div");
-    d.style.cssText="position:fixed;top:0;left:0;right:0;background:#157347;color:#fff;font:14px ui-monospace,Menlo,monospace;padding:10px;z-index:99999;text-align:center";
-    d.textContent="DIAGNOSTIC: JavaScript IS running on this device";
-    (document.body||document.documentElement).appendChild(d);
-  }catch(e){}
-  window.onerror=function(m,src,l,c,e){
-    try{ var b=document.getElementById("__err");
-      if(!b){b=document.createElement("div");b.id="__err";
-        b.style.cssText="position:fixed;left:0;right:0;bottom:0;background:#c0392b;color:#fff;font:12px/1.4 ui-monospace,Menlo,monospace;padding:10px;z-index:99999;white-space:pre-wrap";
-        (document.body||document.documentElement).appendChild(b);}
-      b.textContent="JS ERROR: "+m+"  @ line "+l+":"+c+((e&&e.stack)?("\n"+e.stack):"");
-    }catch(_){}
-    return false;
-  };
-})();
-</script>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.5</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.6</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -174,7 +155,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.5 &middot; <span id="jsflag">JS: not loaded</span></footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.6</footer>
 
 <script>
 "use strict";
@@ -454,7 +435,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.5",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.6",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -486,7 +467,6 @@ function loadDesign(input){
 }
 
 updateVisibility();
-try{document.getElementById("jsflag").textContent="JS: loaded \u2713";document.getElementById("jsflag").style.color="#157347";}catch(e){}
 </script>
 </body>
 </html>
