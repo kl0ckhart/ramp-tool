@@ -50,7 +50,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.12</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.14</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -69,7 +69,8 @@
 
       <div class="sechead">Top deck</div>
       <label class="field"><span class="lab">Deck height <span class="u">(in)</span></span><input id="deckHeight" type="number" step="0.25" value=""></label>
-      <div class="row2">
+      <label class="checkrow"><input type="checkbox" id="hasTopLanding" checked> Include a top landing</label>
+      <div class="row2 only-toplanding">
         <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value=""></label>
         <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value=""></label>
       </div>
@@ -98,7 +99,7 @@
       <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
       <div class="only-door notchgroup">
         <label class="field"><span class="lab">Door width <span class="u">(in)</span></span><input id="doorWidth" type="number" step="1" value="36"></label>
-        <label class="field"><span class="lab">Hinge side</span><select id="doorHinge"><option value="start">One end</option><option value="end">Other end</option></select></label>
+        <label class="field"><span class="lab">Hinge side</span><select id="doorHinge"><option value="left">Left hinge (facing door)</option><option value="right">Right hinge (facing door)</option></select></label>
       </div>
 
       <div class="sechead">Ramp</div>
@@ -131,6 +132,13 @@
       </div>
       <label class="field"><span class="lab">Rest landings after runs</span><input id="restAfter" type="text" value="">
         <span class="hint">which runs to place a rest after — e.g. 1, 3. Leave blank for none.</span></label>
+      <label class="checkrow only-straight"><input type="checkbox" id="sameSize" checked> All ramps &amp; rests the same size</label>
+      <div class="only-persection notchgroup">
+        <label class="field"><span class="lab">Ramp run lengths <span class="u">(in, per run)</span></span><input id="rampRuns" type="text" placeholder="e.g. 96, 78, 96"><span class="hint">one per ramp, in order; blank entry = default</span></label>
+        <label class="field"><span class="lab">Ramp widths <span class="u">(in, per run)</span></span><input id="rampWidths" type="text" placeholder="e.g. 40, 40, 40"></label>
+        <label class="field"><span class="lab">Rest widths <span class="u">(in, per rest)</span></span><input id="restWidths" type="text" placeholder="e.g. 40, 60"></label>
+        <label class="field"><span class="lab">Rest depths <span class="u">(in, per rest)</span></span><input id="restDepths" type="text" placeholder="e.g. 60, 60"></label>
+      </div>
       <label class="checkrow"><input type="checkbox" id="taper" checked> Taper the last ramp to grade (taper 0)</label>
       <label class="checkrow"><input type="checkbox" id="showHandrails"> Show handrails</label>
       <div class="only-handrails notchgroup">
@@ -172,7 +180,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.12</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.14</footer>
 
 <script>
 "use strict";
@@ -191,26 +199,36 @@ function slopeClass(r){
 function finalize(pieces,rise,RUN,n){
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,sum=0;
   for(const pc of pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);if(pc.ramp)sum+=(pc.x1-pc.x0);}
-  return{pieces,rise,slopeRatio:RUN/rise,totalRamps:n,totalRampRun:sum,footW:mxX-mnX,footH:mxY-mnY};
+  let minRun=Infinity; for(const pc of pieces) if(pc.ramp) minRun=Math.min(minRun,pc.x1-pc.x0); if(!isFinite(minRun))minRun=RUN;
+  return{pieces,rise,slopeRatio:minRun/rise,totalRamps:n,totalRampRun:sum,footW:mxX-mnX,footH:mxY-mnY};
 }
 function straightGeometry(p){
-  const rise=p.deckHeight/p.runs,W=p.width, maxW=Math.max(p.topW,p.restW,W);
+  const rise=p.deckHeight/p.runs, hasTL=p.hasTopLanding, uni=p.sameSize;
   const g0={top:"t",bottom:"b",center:"c"}[p.align]||"t";
+  const rRun=i=> (uni||!(p.rampRuns[i-1]>0))?p.rampRun:p.rampRuns[i-1];
+  const rWid=i=> (uni||!(p.rampWidths[i-1]>0))?p.width:p.rampWidths[i-1];
+  const reW=j=> (uni||!(p.restWidths[j]>0))?p.restW:p.restWidths[j];
+  const reD=j=> (uni||!(p.restDepths[j]>0))?p.restD:p.restDepths[j];
+  let ws=[p.width,p.restW]; if(hasTL) ws.push(p.topW);
+  for(let i=1;i<=p.runs;i++) ws.push(rWid(i));
+  let rc=0; for(let i=1;i<p.runs;i++) if(p.restAfter.includes(i)){ ws.push(reW(rc)); rc++; }
+  const maxW=Math.max.apply(null, ws.concat([1]));
   const yspan=(width,side)=> side==="c"?[(maxW-width)/2,(maxW+width)/2]:(side==="b"?[maxW-width,maxW]:[0,width]);
-  const ty=yspan(p.topW,g0); const pieces=[{name:"Top landing",x0:0,x1:p.topD,y0:ty[0],y1:ty[1],ramp:false,top:true}];
-  let x=p.topD;
+  const pieces=[]; let x=0;
+  if(hasTL){ const ty=yspan(p.topW,g0); pieces.push({name:"Top landing",x0:0,x1:p.topD,y0:ty[0],y1:ty[1],ramp:false,top:true}); x=p.topD; }
+  let rIdx=0;
   for(let i=1;i<=p.runs;i++){
-    const side=p.rampOverrides[i]||g0, ry=yspan(W,side);
-    pieces.push({name:"Ramp "+i,x0:x,x1:x+p.rampRun,y0:ry[0],y1:ry[1],ramp:true,dir:1}); x+=p.rampRun;
-    if(i<p.runs && p.restAfter.includes(i)){const gy=yspan(p.restW,g0); pieces.push({name:"Rest",x0:x,x1:x+p.restD,y0:gy[0],y1:gy[1],ramp:false}); x+=p.restD;}
+    const w=rWid(i), run=rRun(i), side=p.rampOverrides[i]||g0, ry=yspan(w,side);
+    pieces.push({name:"Ramp "+i,x0:x,x1:x+run,y0:ry[0],y1:ry[1],ramp:true,dir:1}); x+=run;
+    if(i<p.runs && p.restAfter.includes(i)){ const rw=reW(rIdx), rd=reD(rIdx), gy=yspan(rw,g0); pieces.push({name:"Rest",x0:x,x1:x+rd,y0:gy[0],y1:gy[1],ramp:false}); x+=rd; rIdx++; }
   }
   return finalize(pieces,rise,p.rampRun,p.runs);
 }
 function switchbackGeometry(p){
   const W=p.width,gap=p.gap,RUN=p.rampRun,PITCH=W+gap,TD=p.turnDepth,RW=p.restW,RD=p.restD;
-  const legs=p.legs.length?p.legs:[1],n=legs.reduce((a,b)=>a+b,0),rise=p.deckHeight/n;
-  const pieces=[{name:"Top landing",x0:0,x1:p.topD,y0:0,y1:p.topW,ramp:false,top:true}];
-  let x=p.topD,yTop=p.topW-W,heading=1,ri=0;
+  const legs=p.legs.length?p.legs:[1],n=legs.reduce((a,b)=>a+b,0),rise=p.deckHeight/n, hasTL=p.hasTopLanding;
+  const pieces=[]; let x=0,yTop=0,heading=1,ri=0;
+  if(hasTL){ pieces.push({name:"Top landing",x0:0,x1:p.topD,y0:0,y1:p.topW,ramp:false,top:true}); x=p.topD; yTop=p.topW-W; }
   for(let li=0;li<legs.length;li++){
     for(let r=0;r<legs[li];r++){
       ri++; let x0,x1; if(heading>0){x0=x;x1=x+RUN;}else{x0=x-RUN;x1=x;}
@@ -308,8 +326,9 @@ function buildSVG(p,g){
       s+='<line x1="'+f3(tail)+'" y1="'+f3(ay)+'" x2="'+f3(tip)+'" y2="'+f3(ay)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
          '<path d="M '+f3(tip)+' '+f3(ay)+' l '+(-dir*0.22)+' -0.13 l 0 0.26 z" fill="'+stroke+'"/>';}
     const sizeTxt=pc.ramp?ftCompact(pc.x1-pc.x0):(ftCompact(pc.x1-pc.x0)+" \u00d7 "+ftCompact(pc.y1-pc.y0));
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.28)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.42)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47">'+esc(sizeTxt)+'</text>';
+    const yOff=pc.top?0.8:0;
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.28+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.42+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47">'+esc(sizeTxt)+'</text>';
     if(pc.ramp){const dir=pc.dir||1, hiX=(dir>0?pc.x0:pc.x1)/F+dir*0.55, loX=(dir>0?pc.x1:pc.x0)/F-dir*0.55;
       s+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">Down</text>';
       const loLbl=(pc===lastRampPiece && p.taper)?"Taper 0\u0338":"Straight";
@@ -396,9 +415,11 @@ function buildSVG(p,g){
       else if(side==="right"){ ex=tl.x1; ey=cy-dw/2; dirx=0; diry=1; nx=-1; ny=0; }
       else if(side==="top"){ ex=cx-dw/2; ey=tl.y0; dirx=1; diry=0; nx=0; ny=1; }
       else { ex=cx-dw/2; ey=tl.y1; dirx=1; diry=0; nx=0; ny=-1; }
-      let hx,hy,clx,cly;
-      if(p.doorHinge==="end"){ hx=ex+dirx*dw; hy=ey+diry*dw; clx=ex; cly=ey; }
-      else { hx=ex; hy=ey; clx=ex+dirx*dw; cly=ey+diry*dw; }
+      const Ax=ex,Ay=ey,Bx=ex+dirx*dw,By=ey+diry*dw, fLx=-ny,fLy=nx;
+      const aL=Ax*fLx+Ay*fLy, bL=Bx*fLx+By*fLy;
+      const leftEnd=aL>=bL?[Ax,Ay]:[Bx,By], rightEnd=aL>=bL?[Bx,By]:[Ax,Ay];
+      const hg=p.doorHinge==="left"?leftEnd:rightEnd, cl=p.doorHinge==="left"?rightEnd:leftEnd;
+      let hx=hg[0],hy=hg[1],clx=cl[0],cly=cl[1];
       const opx=hx+nx*dw, opy=hy+ny*dw;
       s+='<line x1="'+f3(hx/F)+'" y1="'+f3(hy/F)+'" x2="'+f3(opx/F)+'" y2="'+f3(opy/F)+'" stroke="#2f6fb0" stroke-width="0.08"/>';
       const a0=Math.atan2(cly-hy,clx-hx), a1=Math.atan2(opy-hy,opx-hx); let da=a1-a0; while(da>Math.PI)da-=2*Math.PI; while(da<-Math.PI)da+=2*Math.PI;
@@ -445,18 +466,19 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["client","projectType","notes","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","legs","gap","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge"];
+const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","legs","gap","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
+function parseFloatList(str){return String(str).split(",").map(x=>{const v=parseFloat(x.trim());return isFinite(v)?v:0;});}
 function parseNotes(str){return String(str).split("\n").map(line=>{const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*:\s*(.+)$/);return m?{x:parseFloat(m[1]),y:parseFloat(m[2]),text:m[3].trim()}:null;}).filter(n=>n);}
 function parseOverrides(str){const m={};String(str).split(",").forEach(tok=>{const parts=tok.split(":");if(parts.length===2){const n=parseInt(parts[0].trim(),10);let s=parts[1].trim().toLowerCase();s=(s[0]==="t")?"t":(s[0]==="b")?"b":(s[0]==="c")?"c":null;if(Number.isFinite(n)&&n>0&&s)m[n]=s;}});return m;}
 function readParams(){
   const num=id=>parseFloat(document.getElementById(id).value)||0;
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
-  return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:parseNotes(document.getElementById("notes").value),layout:document.getElementById("layout").value,
+  return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:parseNotes(document.getElementById("notes").value),layout:document.getElementById("layout").value,hasTopLanding:getVal("hasTopLanding"),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
-    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),
+    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:num("gap"),turnDepth:num("turnDepth"),
     topW:(num("topW")||60),topD:(num("topD")||60),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
     taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
@@ -472,6 +494,8 @@ function updateVisibility(){
   show(".only-steps",document.getElementById("showSteps").checked);
   show(".only-handrails",document.getElementById("showHandrails").checked);
   show(".only-door",document.getElementById("showDoor").checked);
+  show(".only-toplanding",document.getElementById("hasTopLanding").checked);
+  show(".only-persection",document.getElementById("layout").value==="straight"&&!document.getElementById("sameSize").checked);
   render();
 }
 function mirrorX(g){
@@ -556,12 +580,12 @@ function render(){
     g.totalRamps+' runs &middot; footprint <span class="mono">'+esc(ftFrac(g.footW))+' \u00d7 '+esc(ftFrac(g.footH))+'</span>';
 }
 ids.forEach(id=>{const el=document.getElementById(id);
-  const visToggle=(id==="layout"||id==="notchEnable"||id==="showDeckRef"||id==="showNorth"||id==="useOverrides"||id==="showSteps"||id==="showHandrails"||id==="showDoor");
+  const visToggle=(id==="layout"||id==="notchEnable"||id==="showDeckRef"||id==="showNorth"||id==="useOverrides"||id==="showSteps"||id==="showHandrails"||id==="showDoor"||id==="hasTopLanding"||id==="sameSize");
   const ev=(el.type==="checkbox"||el.tagName==="SELECT")?"change":"input";
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.12",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.14",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
