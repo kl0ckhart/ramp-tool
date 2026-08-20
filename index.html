@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.29</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.30</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -191,7 +191,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.29</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.30</footer>
 
 <script>
 "use strict";
@@ -270,39 +270,39 @@ function buildNotchDetail(p,G){
   const ndep=Math.min(p.notchDepth, tl.y1-tl.y0);
   const X=x=>(x-tl.x0)/F, Y=y=>(y-tl.y0)/F;
   const lw=(tl.x1-tl.x0)/F, lh=(tl.y1-tl.y0)/F, RD=24/F;
-  const mL=3.6, mR=5.0, mT=(p.deckRefSide==="top"?5.0:3.6), mB=(p.deckRefSide==="bottom"?4.4:3.4), vbX=-mL, vbY=-mT, vbW=lw+mL+mR, vbH=lh+mT+mB;
+  const mL=3.6, mR=4.8, mT=3.2, mB=1.2, vbX=-mL, vbY=-mT, vbW=lw+mL+mR, vbH=lh+mT+mB;
   const hdim=(x0,x1,y,label)=>'<line x1="'+x0.toFixed(3)+'" y1="'+y.toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+y.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x0.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x0.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x1.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+((x0+x1)/2).toFixed(3)+'" y="'+(y-0.22).toFixed(3)+'" font-size="0.36" text-anchor="middle" fill="#333">'+esc(label)+'</text>';
   const vdim=(x,y0,y1,label)=>'<line x1="'+x.toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+x.toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y0.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y1.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+(x+0.2).toFixed(3)+'" y="'+((y0+y1)/2+0.12).toFixed(3)+'" font-size="0.36" text-anchor="start" fill="#333">'+esc(label)+'</text>';
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.7).toFixed(2)+'cm" height="'+(vbH*0.7).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
   for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
-  // existing-deck reference block (gap = further out on the notch/top side so it clears the dims)
+  // existing-deck reference ATTACHED (flush) to the deck-reference side
   let dbx,dby,dbw,dbh,dlx,dly,dla;
-  if(p.deckRefSide==="top"){ const g=2.4; dbx=0; dby=-g-RD; dbw=lw; dbh=RD; dlx=lw/2; dly=-g-RD-0.25; dla="middle"; }
-  else if(p.deckRefSide==="bottom"){ const g=0.5; dbx=0; dby=lh+g; dbw=lw; dbh=RD; dlx=lw/2; dly=lh+g+RD+0.45; dla="middle"; }
-  else if(p.deckRefSide==="left"){ const g=0.5; dbx=-g-RD; dby=0; dbw=RD; dbh=lh; dlx=-g-RD-0.2; dly=lh/2; dla="end"; }
-  else { const g=0.5; dbx=lw+g; dby=0; dbw=RD; dbh=lh; dlx=lw+g+RD+0.2; dly=lh/2; dla="start"; }
+  if(p.deckRefSide==="top"){ dbx=0; dby=-RD; dbw=lw; dbh=RD; dlx=lw/2; dly=-RD-0.3; dla="middle"; }
+  else if(p.deckRefSide==="bottom"){ dbx=0; dby=lh; dbw=lw; dbh=RD; dlx=lw/2; dly=lh+RD+0.45; dla="middle"; }
+  else if(p.deckRefSide==="left"){ dbx=-RD; dby=0; dbw=RD; dbh=lh; dlx=-RD-0.2; dly=lh/2; dla="end"; }
+  else { dbx=lw; dby=0; dbw=RD; dbh=lh; dlx=lw+RD+0.2; dly=lh/2; dla="start"; }
   s+='<rect x="'+dbx.toFixed(3)+'" y="'+dby.toFixed(3)+'" width="'+dbw.toFixed(3)+'" height="'+dbh.toFixed(3)+'" fill="#ccd0d6" fill-opacity="0.7" stroke="#9aa0a8" stroke-width="0.04" stroke-dasharray="0.22 0.12"/>';
   s+='<text x="'+dlx.toFixed(3)+'" y="'+dly.toFixed(3)+'" font-size="0.34" text-anchor="'+dla+'" fill="#5a6069" font-weight="700">Existing deck (reference)</text>';
-  // ramp reference block on the ramp's shared edge
+  // ramp reference ATTACHED (flush) on the ramp's shared edge
   const r1=G.pieces.find(pc=>pc.ramp);
-  if(r1){ let rbx,rby,rbw,rbh,rlx,rly,rla; const g=0.5;
-    if(Math.abs(r1.x0-tl.x1)<0.6){ rbx=lw+g; rby=Y(r1.y0); rbw=RD; rbh=Y(r1.y1)-Y(r1.y0); rlx=lw+g+RD+0.2; rly=(Y(r1.y0)+Y(r1.y1))/2; rla="start"; }
-    else if(Math.abs(r1.x1-tl.x0)<0.6){ rbx=-g-RD; rby=Y(r1.y0); rbw=RD; rbh=Y(r1.y1)-Y(r1.y0); rlx=-g-RD-0.2; rly=(Y(r1.y0)+Y(r1.y1))/2; rla="end"; }
-    else { rbx=X(r1.x0); rby=lh+g; rbw=X(r1.x1)-X(r1.x0); rbh=RD; rlx=(X(r1.x0)+X(r1.x1))/2; rly=lh+g+RD+0.45; rla="middle"; }
+  if(r1){ let rbx,rby,rbw,rbh,rlx,rly,rla;
+    if(Math.abs(r1.x0-tl.x1)<0.6){ rbx=lw; rby=Y(r1.y0); rbw=RD; rbh=Y(r1.y1)-Y(r1.y0); rlx=lw+RD+0.2; rly=(Y(r1.y0)+Y(r1.y1))/2; rla="start"; }
+    else if(Math.abs(r1.x1-tl.x0)<0.6){ rbx=-RD; rby=Y(r1.y0); rbw=RD; rbh=Y(r1.y1)-Y(r1.y0); rlx=-RD-0.2; rly=(Y(r1.y0)+Y(r1.y1))/2; rla="end"; }
+    else { rbx=X(r1.x0); rby=lh; rbw=X(r1.x1)-X(r1.x0); rbh=RD; rlx=(X(r1.x0)+X(r1.x1))/2; rly=lh+RD+0.45; rla="middle"; }
     s+='<rect x="'+rbx.toFixed(3)+'" y="'+rby.toFixed(3)+'" width="'+rbw.toFixed(3)+'" height="'+rbh.toFixed(3)+'" fill="#d8b784" fill-opacity="0.65" stroke="#b08d52" stroke-width="0.04"/>';
     s+='<text x="'+rlx.toFixed(3)+'" y="'+rly.toFixed(3)+'" font-size="0.34" text-anchor="'+rla+'" fill="#8a6a3a" font-weight="700">Ramp (reference)</text>';
   }
-  // top landing with the notch cut (on top of the ref blocks at the shared edges)
+  // top landing with the notch cut
   const a=X(nx0),b=X(nx1),nd=Y(tl.y0+ndep);
   s+='<path d="M 0 0 L '+a.toFixed(3)+' 0 L '+a.toFixed(3)+' '+nd.toFixed(3)+' L '+b.toFixed(3)+' '+nd.toFixed(3)+' L '+b.toFixed(3)+' 0 L '+lw.toFixed(3)+' 0 L '+lw.toFixed(3)+' '+lh.toFixed(3)+' L 0 '+lh.toFixed(3)+' Z" fill="#a8c8a0" fill-opacity="0.6" stroke="#79a771" stroke-width="0.05"/>';
   s+='<rect x="'+a.toFixed(3)+'" y="0" width="'+(b-a).toFixed(3)+'" height="'+nd.toFixed(3)+'" fill="none" stroke="#c0392b" stroke-width="0.06" stroke-dasharray="0.22 0.12"/>';
-  // notch label BELOW the notch, inside the landing
-  s+='<text x="'+((a+b)/2).toFixed(3)+'" y="'+(nd+0.5).toFixed(3)+'" font-size="0.36" text-anchor="middle" fill="#c0392b" font-weight="700">Notch \u2014 existing step</text>';
-  // dims (kept as-is: location from left edge, width, depth)
-  s+=hdim(0, a, -1.6, "to notch  "+dimBoth(nx0-tl.x0));
-  s+=hdim(a, b, -0.8, dimBoth(nx1-nx0));
+  // WIDTH dim -> just below the notch (inside the landing).  DEPTH dim stays on the right.
+  s+=hdim(a, b, nd+0.55, dimBoth(nx1-nx0));
   s+=vdim(b+0.6, 0, nd, dimBoth(ndep));
+  // notch location (from landing left edge) + label, inside the landing
+  s+=hdim(0, a, nd+1.35, "to notch  "+dimBoth(nx0-tl.x0));
+  s+='<text x="'+((a+b)/2).toFixed(3)+'" y="'+(nd+2.05).toFixed(3)+'" font-size="0.34" text-anchor="middle" fill="#c0392b" font-weight="700">notch \u2014 existing step</text>';
   s+='</svg>'; return s;
 }
 function buildProfile(p,G){
@@ -379,10 +379,12 @@ function buildSVG(p,g){
     if(pc.ramp){const dir=pc.dir||1,tip=(dir>0?(pc.x1/F-0.12):(pc.x0/F+0.12)),tail=tip-dir*0.5,ay=y+0.4;
       s+='<line x1="'+f3(tail)+'" y1="'+f3(ay)+'" x2="'+f3(tip)+'" y2="'+f3(ay)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
          '<path d="M '+f3(tip)+' '+f3(ay)+' l '+(-dir*0.22)+' -0.13 l 0 0.26 z" fill="'+stroke+'"/>';}
-    const sizeTxt=dimPiece(pc.x1-pc.x0)+" \u00d7 "+dimPiece(pc.y1-pc.y0);
+    const ftinTxt=ftCompact(pc.x1-pc.x0)+" \u00d7 "+ftCompact(pc.y1-pc.y0);
+    const inTxt="("+inFrac(pc.x1-pc.x0)+"\" \u00d7 "+inFrac(pc.y1-pc.y0)+"\")";
     const yOff=pc.top?0.8:0;
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.28+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.42+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47">'+esc(sizeTxt)+'</text>';
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.5+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.12+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47">'+esc(ftinTxt)+'</text>';
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.6+yOff)+'" font-size="0.33" text-anchor="middle" fill="#6b7280">'+esc(inTxt)+'</text>';
     if(pc.ramp){const dir=pc.dir||1, hiX=(dir>0?pc.x0:pc.x1)/F+dir*0.55, loX=(dir>0?pc.x1:pc.x0)/F-dir*0.55;
       s+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">Down</text>';
       const loLbl=(pc===lastRampPiece && p.taper)?"Taper 0\u0338":"Straight";
@@ -666,7 +668,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.29",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.30",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
