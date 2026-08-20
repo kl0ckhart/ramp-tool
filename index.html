@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.32</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.33</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -191,7 +191,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.32</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.33</footer>
 
 <script>
 "use strict";
@@ -428,6 +428,15 @@ function buildSVG(p,g){
     if(maxCons>2){ const wl="\u26a0 "+maxCons+" runs with no landing \u2014 add a rest or turn"; const wbw=wl.length*0.28+0.7, wy=by+bh+0.3;
       s+='<rect x="'+bx.toFixed(2)+'" y="'+wy.toFixed(2)+'" width="'+wbw.toFixed(2)+'" height="0.9" rx="0.18" fill="#c0392b"/>';
       s+='<text x="'+(bx+0.35).toFixed(2)+'" y="'+(wy+0.58).toFixed(2)+'" font-size="0.44" text-anchor="start" fill="#fff" font-weight="700">'+esc(wl)+'</text>'; } }
+  { const adaSlope=g.slopeRatio>=12, adaRise=g.rise<=30, adaGap=(p.layout!=="switchback")||(p.gap>=1.5&&p.gap<48);
+    let cons=0,mc=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>mc)mc=cons;} else if(!pc.ref){cons=0;} }
+    const aY=by+bh+0.35+(mc>2?1.25:0), items=[["slope",adaSlope],["rise",adaRise]];
+    if(p.layout==="switchback") items.push(["gap",adaGap]);
+    const abw=1.35+items.length*2.15+0.15;
+    s+='<rect x="'+bx.toFixed(2)+'" y="'+aY.toFixed(2)+'" width="'+abw.toFixed(2)+'" height="0.95" rx="0.15" fill="#fbfaf7" fill-opacity="0.93" stroke="#cfcabf" stroke-width="0.04"/>';
+    s+='<text x="'+(bx+0.3).toFixed(2)+'" y="'+(aY+0.62).toFixed(2)+'" font-size="0.44" fill="#2b2f36" font-weight="700">ADA</text>';
+    let tx=bx+1.35;
+    for(const it of items){ s+='<text x="'+tx.toFixed(2)+'" y="'+(aY+0.62).toFixed(2)+'" font-size="0.4" fill="'+(it[1]?"#157347":"#c0392b")+'" font-weight="700">'+it[0]+' '+(it[1]?"\u2713":"\u26a0")+'</text>'; tx+=2.15; } }
   s+='<text x="'+(vbX+0.4).toFixed(2)+'" y="'+(vbY+vbH-0.5).toFixed(2)+'" font-size="0.4" text-anchor="start" fill="#6b7280">Deck height '+esc(dimText(p.deckHeight))+'  \u00b7  ramp width '+esc(dimText(p.width))+'  \u00b7  footprint '+esc(ftCompact(g.footW))+' \u00d7 '+esc(ftCompact(g.footH))+(p.showSteps?'  \u00b7  notch frame for existing steps':'')+'</text>';
   if(p.showHandrails){
     const PW=3.5/F, HI=1.75, maxSp=(p.postSpacingMax>0?p.postSpacingMax:72);
@@ -636,7 +645,7 @@ function render(){
   } else { document.getElementById("rampRun").disabled=false; }
   document.getElementById("clientLabel").innerHTML=(p.client?esc(p.client):'<span class="ph">[client name]</span>')+' '+esc(p.projectType||"");
   document.title="Care Construction"+(p.client?(" — "+p.client+" "+(p.projectType||"")):"");
-  if(p.layout==="switchback"&&p.legs.length===0){ p.legs=[1,2,2,1]; p._preview=true; }
+  if(p.layout==="switchback"&&p.legs.length===0){ p.legs=[1,1]; p._preview=true; }
   let g=p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p);
   if(p.startSide==="left") g=mirrorX(g);
   if(p.showDeckRef){
@@ -676,7 +685,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.32",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.33",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
