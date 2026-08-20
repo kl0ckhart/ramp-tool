@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.15</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.29</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -77,13 +77,13 @@
       <label class="field"><span class="lab">Deck height <span class="u">(in)</span></span><input id="deckHeight" type="number" step="0.25" value=""></label>
       <label class="checkrow"><input type="checkbox" id="hasTopLanding" checked> Include a top landing</label>
       <div class="row2 only-toplanding">
-        <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value=""></label>
-        <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value=""></label>
+        <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
+        <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
       </div>
       <label class="checkrow"><input type="checkbox" id="topOnExistingDeck"> Top landing on existing deck (2x4 framing)</label>
       <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing deck reference (2' × 10')</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
-        <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top">Above top landing</option><option value="bottom">Below top landing</option></select></label>
+        <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
       <label class="checkrow"><input type="checkbox" id="notchEnable"> Notch the deck for an existing step</label>
       <div class="only-notch notchgroup">
         <label class="field"><span class="lab">Notch width <span class="u">(in)</span></span><input id="notchWidth" type="number" step="1" value="48"></label>
@@ -112,7 +112,7 @@
       <label class="field"><span class="lab">Layout</span>
         <select id="layout"><option value="straight">Straight run</option><option value="switchback">Switchback (hairpin)</option></select></label>
       <label class="field only-straight"><span class="lab">Ramp alignment</span>
-        <select id="align"><option value="top">Flush to top edge</option><option value="bottom">Flush to bottom edge</option><option value="center">Centered</option></select>
+        <select id="align"><option value="top">Flush to top edge</option><option value="bottom" selected>Flush to bottom edge</option><option value="center">Centered</option></select>
         <span class="hint">which landing edge the ramps line up with by default</span></label>
       <label class="field"><span class="lab">First ramp comes off the</span>
         <select id="startSide"><option value="right">Right side of the top landing</option><option value="left">Left side of the top landing</option></select>
@@ -120,8 +120,8 @@
       <label class="field"><span class="lab">Design to a target slope</span>
         <select id="targetSlope"><option value="manual">Set run length manually</option><option value="12">1:12 (accessible)</option><option value="10">1:10</option><option value="8">1:8 (steepest safe)</option></select>
         <span class="hint">pick a slope and the run length is computed to match</span></label>
-      <label class="field"><span class="lab">Length of each run <span class="u">(in)</span></span><input id="rampRun" type="number" step="1" value=""></label>
-      <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="number" step="1" value=""></label>
+      <label class="field"><span class="lab">Length of each run <span class="u">(in)</span></span><input id="rampRun" type="number" step="1" value="96"></label>
+      <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="number" step="1" value="40"></label>
       <label class="field only-straight"><span class="lab">Number of ramp runs</span><input id="runs" type="number" step="1" min="1" value=""></label>
       <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move specific ramps to a different edge</label>
       <label class="field only-overrides"><span class="lab">Move specific ramps</span>
@@ -172,6 +172,7 @@
         <div class="ro" id="roSlopeBox"><div class="k">Total slope</div><div class="v mono" id="roSlope">–</div><div class="flag mono" id="roFlag"></div></div>
         <div class="ro"><div class="k">Rise per run</div><div class="v mono" id="roRise">–</div></div>
         <div class="ro"><div class="k">Footprint</div><div class="v mono" id="roFoot">–</div></div>
+        <div class="ro" id="roAdaBox"><div class="k">ADA check</div><div class="v mono" id="roAda">–</div><div class="flag mono" id="roAdaNote"></div></div>
       </div>
     </section>
 
@@ -184,9 +185,13 @@
         <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Profile &mdash; side view</h2>
         <div class="paper" id="profilePaper"></div>
       </div>
+      <div id="notchWrap" style="margin-top:16px">
+        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Notch detail</h2>
+        <div class="paper" id="notchPaper"></div>
+      </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.15</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.29</footer>
 
 <script>
 "use strict";
@@ -194,7 +199,9 @@ function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a||
 function inFrac(v){let w=Math.floor(v+1e-6),n=Math.round((v-w)*16);if(n===16){w++;n=0;}if(n===0)return String(w);const g=gcd(n,16);return w?w+" "+(n/g)+"/"+(16/g):(n/g)+"/"+(16/g);}
 function ftFrac(v){let ft=Math.floor(v/12),rem=v-ft*12,w=Math.floor(rem+1e-6),n=Math.round((rem-w)*16);if(n===16){w++;n=0;}if(w===12){ft++;w=0;}let i;if(n===0){i=w+'"';}else{const g=gcd(n,16);i=w+" "+(n/g)+"/"+(16/g)+'"';}return ft+"'-"+i;}
 function ftCompact(v){return (Math.abs(v%12)<1e-6)?((v/12)+"'"):ftFrac(v);}
-function dimText(v){return v>24?(inFrac(v)+" in ("+ftFrac(v)+")"):(inFrac(v)+" in");}
+function dimText(v){return v>24?(inFrac(v)+"\" ("+ftFrac(v)+")"):(inFrac(v)+"\"");}
+function dimBoth(v){return inFrac(v)+"\" ("+ftFrac(v)+")";}
+function dimPiece(v){return ftCompact(v)+" ("+inFrac(v)+"\")";}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function f3(v){return v.toFixed(3);}
 function slopeClass(r){
@@ -253,48 +260,89 @@ function switchbackGeometry(p){
   return finalize(pieces,rise,RUN,n);
 }
 
-function buildProfile(p){
-  if(p.layout!=="straight") return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Side profile is available for straight runs for now — switchback comes later.</div>';
-  const F=12, deck=p.deckHeight, runs=p.runs, run=p.rampRun, W=p.width, rise=deck/runs, hh=(p.handrailHeight>0?p.handrailHeight:36);
+function buildNotchDetail(p,G){
+  if(!p.notchEnable || !(p.notchWidth>0) || !(p.notchDepth>0)) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Turn on \u201cNotch the deck for an existing step\u201d to see the notch detail.</div>';
+  const tl=G.pieces[0]; if(!tl || !tl.top) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">The notch detail needs a top landing.</div>';
+  const F=12;
+  const lcx=(tl.x0+tl.x1)/2;
+  const nx0=Math.max(tl.x0, lcx+p.notchOffset-p.notchWidth/2);
+  const nx1=Math.min(tl.x1, lcx+p.notchOffset+p.notchWidth/2);
+  const ndep=Math.min(p.notchDepth, tl.y1-tl.y0);
+  const X=x=>(x-tl.x0)/F, Y=y=>(y-tl.y0)/F;
+  const lw=(tl.x1-tl.x0)/F, lh=(tl.y1-tl.y0)/F, RD=24/F;
+  const mL=3.6, mR=5.0, mT=(p.deckRefSide==="top"?5.0:3.6), mB=(p.deckRefSide==="bottom"?4.4:3.4), vbX=-mL, vbY=-mT, vbW=lw+mL+mR, vbH=lh+mT+mB;
+  const hdim=(x0,x1,y,label)=>'<line x1="'+x0.toFixed(3)+'" y1="'+y.toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+y.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x0.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x0.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x1.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+((x0+x1)/2).toFixed(3)+'" y="'+(y-0.22).toFixed(3)+'" font-size="0.36" text-anchor="middle" fill="#333">'+esc(label)+'</text>';
+  const vdim=(x,y0,y1,label)=>'<line x1="'+x.toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+x.toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y0.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y1.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+(x+0.2).toFixed(3)+'" y="'+((y0+y1)/2+0.12).toFixed(3)+'" font-size="0.36" text-anchor="start" fill="#333">'+esc(label)+'</text>';
+  let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.7).toFixed(2)+'cm" height="'+(vbH*0.7).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
+  for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  // existing-deck reference block (gap = further out on the notch/top side so it clears the dims)
+  let dbx,dby,dbw,dbh,dlx,dly,dla;
+  if(p.deckRefSide==="top"){ const g=2.4; dbx=0; dby=-g-RD; dbw=lw; dbh=RD; dlx=lw/2; dly=-g-RD-0.25; dla="middle"; }
+  else if(p.deckRefSide==="bottom"){ const g=0.5; dbx=0; dby=lh+g; dbw=lw; dbh=RD; dlx=lw/2; dly=lh+g+RD+0.45; dla="middle"; }
+  else if(p.deckRefSide==="left"){ const g=0.5; dbx=-g-RD; dby=0; dbw=RD; dbh=lh; dlx=-g-RD-0.2; dly=lh/2; dla="end"; }
+  else { const g=0.5; dbx=lw+g; dby=0; dbw=RD; dbh=lh; dlx=lw+g+RD+0.2; dly=lh/2; dla="start"; }
+  s+='<rect x="'+dbx.toFixed(3)+'" y="'+dby.toFixed(3)+'" width="'+dbw.toFixed(3)+'" height="'+dbh.toFixed(3)+'" fill="#ccd0d6" fill-opacity="0.7" stroke="#9aa0a8" stroke-width="0.04" stroke-dasharray="0.22 0.12"/>';
+  s+='<text x="'+dlx.toFixed(3)+'" y="'+dly.toFixed(3)+'" font-size="0.34" text-anchor="'+dla+'" fill="#5a6069" font-weight="700">Existing deck (reference)</text>';
+  // ramp reference block on the ramp's shared edge
+  const r1=G.pieces.find(pc=>pc.ramp);
+  if(r1){ let rbx,rby,rbw,rbh,rlx,rly,rla; const g=0.5;
+    if(Math.abs(r1.x0-tl.x1)<0.6){ rbx=lw+g; rby=Y(r1.y0); rbw=RD; rbh=Y(r1.y1)-Y(r1.y0); rlx=lw+g+RD+0.2; rly=(Y(r1.y0)+Y(r1.y1))/2; rla="start"; }
+    else if(Math.abs(r1.x1-tl.x0)<0.6){ rbx=-g-RD; rby=Y(r1.y0); rbw=RD; rbh=Y(r1.y1)-Y(r1.y0); rlx=-g-RD-0.2; rly=(Y(r1.y0)+Y(r1.y1))/2; rla="end"; }
+    else { rbx=X(r1.x0); rby=lh+g; rbw=X(r1.x1)-X(r1.x0); rbh=RD; rlx=(X(r1.x0)+X(r1.x1))/2; rly=lh+g+RD+0.45; rla="middle"; }
+    s+='<rect x="'+rbx.toFixed(3)+'" y="'+rby.toFixed(3)+'" width="'+rbw.toFixed(3)+'" height="'+rbh.toFixed(3)+'" fill="#d8b784" fill-opacity="0.65" stroke="#b08d52" stroke-width="0.04"/>';
+    s+='<text x="'+rlx.toFixed(3)+'" y="'+rly.toFixed(3)+'" font-size="0.34" text-anchor="'+rla+'" fill="#8a6a3a" font-weight="700">Ramp (reference)</text>';
+  }
+  // top landing with the notch cut (on top of the ref blocks at the shared edges)
+  const a=X(nx0),b=X(nx1),nd=Y(tl.y0+ndep);
+  s+='<path d="M 0 0 L '+a.toFixed(3)+' 0 L '+a.toFixed(3)+' '+nd.toFixed(3)+' L '+b.toFixed(3)+' '+nd.toFixed(3)+' L '+b.toFixed(3)+' 0 L '+lw.toFixed(3)+' 0 L '+lw.toFixed(3)+' '+lh.toFixed(3)+' L 0 '+lh.toFixed(3)+' Z" fill="#a8c8a0" fill-opacity="0.6" stroke="#79a771" stroke-width="0.05"/>';
+  s+='<rect x="'+a.toFixed(3)+'" y="0" width="'+(b-a).toFixed(3)+'" height="'+nd.toFixed(3)+'" fill="none" stroke="#c0392b" stroke-width="0.06" stroke-dasharray="0.22 0.12"/>';
+  // notch label BELOW the notch, inside the landing
+  s+='<text x="'+((a+b)/2).toFixed(3)+'" y="'+(nd+0.5).toFixed(3)+'" font-size="0.36" text-anchor="middle" fill="#c0392b" font-weight="700">Notch \u2014 existing step</text>';
+  // dims (kept as-is: location from left edge, width, depth)
+  s+=hdim(0, a, -1.6, "to notch  "+dimBoth(nx0-tl.x0));
+  s+=hdim(a, b, -0.8, dimBoth(nx1-nx0));
+  s+=vdim(b+0.6, 0, nd, dimBoth(ndep));
+  s+='</svg>'; return s;
+}
+function buildProfile(p,G){
+  const F=12, deck=p.deckHeight, hh=(p.handrailHeight>0?p.handrailHeight:36);
   const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1, slabMax=Math.max(framR,framT)+deckingT;
-  const midH=hh*0.5, toeH=3;
-  const segs=[]; let along=0, z=deck;
-  segs.push({top:true,a0:0,a1:p.topD,z0:deck,z1:deck}); along=p.topD;
-  for(let i=1;i<=runs;i++){ segs.push({a0:along,a1:along+run,z0:z,z1:z-rise}); along+=run; z-=rise;
-    if(i<runs&&p.restAfter.includes(i)){ segs.push({a0:along,a1:along+p.restD,z0:z,z1:z}); along+=p.restD; } }
-  const totalA=along;
-  function zAt(a){ for(const g of segs){ if(a>=g.a0-1e-6&&a<=g.a1+1e-6){ const t=(g.a1>g.a0)?(a-g.a0)/(g.a1-g.a0):0; return g.z0+(g.z1-g.z0)*t; } } return 0; }
-  const X=a=>a/F, Y=z=>-z/F;
-  const vbX=-3.2, xR=totalA/F+2.4, vbW=xR-vbX;
-  const vbY=Y(deck+hh)-1.4, yBot=(slabMax/F)+3.0, vbH=yBot-vbY;
+  let totalRamps=0; for(const pc of G.pieces) if(pc.ramp) totalRamps++;
+  if(totalRamps<1) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the profile.</div>';
+  const rise=deck/totalRamps;
+  // walk in travel order to get height, but keep each piece at its real PLAN X (so switchbacks stay folded)
+  const segs=[]; let z=deck;
+  for(const pc of G.pieces){ if(pc.ref) continue;
+    if(pc.ramp){ const dir=pc.dir||1; let zx0,zx1; if(dir>0){zx0=z;zx1=z-rise;}else{zx1=z;zx0=z-rise;}
+      segs.push({x0:pc.x0,x1:pc.x1,zx0:zx0,zx1:zx1,ramp:true}); z-=rise;
+    } else { segs.push({x0:pc.x0,x1:pc.x1,zx0:z,zx1:z,top:!!pc.top}); } }
+  let mnX=1e9,mxX=-1e9; for(const sg of segs){ if(sg.x0<mnX)mnX=sg.x0; if(sg.x1>mxX)mxX=sg.x1; }
+  const X=x=>x/F, Y=zz=>-zz/F;
+  const vbX=mnX/F-3.0, xR=mxX/F+2.0, vbW=xR-vbX;
+  const vbY=Y(deck+hh)-1.4, yBot=(slabMax/F)+3.2, vbH=yBot-vbY;
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.5).toFixed(2)+'cm" height="'+(vbH*0.5).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
   for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
-  // slab (framing + decking) to scale
-  for(const g of segs){ const sl=((g.top?framT:framR)+deckingT)/F;
-    s+='<path d="M '+X(g.a0).toFixed(3)+' '+Y(g.z0).toFixed(3)+' L '+X(g.a1).toFixed(3)+' '+Y(g.z1).toFixed(3)+' L '+X(g.a1).toFixed(3)+' '+(Y(g.z1)+sl).toFixed(3)+' L '+X(g.a0).toFixed(3)+' '+(Y(g.z0)+sl).toFixed(3)+' Z" fill="#e3c690" stroke="#b08d52" stroke-width="0.03"/>'; }
-  // ground
   s+='<line x1="'+vbX.toFixed(2)+'" y1="0" x2="'+xR.toFixed(2)+'" y2="0" stroke="#7a6a3a" stroke-width="0.05"/>';
   s+='<text x="'+xR.toFixed(2)+'" y="0.42" font-size="0.35" text-anchor="end" fill="#7a6a3a">GROUND</text>';
-  // posts 4x4 to the ground
-  const postSp=(p.postSpacingMax>0?p.postSpacingMax:72), nSp=Math.max(1,Math.ceil(totalA/postSp)), PW=3.5/F;
-  for(let i=0;i<=nSp;i++){ const a=totalA*i/nSp, top=zAt(a)+hh;
-    s+='<rect x="'+(X(a)-PW/2).toFixed(3)+'" y="'+Y(top).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(Y(0)-Y(top)).toFixed(3)+'" fill="#8a6a3a" stroke="#5a4326" stroke-width="0.03"/>'; }
-  // rails: toe & mid on edge (3.5"), top flat (1.5")
-  function rail(rh, thick){ let d="M "+X(0).toFixed(3)+" "+Y(zAt(0)+rh).toFixed(3); for(const g of segs) d+=" L "+X(g.a1).toFixed(3)+" "+Y(g.z1+rh).toFixed(3); return '<path d="'+d+'" fill="none" stroke="#7a5a2e" stroke-width="'+thick+'" stroke-linecap="round" stroke-linejoin="round"/>'; }
-  s+=rail(toeH, 3.5/F);
-  s+=rail(midH, 3.5/F);
-  s+=rail(hh, 1.5/F);
-  // small beveled returns at the top-rail ends (chamfer down to end posts)
-  const gL=segs[segs.length-1];
-  s+='<line x1="'+X(0).toFixed(3)+'" y1="'+Y(deck+hh).toFixed(3)+'" x2="'+X(-6).toFixed(3)+'" y2="'+Y(deck+hh-6).toFixed(3)+'" stroke="#7a5a2e" stroke-width="'+(1.5/F)+'" stroke-linecap="round"/>';
-  s+='<line x1="'+X(totalA).toFixed(3)+'" y1="'+Y(gL.z1+hh).toFixed(3)+'" x2="'+X(totalA+6).toFixed(3)+'" y2="'+Y(gL.z1+hh-6).toFixed(3)+'" stroke="#7a5a2e" stroke-width="'+(1.5/F)+'" stroke-linecap="round"/>';
+  // slabs/surfaces first (translucent so stacked legs both read)
+  for(const sg of segs){ const sl=((sg.top?framT:framR)+deckingT)/F;
+    s+='<path d="M '+X(sg.x0).toFixed(3)+' '+Y(sg.zx0).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+Y(sg.zx1).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+(Y(sg.zx1)+sl).toFixed(3)+' L '+X(sg.x0).toFixed(3)+' '+(Y(sg.zx0)+sl).toFixed(3)+' Z" fill="#e3c690" fill-opacity="0.7" stroke="#b08d52" stroke-width="0.03"/>'; }
+  // posts + rails on top
+  const postSp=(p.postSpacingMax>0?p.postSpacingMax:72), PW=3.5/F;
+  for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=Math.max(1,Math.ceil(len/postSp));
+    for(let i=0;i<=n;i++){ const t=i/n, xx=sg.x0+(sg.x1-sg.x0)*t, zs=sg.zx0+(sg.zx1-sg.zx0)*t, top=zs+hh;
+      s+='<rect x="'+(X(xx)-PW/2).toFixed(3)+'" y="'+Y(top).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(Y(0)-Y(top)).toFixed(3)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; }
+    for(const rh of [hh, hh*0.5, 3]){ const th=(rh===hh?1.5:3.5)/F;
+      s+='<line x1="'+X(sg.x0).toFixed(3)+'" y1="'+Y(sg.zx0+rh).toFixed(3)+'" x2="'+X(sg.x1).toFixed(3)+'" y2="'+Y(sg.zx1+rh).toFixed(3)+'" stroke="#7a5a2e" stroke-width="'+th+'" stroke-linecap="round"/>'; }
+  }
   // dims
-  s+='<line x1="'+X(0).toFixed(3)+'" y1="'+(1.5).toFixed(3)+'" x2="'+X(totalA).toFixed(3)+'" y2="'+(1.5).toFixed(3)+'" stroke="#555" stroke-width="0.03"/>';
-  s+='<text x="'+X(totalA/2).toFixed(2)+'" y="'+(1.95).toFixed(2)+'" font-size="0.5" text-anchor="middle" fill="#333">'+esc(dimText(totalA))+'</text>';
-  s+='<line x1="'+X(-1.8).toFixed(3)+'" y1="0" x2="'+X(-1.8).toFixed(3)+'" y2="'+Y(deck).toFixed(3)+'" stroke="#555" stroke-width="0.03"/>';
-  s+='<text x="'+X(-2.1).toFixed(2)+'" y="'+(Y(deck/2)+0.15).toFixed(2)+'" font-size="0.42" text-anchor="end" fill="#333">'+esc(dimText(deck))+'</text>';
-  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">2x6 framing + 1" decking'+(p.topOnExistingDeck?", top landing 2x4 on existing deck":"")+"  \u00b7  posts 4x4, rails 2x4  \u00b7  shown one side</text>";
+  s+='<line x1="'+(vbX+1.0).toFixed(2)+'" y1="0" x2="'+(vbX+1.0).toFixed(2)+'" y2="'+Y(deck).toFixed(2)+'" stroke="#555" stroke-width="0.03"/>';
+  s+='<text x="'+(vbX+0.7).toFixed(2)+'" y="'+(Y(deck/2)+0.15).toFixed(2)+'" font-size="0.42" text-anchor="end" fill="#333">'+esc(dimText(deck))+'</text>';
+  s+='<line x1="'+X(mnX).toFixed(3)+'" y1="1.5" x2="'+X(mxX).toFixed(3)+'" y2="1.5" stroke="#555" stroke-width="0.03"/>';
+  s+='<text x="'+X((mnX+mxX)/2).toFixed(2)+'" y="1.95" font-size="0.5" text-anchor="middle" fill="#333">'+esc(dimText(mxX-mnX))+'</text>';
+  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">2x6 framing + 1" decking'+(p.topOnExistingDeck?", top landing 2x4 on existing deck":"")+"  \u00b7  posts 4x4, rails 2x4  \u00b7  side view of the plan</text>";
   s+='</svg>'; return s;
 }
 function buildSVG(p,g){
@@ -331,7 +379,7 @@ function buildSVG(p,g){
     if(pc.ramp){const dir=pc.dir||1,tip=(dir>0?(pc.x1/F-0.12):(pc.x0/F+0.12)),tail=tip-dir*0.5,ay=y+0.4;
       s+='<line x1="'+f3(tail)+'" y1="'+f3(ay)+'" x2="'+f3(tip)+'" y2="'+f3(ay)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
          '<path d="M '+f3(tip)+' '+f3(ay)+' l '+(-dir*0.22)+' -0.13 l 0 0.26 z" fill="'+stroke+'"/>';}
-    const sizeTxt=pc.ramp?ftCompact(pc.x1-pc.x0):(ftCompact(pc.x1-pc.x0)+" \u00d7 "+ftCompact(pc.y1-pc.y0));
+    const sizeTxt=dimPiece(pc.x1-pc.x0)+" \u00d7 "+dimPiece(pc.y1-pc.y0);
     const yOff=pc.top?0.8:0;
     s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.28+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
     s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.42+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47">'+esc(sizeTxt)+'</text>';
@@ -366,7 +414,11 @@ function buildSVG(p,g){
     s+='<path d="M '+tx.toFixed(2)+' '+(ty-0.34).toFixed(2)+' L '+(tx-0.34).toFixed(2)+' '+(ty+0.28).toFixed(2)+' L '+(tx+0.34).toFixed(2)+' '+(ty+0.28).toFixed(2)+' Z" fill="'+sc.color+'"/>'+
        '<text x="'+tx.toFixed(2)+'" y="'+(ty+0.22).toFixed(2)+'" font-size="0.36" text-anchor="middle" fill="#22242b" font-weight="700">!</text>'; tx0+=0.9;}
   s+='<text x="'+tx0.toFixed(2)+'" y="'+(by+bh/2+0.2).toFixed(2)+'" font-size="0.56" text-anchor="start" fill="'+sc.color+'" font-weight="700">'+esc(label)+'</text>';
-  s+='<text x="'+(vbX+0.4).toFixed(2)+'" y="'+(vbY+vbH-0.5).toFixed(2)+'" font-size="0.4" text-anchor="start" fill="#6b7280">Deck '+esc(dimText(p.deckHeight))+'  \u00b7  ramp width '+esc(dimText(p.width))+'  \u00b7  footprint '+esc(ftCompact(g.footW))+' \u00d7 '+esc(ftCompact(g.footH))+(p.showSteps?'  \u00b7  notch frame for existing steps':'')+'</text>';
+  { let cons=0,maxCons=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>maxCons)maxCons=cons;} else if(!pc.ref){cons=0;} }
+    if(maxCons>2){ const wl="\u26a0 "+maxCons+" runs with no landing \u2014 add a rest or turn"; const wbw=wl.length*0.28+0.7, wy=by+bh+0.3;
+      s+='<rect x="'+bx.toFixed(2)+'" y="'+wy.toFixed(2)+'" width="'+wbw.toFixed(2)+'" height="0.9" rx="0.18" fill="#c0392b"/>';
+      s+='<text x="'+(bx+0.35).toFixed(2)+'" y="'+(wy+0.58).toFixed(2)+'" font-size="0.44" text-anchor="start" fill="#fff" font-weight="700">'+esc(wl)+'</text>'; } }
+  s+='<text x="'+(vbX+0.4).toFixed(2)+'" y="'+(vbY+vbH-0.5).toFixed(2)+'" font-size="0.4" text-anchor="start" fill="#6b7280">Deck height '+esc(dimText(p.deckHeight))+'  \u00b7  ramp width '+esc(dimText(p.width))+'  \u00b7  footprint '+esc(ftCompact(g.footW))+' \u00d7 '+esc(ftCompact(g.footH))+(p.showSteps?'  \u00b7  notch frame for existing steps':'')+'</text>';
   if(p.showHandrails){
     const PW=3.5/F, HI=1.75, maxSp=(p.postSpacingMax>0?p.postSpacingMax:72);
     const railable=g.pieces.filter(pc=>!pc.ref);
@@ -468,6 +520,20 @@ function buildSVG(p,g){
     s+='<path d="M '+tipx.toFixed(2)+' '+tipy.toFixed(2)+' L '+(tlx+px).toFixed(2)+' '+(tly+py).toFixed(2)+' L '+(tlx-px).toFixed(2)+' '+(tly-py).toFixed(2)+' Z" fill="#c0392b"/>';
     const nx=ncx+ux*(r+0.3), ny=ncy+uy*(r+0.3);
     s+='<text x="'+nx.toFixed(2)+'" y="'+(ny+0.14).toFixed(2)+'" font-size="0.42" text-anchor="middle" fill="#23252b" font-weight="700">N</text>';
+  }
+  { const cats=[["Top landings",function(pc){return pc.top;}],["Ramps",function(pc){return pc.ramp;}],["Rests",function(pc){return pc.name==="Rest";}],["Hairpins",function(pc){return pc.name==="Turn landing";}]];
+    const lines=[];
+    for(const c of cats){ const it=g.pieces.filter(c[1]); if(!it.length) continue;
+      const dm=it.map(function(pc){return [pc.x1-pc.x0,pc.y1-pc.y0];});
+      const same=dm.every(function(d){return Math.abs(d[0]-dm[0][0])<0.1&&Math.abs(d[1]-dm[0][1])<0.1;});
+      lines.push(c[0]+": "+it.length+(same?"  \u2014  "+dimBoth(dm[0][0])+" \u00d7 "+dimBoth(dm[0][1]):"  (sizes vary)"));
+    }
+    if(lines.length){ const fs=0.36, lh=0.52; let mw=0; for(const l of lines) if(l.length>mw) mw=l.length;
+      const bw=mw*fs*0.56+0.7, bh=lines.length*lh+0.95, bx2=vbX+vbW-bw-0.3, by2=vbY+(p.showNorth?2.7:0.4);
+      s+='<rect x="'+bx2.toFixed(2)+'" y="'+by2.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.15" fill="#fbfaf7" fill-opacity="0.93" stroke="#cfcabf" stroke-width="0.03"/>';
+      s+='<text x="'+(bx2+0.35).toFixed(2)+'" y="'+(by2+0.6).toFixed(2)+'" font-size="0.42" font-weight="700" fill="#2b2f36">Pieces</text>';
+      for(let i=0;i<lines.length;i++) s+='<text x="'+(bx2+0.35).toFixed(2)+'" y="'+(by2+1.15+i*lh).toFixed(2)+'" font-size="'+fs+'" fill="#3a3f47">'+esc(lines[i])+'</text>';
+    }
   }
   s+='</svg>'; return s;
 }
@@ -577,12 +643,21 @@ function render(){
   flg.textContent=sc.note; flg.style.color=sc.color;
   document.getElementById("roRise").textContent=inFrac(g.rise)+" in";
   document.getElementById("roFoot").textContent=ftFrac(g.footW)+"  \u00d7  "+ftFrac(g.footH);
+  { const ok='<span style="color:#157347">',warn='<span style="color:#c0392b">';
+    const slopeOK=g.slopeRatio>=12, riseOK=g.rise<=30, gapOK=(p.layout!=="switchback")||(p.gap>=1.5&&p.gap<48);
+    let parts=(slopeOK?ok+"slope \u2713":warn+"slope \u26a0")+"</span>   "+(riseOK?ok+"rise \u2713":warn+"rise \u26a0")+"</span>";
+    if(p.layout==="switchback") parts+="   "+(gapOK?ok+"gap \u2713":warn+"gap \u26a0")+"</span>";
+    document.getElementById("roAda").innerHTML=parts;
+    document.getElementById("roAdaNote").textContent='ADA: 1:12, rise \u2264 30"/run'+(p.layout==="switchback"?', turn gap <48"':'')+' \u00b7 see ADA notes'; }
   document.getElementById("paper").innerHTML=buildSVG(p,g);
   document.getElementById("profileWrap").style.display=p.showProfile?"":"none";
-  if(p.showProfile) document.getElementById("profilePaper").innerHTML=buildProfile(p);
+  if(p.showProfile) document.getElementById("profilePaper").innerHTML=buildProfile(p,g);
+  document.getElementById("notchWrap").style.display=p.notchEnable?"":"none";
+  if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,g);
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
+  let cons2=0,maxCons2=0; for(const pc of g.pieces){ if(pc.ramp){cons2++;if(cons2>maxCons2)maxCons2=cons2;} else if(!pc.ref){cons2=0;} }
   document.getElementById("caption").innerHTML=
-    (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+'Deck <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
+    (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(maxCons2>2?'<b style="color:#c0392b">\u26a0 '+maxCons2+' ramp runs in a row with no landing between them \u2014 add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
     g.totalRamps+' runs &middot; footprint <span class="mono">'+esc(ftFrac(g.footW))+' \u00d7 '+esc(ftFrac(g.footH))+'</span>';
 }
 ids.forEach(id=>{const el=document.getElementById(id);
@@ -591,7 +666,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.15",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.29",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
