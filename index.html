@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.30</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.6.32</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -191,7 +191,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.30</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.32</footer>
 
 <script>
 "use strict";
@@ -270,10 +270,10 @@ function buildNotchDetail(p,G){
   const ndep=Math.min(p.notchDepth, tl.y1-tl.y0);
   const X=x=>(x-tl.x0)/F, Y=y=>(y-tl.y0)/F;
   const lw=(tl.x1-tl.x0)/F, lh=(tl.y1-tl.y0)/F, RD=24/F;
-  const mL=3.6, mR=4.8, mT=3.2, mB=1.2, vbX=-mL, vbY=-mT, vbW=lw+mL+mR, vbH=lh+mT+mB;
+  const mL=3.6, mR=6.2, mT=3.2, mB=1.0, vbX=-mL, vbY=-mT, vbW=lw+mL+mR, vbH=lh+mT+mB;
   const hdim=(x0,x1,y,label)=>'<line x1="'+x0.toFixed(3)+'" y1="'+y.toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+y.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x0.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x0.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x1.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+((x0+x1)/2).toFixed(3)+'" y="'+(y-0.22).toFixed(3)+'" font-size="0.36" text-anchor="middle" fill="#333">'+esc(label)+'</text>';
   const vdim=(x,y0,y1,label)=>'<line x1="'+x.toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+x.toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y0.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y1.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+(x+0.2).toFixed(3)+'" y="'+((y0+y1)/2+0.12).toFixed(3)+'" font-size="0.36" text-anchor="start" fill="#333">'+esc(label)+'</text>';
-  let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.7).toFixed(2)+'cm" height="'+(vbH*0.7).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
+  let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.85).toFixed(2)+'cm" height="'+(vbH*0.85).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
   for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
   // existing-deck reference ATTACHED (flush) to the deck-reference side
@@ -300,9 +300,10 @@ function buildNotchDetail(p,G){
   // WIDTH dim -> just below the notch (inside the landing).  DEPTH dim stays on the right.
   s+=hdim(a, b, nd+0.55, dimBoth(nx1-nx0));
   s+=vdim(b+0.6, 0, nd, dimBoth(ndep));
-  // notch location (from landing left edge) + label, inside the landing
-  s+=hdim(0, a, nd+1.35, "to notch  "+dimBoth(nx0-tl.x0));
-  s+='<text x="'+((a+b)/2).toFixed(3)+'" y="'+(nd+2.05).toFixed(3)+'" font-size="0.34" text-anchor="middle" fill="#c0392b" font-weight="700">notch \u2014 existing step</text>';
+  // notch label INSIDE the notch opening
+  s+='<text x="'+((a+b)/2).toFixed(3)+'" y="'+(nd/2+0.12).toFixed(3)+'" font-size="0.3" text-anchor="middle" fill="#c0392b" font-weight="700">notch \u2014 existing step</text>';
+  // notch location from the landing's left edge
+  s+=hdim(0, a, nd+1.35, "from left edge  "+dimBoth(nx0-tl.x0));
   s+='</svg>'; return s;
 }
 function buildProfile(p,G){
@@ -349,7 +350,7 @@ function buildSVG(p,g){
   const F=12;
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
   for(const pc of g.pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);}
-  const x0f=mnX/F,y0f=mnY/F,x1f=mxX/F,y1f=mxY/F, mL=3.4,mR=3.4,mT=3.6,mB=3.4;
+  const x0f=mnX/F,y0f=mnY/F,x1f=mxX/F,y1f=mxY/F, mL=3.4,mR=3.4,mT=(p.notchEnable?4.8:3.6),mB=3.4;
   const vbX=x0f-mL,vbY=y0f-mT,vbW=(x1f-x0f)+mL+mR,vbH=(y1f-y0f)+mT+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+
         '" width="'+(vbW*cm).toFixed(2)+'cm" height="'+(vbH*cm).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
@@ -373,6 +374,13 @@ function buildSVG(p,g){
       let a=Math.max(pc.x0,lcx+p.notchOffset-p.notchWidth/2)/F,b=Math.min(pc.x1,lcx+p.notchOffset+p.notchWidth/2)/F;
       const nd=(pc.y0+Math.min(p.notchDepth,pc.y1-pc.y0))/F;
       s+='<path d="M '+f3(x)+' '+f3(y)+' L '+f3(a)+' '+f3(y)+' L '+f3(a)+' '+f3(nd)+' L '+f3(b)+' '+f3(nd)+' L '+f3(b)+' '+f3(y)+' L '+f3(x+w)+' '+f3(y)+' L '+f3(x+w)+' '+f3(y+h)+' L '+f3(x)+' '+f3(y+h)+' Z" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
+      { const ncx=(a+b)/2, ncy=(y+nd)/2, midX=(x0f+x1f)/2, side=(ncx<=midX)?1:-1, bx=ncx+side*2.6, by=y0f-3.0;
+        s+='<line x1="'+f3(ncx)+'" y1="'+f3(ncy)+'" x2="'+f3(bx-side*0.55)+'" y2="'+f3(by+0.2)+'" stroke="#c0392b" stroke-width="0.05"/>';
+        s+='<circle cx="'+f3(ncx)+'" cy="'+f3(ncy)+'" r="0.1" fill="#c0392b"/>';
+        s+='<circle cx="'+f3(bx)+'" cy="'+f3(by)+'" r="0.62" fill="#fff" stroke="#c0392b" stroke-width="0.07"/>';
+        s+='<circle cx="'+f3(bx-0.11)+'" cy="'+f3(by-0.11)+'" r="0.25" fill="none" stroke="#c0392b" stroke-width="0.06"/>';
+        s+='<line x1="'+f3(bx+0.07)+'" y1="'+f3(by+0.07)+'" x2="'+f3(bx+0.33)+'" y2="'+f3(by+0.33)+'" stroke="#c0392b" stroke-width="0.09" stroke-linecap="round"/>';
+        s+='<text x="'+f3(bx+side*0.9)+'" y="'+f3(by+0.15)+'" font-size="0.44" text-anchor="'+(side>0?"start":"end")+'" fill="#c0392b" font-weight="700">See notch detail below</text>'; }
     } else {
       s+='<rect x="'+f3(x)+'" y="'+f3(y)+'" width="'+f3(w)+'" height="'+f3(h)+'" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
     }
@@ -668,7 +676,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.30",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.32",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
