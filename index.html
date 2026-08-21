@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.6.34</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.7.0</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -122,13 +122,14 @@
         <span class="hint">pick a slope and the run length is computed to match</span></label>
       <label class="field"><span class="lab">Length of each run <span class="u">(in)</span></span><input id="rampRun" type="number" step="1" value="96"></label>
       <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="number" step="1" value="40"></label>
-      <label class="field only-straight"><span class="lab">Number of ramp runs</span><input id="runs" type="number" step="1" min="1" value=""></label>
+      <label class="field only-straight"><span class="lab">Number of ramp runs</span><input id="runs" type="number" step="1" min="1" value="">
+        <span class="hint">how many ramp sections, each using the run length above. e.g. 3</span></label>
       <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move specific ramps to a different edge</label>
       <label class="field only-overrides"><span class="lab">Move specific ramps</span>
         <input id="rampOverrides" type="text" placeholder="e.g. 2:bottom, 4:top">
-        <span class="hint">run number : top / bottom / center</span></label>
+        <span class="hint">nudge one ramp to an edge. format run#:edge &mdash; e.g. 2:bottom, 4:top (edges: top / bottom / center)</span></label>
       <label class="field only-switchback"><span class="lab">Runs per leg</span><input id="legs" type="text" value="">
-        <span class="hint">ramps in each straight section, before each 180° turn — comma-separated</span></label>
+        <span class="hint">ramps in each straight leg; a 180° hairpin is added automatically between legs. e.g. <b>3, 3</b> = 3 ramps, hairpin, 3 ramps. <b>2, 2</b> = a single hairpin with 2 ramps each side. One number = no hairpin.</span></label>
       <label class="field only-switchback"><span class="lab">Gap between parallel ramps <span class="u">(in)</span></span><input id="gap" type="number" step="1" value="16">
         <span class="hint">sets the hairpin's across dimension (two ramps + this gap)</span></label>
       <label class="field only-switchback"><span class="lab">Hairpin turn landing depth <span class="u">(in)</span></span><input id="turnDepth" type="number" step="1" value="40"></label>
@@ -137,7 +138,7 @@
         <label class="field"><span class="lab">Rest landing depth <span class="u">(in)</span></span><input id="restD" type="number" step="1" value="60"></label>
       </div>
       <label class="field"><span class="lab">Rest landings after runs</span><input id="restAfter" type="text" value="">
-        <span class="hint">which runs to place a rest after — e.g. 1, 3. Leave blank for none.</span></label>
+        <span class="hint">overall ramp number to add a flat rest after (counts across all legs). e.g. <b>1, 5</b> = rest after ramp 1 and ramp 5. Blank = none.</span></label>
       <label class="checkrow only-straight"><input type="checkbox" id="sameSize" checked> All ramps &amp; rests the same size</label>
       <div class="only-persection notchgroup">
         <label class="field"><span class="lab">Ramp run lengths <span class="u">(in, per run)</span></span><input id="rampRuns" type="text" placeholder="e.g. 96, 78, 96"><span class="hint">one per ramp, in order; blank entry = default</span></label>
@@ -191,7 +192,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.6.34</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.7.0</footer>
 
 <script>
 "use strict";
@@ -698,7 +699,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.6.34",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.7.0",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
