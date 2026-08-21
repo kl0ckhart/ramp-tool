@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.7.4</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.7.5</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -169,6 +169,26 @@
       <textarea id="fcexport" rows="7" readonly style="font-size:12px;line-height:1.3"></textarea>
       <button class="sec" id="fccopy" onclick="copyFreecad()" style="margin-top:8px">Copy for FreeCAD</button>
 
+      <details style="margin-top:16px">
+        <summary class="sechead" style="cursor:pointer">Survey tools checklist</summary>
+        <p class="hint" style="margin:6px 0 8px">What to bring to measure a site. Tick items as you pack. Fixed list &mdash; ask to tailor.</p>
+        <div class="sechead">Core kit</div>
+        <label class="checkrow"><input type="checkbox"> 100' tape measure</label>
+        <label class="checkrow"><input type="checkbox"> 25&ndash;30' tape measure(s)</label>
+        <label class="checkrow"><input type="checkbox"> String / mason&rsquo;s line</label>
+        <label class="checkrow"><input type="checkbox"> Line level (string level)</label>
+        <label class="checkrow"><input type="checkbox"> Stakes / spikes</label>
+        <label class="checkrow"><input type="checkbox"> Hammer</label>
+        <div class="sechead">Add for accuracy</div>
+        <label class="checkrow"><input type="checkbox"> Water level (clear vinyl tubing + water) &mdash; best for total rise</label>
+        <label class="checkrow"><input type="checkbox"> Plumb bob &mdash; drop points straight down over uneven ground</label>
+        <label class="checkrow"><input type="checkbox"> Marking flags / spray paint</label>
+        <label class="checkrow"><input type="checkbox"> Clipboard, pencil, graph paper</label>
+        <label class="checkrow"><input type="checkbox"> Phone / camera &mdash; photograph threshold, steps, obstacles</label>
+        <label class="checkrow"><input type="checkbox"> Speed square</label>
+        <p class="hint" style="margin-top:8px"><b>Rise is the key measurement</b> &mdash; the whole design depends on it. Measure it twice.</p>
+      </details>
+
       <div class="readouts">
         <div class="ro" id="roSlopeBox"><div class="k">Total slope</div><div class="v mono" id="roSlope">–</div><div class="flag mono" id="roFlag"></div></div>
         <div class="ro"><div class="k">Rise per run</div><div class="v mono" id="roRise">–</div></div>
@@ -192,7 +212,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.7.4</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.7.5</footer>
 
 <script>
 "use strict";
@@ -709,7 +729,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.7.4",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.7.5",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
