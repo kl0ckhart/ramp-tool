@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.12</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.13</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -81,7 +81,7 @@
         <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
         <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
       </div>
-      <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference (2' × 10')</label>
+      <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference (2' × 12')</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
       <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
@@ -221,7 +221,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.12</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.13</footer>
 
 <script>
 "use strict";
@@ -244,7 +244,9 @@ function finalize(pieces,deckHeight,RUN,n){
   for(const pc of pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);if(pc.ramp){const r=pc.x1-pc.x0;sum+=r;if(r>maxRun)maxRun=r;}}
   const slopeRatio = sum>0 ? sum/deckHeight : RUN/(deckHeight/n);
   const rise = sum>0 ? (maxRun/sum)*deckHeight : deckHeight/n;
-  return{pieces,rise,slopeRatio,totalRamps:n,totalRampRun:sum,footW:mxX-mnX,footH:mxY-mnY};
+  let maxGroupRun=0,gr=0; for(const pc of pieces){ if(pc.ramp){gr+=(pc.x1-pc.x0);} else if(!pc.ref){if(gr>maxGroupRun)maxGroupRun=gr;gr=0;} } if(gr>maxGroupRun)maxGroupRun=gr;
+  const maxGroupRise = sum>0 ? (maxGroupRun/sum)*deckHeight : 0;
+  return{pieces,rise,slopeRatio,totalRamps:n,totalRampRun:sum,footW:mxX-mnX,footH:mxY-mnY,maxGroupRise};
 }
 function straightGeometry(p){
   const rise=p.deckHeight/p.runs, hasTL=p.hasTopLanding, uni=p.sameSize;
@@ -414,7 +416,7 @@ function buildSVG(p,g){
     notesBW=mw*0.4*0.66+0.6; notesBH=notesLines.length*0.56+1.0;
   }
   let mcE=0; { let cons=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>mcE)mcE=cons;} else if(!pc.ref){cons=0;} } }
-  const mB=Math.max(3.4, mcE>2?5.0:3.8, notesBH>0 ? notesBH+1.6 : 0);
+  const mB=Math.max(3.4, (g.maxGroupRise>30?5.0:3.8), notesBH>0 ? notesBH+1.6 : 0);
   const vbX=x0f-mL,vbY=y0f-mT,vbW=Math.max((x1f-x0f)+mL+mR, notesBW+0.7),vbH=(y1f-y0f)+mT+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+
         '" width="'+(vbW*cm).toFixed(2)+'cm" height="'+(vbH*cm).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
@@ -488,13 +490,11 @@ function buildSVG(p,g){
     s+='<path d="M '+tx.toFixed(2)+' '+(ty-0.34).toFixed(2)+' L '+(tx-0.34).toFixed(2)+' '+(ty+0.28).toFixed(2)+' L '+(tx+0.34).toFixed(2)+' '+(ty+0.28).toFixed(2)+' Z" fill="'+sc.color+'"/>'+
        '<text x="'+tx.toFixed(2)+'" y="'+(ty+0.22).toFixed(2)+'" font-size="0.36" text-anchor="middle" fill="#22242b" font-weight="700">!</text>'; tx0+=0.9;}
   s+='<text x="'+tx0.toFixed(2)+'" y="'+(by+bh/2+0.2).toFixed(2)+'" font-size="0.56" text-anchor="start" fill="'+sc.color+'" font-weight="700">'+esc(label)+'</text>';
-  { let cons=0,maxCons=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>maxCons)maxCons=cons;} else if(!pc.ref){cons=0;} }
-    if(maxCons>2){ const wl="\u26a0 "+maxCons+" runs with no landing \u2014 add a rest or turn"; const wbw=wl.length*0.28+0.7, wy=by+bh+0.3;
+  { if(g.maxGroupRise>30){ const wl="\u26a0 "+inFrac(g.maxGroupRise)+"\" continuous rise, no landing \u2014 30\" max, add a rest or turn"; const wbw=wl.length*0.28+0.7, wy=by+bh+0.3;
       s+='<rect x="'+bx.toFixed(2)+'" y="'+wy.toFixed(2)+'" width="'+wbw.toFixed(2)+'" height="0.9" rx="0.18" fill="#c0392b"/>';
       s+='<text x="'+(bx+0.35).toFixed(2)+'" y="'+(wy+0.58).toFixed(2)+'" font-size="0.44" text-anchor="start" fill="#fff" font-weight="700">'+esc(wl)+'</text>'; } }
   { const adaSlope=g.slopeRatio>=12, adaRise=g.rise<=30, adaGap=(p.layout!=="switchback")||(p.gap>=1.5&&p.gap<48);
-    let cons=0,mc=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>mc)mc=cons;} else if(!pc.ref){cons=0;} }
-    const aY=by+bh+0.35+(mc>2?1.25:0), items=[["slope",adaSlope],["rise",adaRise]];
+    const aY=by+bh+0.35+(g.maxGroupRise>30?1.25:0), items=[["slope",adaSlope],["rise",adaRise]];
     if(p.layout==="switchback") items.push(["gap",adaGap]);
     const abw=1.35+items.length*2.15+0.15;
     s+='<rect x="'+bx.toFixed(2)+'" y="'+aY.toFixed(2)+'" width="'+abw.toFixed(2)+'" height="0.95" rx="0.15" fill="#fbfaf7" fill-opacity="0.93" stroke="#cfcabf" stroke-width="0.04"/>';
@@ -507,7 +507,7 @@ function buildSVG(p,g){
     const railable=g.pieces.filter(pc=>!pc.ref);
     let lastRamp=null; for(const pc of g.pieces) if(pc.ramp) lastRamp=pc;
     const tl=g.pieces[0]; let deckPh=null;
-    if(tl){ const cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, D=24, L=120;
+    if(tl){ const cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, D=24, L=144;
       if(p.deckRefSide==="right") deckPh={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
       else if(p.deckRefSide==="top") deckPh={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
       else if(p.deckRefSide==="bottom") deckPh={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
@@ -745,7 +745,7 @@ function render(){
   let g=p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p);
   if(p.startSide==="left") g=mirrorX(g);
   if(p.showDeckRef){
-    const tl=g.pieces[0], L=120, D=24, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
+    const tl=g.pieces[0], L=144, D=24, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
     if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
     else if(p.deckRefSide==="top") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
     else if(p.deckRefSide==="bottom") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
@@ -770,9 +770,8 @@ function render(){
   document.getElementById("notchWrap").style.display=p.notchEnable?"":"none";
   if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,g);
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
-  let cons2=0,maxCons2=0; for(const pc of g.pieces){ if(pc.ramp){cons2++;if(cons2>maxCons2)maxCons2=cons2;} else if(!pc.ref){cons2=0;} }
   document.getElementById("caption").innerHTML=
-    (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(maxCons2>2?'<b style="color:#c0392b">\u26a0 '+maxCons2+' ramp runs in a row with no landing between them \u2014 add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
+    (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(g.maxGroupRise>30?'<b style="color:#c0392b">\u26a0 '+inFrac(g.maxGroupRise)+'" continuous rise, no landing \u2014 30" max, add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
     g.totalRamps+' runs &middot; footprint <span class="mono">'+esc(ftFrac(g.footW))+' \u00d7 '+esc(ftFrac(g.footH))+'</span>';
 }
 ids.forEach(id=>{const el=document.getElementById(id);
@@ -781,7 +780,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.12",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.13",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
