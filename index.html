@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.8</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.9</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -221,7 +221,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.8</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.9</footer>
 
 <script>
 "use strict";
@@ -590,13 +590,17 @@ function buildSVG(p,g){
   if(p.obstacles && p.obstacles.length){
     let ox=Infinity, oy=Infinity;
     for(const pc of g.pieces){ if(pc.ref) continue; if(pc.x0<ox)ox=pc.x0; if(pc.y0<oy)oy=pc.y0; }
-    const oxf=ox/F, oyf=oy/F;
+    const oxf=ox/F, oyf=oy/F, midYo=(y0f+y1f)/2;
     for(const ob of p.obstacles){
       const mx=oxf+ob.x, my=oyf+ob.y;
       s+='<rect x="'+(mx-0.18).toFixed(2)+'" y="'+(my-0.18).toFixed(2)+'" width="0.36" height="0.36" fill="#8a4b2b" stroke="#3f2010" stroke-width="0.05"/>';
       s+='<line x1="'+(mx-0.34).toFixed(2)+'" y1="'+my.toFixed(2)+'" x2="'+(mx+0.34).toFixed(2)+'" y2="'+my.toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
       s+='<line x1="'+mx.toFixed(2)+'" y1="'+(my-0.34).toFixed(2)+'" x2="'+mx.toFixed(2)+'" y2="'+(my+0.34).toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
-      s+='<text x="'+(mx+0.42).toFixed(2)+'" y="'+(my+0.14).toFixed(2)+'" font-size="0.4" fill="#8a4b2b" font-weight="700">'+esc(ob.label)+'</text>';
+      s+='<circle cx="'+mx.toFixed(2)+'" cy="'+my.toFixed(2)+'" r="0.07" fill="#3f2010"/>';
+      const dir=(my<midYo)?-1:1, ly=my+dir*1.5, lab=esc(ob.label), lw=lab.length*0.264+0.5;
+      s+='<line x1="'+mx.toFixed(2)+'" y1="'+(my+dir*0.22).toFixed(2)+'" x2="'+mx.toFixed(2)+'" y2="'+(ly-dir*0.31).toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
+      s+='<rect x="'+(mx-lw/2).toFixed(2)+'" y="'+(ly-0.31).toFixed(2)+'" width="'+lw.toFixed(2)+'" height="0.62" rx="0.1" fill="#fff" fill-opacity="0.93" stroke="#8a4b2b" stroke-width="0.05"/>';
+      s+='<text x="'+mx.toFixed(2)+'" y="'+(ly+0.13).toFixed(2)+'" font-size="0.4" text-anchor="middle" fill="#8a4b2b" font-weight="700">'+lab+'</text>';
     }
   }
   if(notesLines){
@@ -771,7 +775,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.8",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.9",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
