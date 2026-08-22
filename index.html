@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.6</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.8</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -134,9 +134,9 @@
         <span class="hint">nudge one ramp to an edge. format run#:edge &mdash; e.g. 2:bottom, 4:top (edges: top / bottom / center)</span></label>
       <label class="field only-switchback"><span class="lab">Runs per leg</span><input id="legs" type="text" value="">
         <span class="hint">ramps in each straight leg; a 180° hairpin is added automatically between legs. e.g. <b>3, 3</b> = 3 ramps, hairpin, 3 ramps. <b>2, 2</b> = a single hairpin with 2 ramps each side. One number = no hairpin.</span></label>
-      <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="number" step="1" min="96" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span>
+      <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="number" step="1" min="96" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span><span class="hint" id="gapOut" style="color:#2f6fb0;font-weight:700"></span>
         <span class="hint">sets the hairpin's across dimension (two ramps + this gap)</span></label>
-      <label class="field only-switchback"><span class="lab">Hairpin turn landing depth <span class="u">(in)</span></span><input id="turnDepth" type="number" step="1" value="40"></label>
+      <label class="field only-switchback"><span class="lab">Hairpin turn landing depth <span class="u">(in)</span></span><input id="turnDepth" type="number" step="1" value="48"></label>
       <div class="row2">
         <label class="field"><span class="lab">Rest landing width <span class="u">(in)</span></span><input id="restW" type="number" step="1" value="40"></label>
         <label class="field"><span class="lab">Rest landing depth <span class="u">(in)</span></span><input id="restD" type="number" step="1" value="60"></label>
@@ -171,6 +171,7 @@
       <label class="field"><span class="lab">Notes on the drawing</span>
         <textarea id="notes" rows="4" placeholder="Free text &mdash; appears in a Notes box on the drawing.&#10;e.g. Verify deck height on site.&#10;Existing tree at NE corner."></textarea>
         <span class="hint">Shown in a Notes box in the lower-right of the drawing.</span></label>
+      <label class="field"><span class="lab">Obstacles</span><textarea id="obstacles" rows="3" placeholder="One per line:   x, y: label&#10;e.g.   6, 2: 4x4 post"></textarea><span class="hint">position in feet from the top-left of the drawing; drops a marker + label on the plan</span></label>
 
       <div class="sechead">FreeCAD export</div>
       <p class="hint" style="margin:0 0 8px">Paste these into your FreeCAD macro's parameter block. Updates live as you edit.</p>
@@ -220,7 +221,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.6</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.8</footer>
 
 <script>
 "use strict";
@@ -238,11 +239,12 @@ function slopeClass(r){
   if(r>=8)return{key:"caution",color:"#ffd21f",word:"CAUTION",note:"CAUTION — steeper than 1:12"};
   return{key:"warn",color:"#ff5545",word:"WARNING",note:"WARNING — too steep (steeper than 1:8)"};
 }
-function finalize(pieces,rise,RUN,n){
-  let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,sum=0;
-  for(const pc of pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);if(pc.ramp)sum+=(pc.x1-pc.x0);}
-  let minRun=Infinity; for(const pc of pieces) if(pc.ramp) minRun=Math.min(minRun,pc.x1-pc.x0); if(!isFinite(minRun))minRun=RUN;
-  return{pieces,rise,slopeRatio:minRun/rise,totalRamps:n,totalRampRun:sum,footW:mxX-mnX,footH:mxY-mnY};
+function finalize(pieces,deckHeight,RUN,n){
+  let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,sum=0,maxRun=0;
+  for(const pc of pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);if(pc.ramp){const r=pc.x1-pc.x0;sum+=r;if(r>maxRun)maxRun=r;}}
+  const slopeRatio = sum>0 ? sum/deckHeight : RUN/(deckHeight/n);
+  const rise = sum>0 ? (maxRun/sum)*deckHeight : deckHeight/n;
+  return{pieces,rise,slopeRatio,totalRamps:n,totalRampRun:sum,footW:mxX-mnX,footH:mxY-mnY};
 }
 function straightGeometry(p){
   const rise=p.deckHeight/p.runs, hasTL=p.hasTopLanding, uni=p.sameSize;
@@ -264,7 +266,7 @@ function straightGeometry(p){
     pieces.push({name:"Ramp "+i,x0:x,x1:x+run,y0:ry[0],y1:ry[1],ramp:true,dir:1}); x+=run;
     if(i<p.runs && p.restAfter.includes(i)){ const rw=reW(rIdx), rd=reD(rIdx), gy=yspan(rw,g0); pieces.push({name:"Rest",x0:x,x1:x+rd,y0:gy[0],y1:gy[1],ramp:false}); x+=rd; rIdx++; }
   }
-  return finalize(pieces,rise,p.rampRun,p.runs);
+  return finalize(pieces,p.deckHeight,p.rampRun,p.runs);
 }
 function switchbackGeometry(p){
   const W=p.width,gap=p.gap,PITCH=W+gap, hasTL=p.hasTopLanding, uni=p.sameSize;
@@ -292,7 +294,7 @@ function switchbackGeometry(p){
       pieces.push({name:"Turn landing",x0:a,x1:b,y0:ly0,y1:ly1,ramp:false}); yTop=ny; heading=-heading;
     }
   }
-  return finalize(pieces,rise,p.rampRun,n);
+  return finalize(pieces,p.deckHeight,p.rampRun,n);
 }
 
 function buildNotchDetail(p,G){
@@ -346,12 +348,12 @@ function buildProfile(p,G){
   const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1, slabMax=Math.max(framR,framT)+deckingT;
   let totalRamps=0; for(const pc of G.pieces) if(pc.ramp) totalRamps++;
   if(totalRamps<1) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the profile.</div>';
-  const rise=deck/totalRamps;
+  let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.x1-pc.x0);
   // walk in travel order to get height, but keep each piece at its real PLAN X (so switchbacks stay folded)
   const segs=[]; let z=deck;
   for(const pc of G.pieces){ if(pc.ref) continue;
-    if(pc.ramp){ const dir=pc.dir||1; let zx0,zx1; if(dir>0){zx0=z;zx1=z-rise;}else{zx1=z;zx0=z-rise;}
-      segs.push({x0:pc.x0,x1:pc.x1,zx0:zx0,zx1:zx1,ramp:true}); z-=rise;
+    if(pc.ramp){ const run=pc.x1-pc.x0, ri=(totalRun>0?(run/totalRun)*deck:deck/totalRamps); const dir=pc.dir||1; let zx0,zx1; if(dir>0){zx0=z;zx1=z-ri;}else{zx1=z;zx0=z-ri;}
+      segs.push({x0:pc.x0,x1:pc.x1,zx0:zx0,zx1:zx1,ramp:true}); z-=ri;
     } else { segs.push({x0:pc.x0,x1:pc.x1,zx0:z,zx1:z,top:!!pc.top}); } }
   let mnX=1e9,mxX=-1e9; for(const sg of segs){ if(sg.x0<mnX)mnX=sg.x0; if(sg.x1>mxX)mxX=sg.x1; }
   const X=x=>x/F, Y=zz=>-zz/F;
@@ -585,6 +587,18 @@ function buildSVG(p,g){
       }
     }
   }
+  if(p.obstacles && p.obstacles.length){
+    let ox=Infinity, oy=Infinity;
+    for(const pc of g.pieces){ if(pc.ref) continue; if(pc.x0<ox)ox=pc.x0; if(pc.y0<oy)oy=pc.y0; }
+    const oxf=ox/F, oyf=oy/F;
+    for(const ob of p.obstacles){
+      const mx=oxf+ob.x, my=oyf+ob.y;
+      s+='<rect x="'+(mx-0.18).toFixed(2)+'" y="'+(my-0.18).toFixed(2)+'" width="0.36" height="0.36" fill="#8a4b2b" stroke="#3f2010" stroke-width="0.05"/>';
+      s+='<line x1="'+(mx-0.34).toFixed(2)+'" y1="'+my.toFixed(2)+'" x2="'+(mx+0.34).toFixed(2)+'" y2="'+my.toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
+      s+='<line x1="'+mx.toFixed(2)+'" y1="'+(my-0.34).toFixed(2)+'" x2="'+mx.toFixed(2)+'" y2="'+(my+0.34).toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
+      s+='<text x="'+(mx+0.42).toFixed(2)+'" y="'+(my+0.14).toFixed(2)+'" font-size="0.4" fill="#8a4b2b" font-weight="700">'+esc(ob.label)+'</text>';
+    }
+  }
   if(notesLines){
     const fs=0.4, lh=0.56, bw=notesBW, bh=notesBH;
     const bx3=Math.max(vbX+0.35, vbX+vbW-bw-0.35), by3=y1f+0.6;
@@ -617,20 +631,28 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","groundDrop"];
+const ids=["client","projectType","notes","obstacles","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","groundDrop"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
 function parseFloatList(str){return String(str).split(",").map(x=>{const v=parseFloat(x.trim());return isFinite(v)?v:0;});}
 function parseNotes(str){return String(str).split("\n").map(line=>{const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*:\s*(.+)$/);return m?{x:parseFloat(m[1]),y:parseFloat(m[2]),text:m[3].trim()}:null;}).filter(n=>n);}
 function parseOverrides(str){const m={};String(str).split(",").forEach(tok=>{const parts=tok.split(":");if(parts.length===2){const n=parseInt(parts[0].trim(),10);let s=parts[1].trim().toLowerCase();s=(s[0]==="t")?"t":(s[0]==="b")?"b":(s[0]==="c")?"c":null;if(Number.isFinite(n)&&n>0&&s)m[n]=s;}});return m;}
+function parseObstacles(txt){
+  const out=[];
+  for(const line of String(txt).split(String.fromCharCode(10))){
+    const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*:\s*(.+)$/);
+    if(m) out.push({x:parseFloat(m[1]),y:parseFloat(m[2]),label:m[3].trim()});
+  }
+  return out;
+}
 function readParams(){
   const num=id=>parseFloat(document.getElementById(id).value)||0;
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
-  return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,layout:document.getElementById("layout").value,hasTopLanding:getVal("hasTopLanding"),
+  return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,hasTopLanding:getVal("hasTopLanding"),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
-    legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:num("turnDepth"),
+    legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(num("topW")||60),topD:(num("topD")||60),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
     taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
@@ -701,6 +723,7 @@ function copyFreecad(){
 }
 function render(){
   const p=readParams();
+  {const go=document.getElementById("gapOut"); if(go) go.textContent=(p.layout==="switchback")?("= "+Math.round(p.gap)+String.fromCharCode(34)+" gap between the ramps"):"";}
   if(p.targetSlope!=="manual"){
     const totalRamps=(p.layout==="switchback")?(p.legs.reduce((a,b)=>a+b,0)||1):p.runs;
     p.rampRun=parseFloat(p.targetSlope)*(p.deckHeight/totalRamps);
@@ -748,7 +771,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.6",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.8",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
