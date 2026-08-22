@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.5</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.6</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -84,20 +84,11 @@
       <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing deck reference (2' × 10')</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
-      <label class="field only-deckref"><span class="lab">Deck reference offset <span class="u">(in)</span></span><input id="deckRefOffset" type="number" step="1" value="0"><span class="hint">shift the existing deck sideways relative to the top landing (+ / −)</span></label>
-      <label class="checkrow"><input type="checkbox" id="notchEnable"> Notch the deck for an existing step</label>
-      <div class="only-notch notchgroup">
-        <label class="field"><span class="lab">Notch width <span class="u">(in)</span></span><input id="notchWidth" type="number" step="1" value="48"></label>
-        <div class="row2">
-          <label class="field"><span class="lab">Notch depth <span class="u">(in)</span></span><input id="notchDepth" type="number" step="1" value="12"></label>
-          <label class="field"><span class="lab">Offset <span class="u">(in)</span></span><input id="notchOffset" type="number" step="1" value="0"></label>
-        </div>
-      </div>
-
       <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
       <div class="only-door notchgroup">
         <label class="field"><span class="lab">Door width <span class="u">(in)</span></span><input id="doorWidth" type="number" step="1" value="36"></label>
         <label class="field"><span class="lab">Hinge side</span><select id="doorHinge"><option value="left">Left hinge (facing door)</option><option value="right">Right hinge (facing door)</option></select></label>
+        <label class="field"><span class="lab">Door offset <span class="u">(in)</span></span><input id="doorOffset" type="number" step="1" value="0"><span class="hint">slide the door along the deck edge (+ / −)</span></label>
       </div>
 
       <label class="checkrow"><input type="checkbox" id="showSteps"> Show existing steps under the ramp</label>
@@ -109,6 +100,15 @@
         </div>
       </div>
 
+
+      <label class="checkrow"><input type="checkbox" id="notchEnable"> Notch the deck for an existing step</label>
+      <div class="only-notch notchgroup">
+        <label class="field"><span class="lab">Notch width <span class="u">(in)</span></span><input id="notchWidth" type="number" step="1" value="48"></label>
+        <div class="row2">
+          <label class="field"><span class="lab">Notch depth <span class="u">(in)</span></span><input id="notchDepth" type="number" step="1" value="12"></label>
+          <label class="field"><span class="lab">Offset <span class="u">(in)</span></span><input id="notchOffset" type="number" step="1" value="0"></label>
+        </div>
+      </div>
 
       <label class="checkrow"><input type="checkbox" id="topOnExistingDeck"> Top landing on existing deck (2x4 framing)</label>
 
@@ -134,7 +134,7 @@
         <span class="hint">nudge one ramp to an edge. format run#:edge &mdash; e.g. 2:bottom, 4:top (edges: top / bottom / center)</span></label>
       <label class="field only-switchback"><span class="lab">Runs per leg</span><input id="legs" type="text" value="">
         <span class="hint">ramps in each straight leg; a 180° hairpin is added automatically between legs. e.g. <b>3, 3</b> = 3 ramps, hairpin, 3 ramps. <b>2, 2</b> = a single hairpin with 2 ramps each side. One number = no hairpin.</span></label>
-      <label class="field only-switchback"><span class="lab">Gap between parallel ramps <span class="u">(in)</span></span><input id="gap" type="number" step="1" value="16">
+      <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="number" step="1" min="96" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span>
         <span class="hint">sets the hairpin's across dimension (two ramps + this gap)</span></label>
       <label class="field only-switchback"><span class="lab">Hairpin turn landing depth <span class="u">(in)</span></span><input id="turnDepth" type="number" step="1" value="40"></label>
       <div class="row2">
@@ -220,7 +220,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.5</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.6</footer>
 
 <script>
 "use strict";
@@ -548,12 +548,12 @@ function buildSVG(p,g){
   if(p.showDoor && p.doorWidth>0){
     const tl=g.pieces[0];
     if(tl){
-      const dw=p.doorWidth, side=p.deckRefSide, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2;
+      const dw=p.doorWidth, side=p.deckRefSide, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, doff=(p.doorOffset||0);
       let ex,ey,dirx,diry,nx,ny;
-      if(side==="left"){ ex=tl.x0; ey=cy-dw/2; dirx=0; diry=1; nx=1; ny=0; }
-      else if(side==="right"){ ex=tl.x1; ey=cy-dw/2; dirx=0; diry=1; nx=-1; ny=0; }
-      else if(side==="top"){ ex=cx-dw/2; ey=tl.y0; dirx=1; diry=0; nx=0; ny=1; }
-      else { ex=cx-dw/2; ey=tl.y1; dirx=1; diry=0; nx=0; ny=-1; }
+      if(side==="left"){ ex=tl.x0; ey=cy-dw/2+doff; dirx=0; diry=1; nx=1; ny=0; }
+      else if(side==="right"){ ex=tl.x1; ey=cy-dw/2+doff; dirx=0; diry=1; nx=-1; ny=0; }
+      else if(side==="top"){ ex=cx-dw/2+doff; ey=tl.y0; dirx=1; diry=0; nx=0; ny=1; }
+      else { ex=cx-dw/2+doff; ey=tl.y1; dirx=1; diry=0; nx=0; ny=-1; }
       const Ax=ex,Ay=ey,Bx=ex+dirx*dw,By=ey+diry*dw, fLx=-ny,fLy=nx;
       const aL=Ax*fLx+Ay*fLy, bL=Bx*fLx+By*fLy;
       const leftEnd=aL>=bL?[Ax,Ay]:[Bx,By], rightEnd=aL>=bL?[Bx,By]:[Ax,Ay];
@@ -617,7 +617,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","gap","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","deckRefOffset","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","groundDrop"];
+const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","groundDrop"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -630,9 +630,9 @@ function readParams(){
   return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,layout:document.getElementById("layout").value,hasTopLanding:getVal("hasTopLanding"),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
-    legs:parseList(document.getElementById("legs").value),gap:num("gap"),turnDepth:num("turnDepth"),
+    legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:num("turnDepth"),
     topW:(num("topW")||60),topD:(num("topD")||60),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,deckRefOffset:num("deckRefOffset"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
@@ -712,11 +712,11 @@ function render(){
   let g=p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p);
   if(p.startSide==="left") g=mirrorX(g);
   if(p.showDeckRef){
-    const tl=g.pieces[0], L=120, D=24, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, off=(p.deckRefOffset||0); let d;
-    if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2+off,y1:cy+L/2+off};
-    else if(p.deckRefSide==="top") d={x0:cx-L/2+off,x1:cx+L/2+off,y0:tl.y0-D,y1:tl.y0};
-    else if(p.deckRefSide==="bottom") d={x0:cx-L/2+off,x1:cx+L/2+off,y0:tl.y1,y1:tl.y1+D};
-    else d={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2+off,y1:cy+L/2+off};
+    const tl=g.pieces[0], L=120, D=24, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
+    if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
+    else if(p.deckRefSide==="top") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
+    else if(p.deckRefSide==="bottom") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
+    else d={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2,y1:cy+L/2};
     g.pieces.push({name:"Existing deck",x0:d.x0,x1:d.x1,y0:d.y0,y1:d.y1,ramp:false,ref:true});
   }
   const sc=slopeClass(g.slopeRatio);
@@ -748,7 +748,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.5",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.6",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
