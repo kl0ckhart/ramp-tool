@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.2</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.3</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -140,12 +140,13 @@
       </div>
       <label class="field"><span class="lab">Rest landings after runs</span><input id="restAfter" type="text" value="">
         <span class="hint">overall ramp number to add a flat rest after (counts across all legs). e.g. <b>1, 5</b> = rest after ramp 1 and ramp 5. Blank = none.</span></label>
-      <label class="checkrow only-straight"><input type="checkbox" id="sameSize" checked> All ramps &amp; rests the same size</label>
+      <label class="checkrow"><input type="checkbox" id="sameSize" checked> All ramps, rests &amp; hairpins the same size</label>
       <div class="only-persection notchgroup">
         <label class="field"><span class="lab">Ramp run lengths <span class="u">(in, per run)</span></span><input id="rampRuns" type="text" placeholder="e.g. 96, 78, 96"><span class="hint">one per ramp, in order; blank entry = default</span></label>
-        <label class="field"><span class="lab">Ramp widths <span class="u">(in, per run)</span></span><input id="rampWidths" type="text" placeholder="e.g. 40, 40, 40"></label>
+        <label class="field ps-straight"><span class="lab">Ramp widths <span class="u">(in, per run)</span></span><input id="rampWidths" type="text" placeholder="e.g. 40, 40, 40"></label>
         <label class="field"><span class="lab">Rest widths <span class="u">(in, per rest)</span></span><input id="restWidths" type="text" placeholder="e.g. 40, 60"></label>
         <label class="field"><span class="lab">Rest depths <span class="u">(in, per rest)</span></span><input id="restDepths" type="text" placeholder="e.g. 60, 60"></label>
+        <label class="field ps-switchback"><span class="lab">Hairpin depths <span class="u">(in, per hairpin)</span></span><input id="turnDepths" type="text" placeholder="e.g. 48, 60"><span class="hint">one per hairpin, in order; blank = default. The across dimension follows the two legs + gap.</span></label>
       </div>
       <label class="checkrow"><input type="checkbox" id="taper" checked> Taper the last ramp to grade (taper 0)</label>
       <label class="checkrow"><input type="checkbox" id="showHandrails"> Show handrails</label>
@@ -216,7 +217,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.2</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.3</footer>
 
 <script>
 "use strict";
@@ -263,26 +264,32 @@ function straightGeometry(p){
   return finalize(pieces,rise,p.rampRun,p.runs);
 }
 function switchbackGeometry(p){
-  const W=p.width,gap=p.gap,RUN=p.rampRun,PITCH=W+gap,TD=p.turnDepth,RW=p.restW,RD=p.restD;
-  const legs=p.legs.length?p.legs:[1],n=legs.reduce((a,b)=>a+b,0),rise=p.deckHeight/n, hasTL=p.hasTopLanding;
-  const pieces=[]; let x=0,yTop=0,heading=1,ri=0;
+  const W=p.width,gap=p.gap,PITCH=W+gap, hasTL=p.hasTopLanding, uni=p.sameSize;
+  const legs=p.legs.length?p.legs:[1],n=legs.reduce((a,b)=>a+b,0),rise=p.deckHeight/n;
+  const rRun=i=> (uni||!(p.rampRuns[i-1]>0))?p.rampRun:p.rampRuns[i-1];
+  const reW=j=> (uni||!(p.restWidths[j]>0))?p.restW:p.restWidths[j];
+  const reD=j=> (uni||!(p.restDepths[j]>0))?p.restD:p.restDepths[j];
+  const tDep=k=> (uni||!(p.turnDepths[k]>0))?p.turnDepth:p.turnDepths[k];
+  const pieces=[]; let x=0,yTop=0,heading=1,ri=0,rj=0,tk=0;
   if(hasTL){ pieces.push({name:"Top landing",x0:0,x1:p.topD,y0:0,y1:p.topW,ramp:false,top:true}); x=p.topD; yTop=p.topW-W; }
   for(let li=0;li<legs.length;li++){
     for(let r=0;r<legs[li];r++){
-      ri++; let x0,x1; if(heading>0){x0=x;x1=x+RUN;}else{x0=x-RUN;x1=x;}
+      ri++; const RUN=rRun(ri); let x0,x1; if(heading>0){x0=x;x1=x+RUN;}else{x0=x-RUN;x1=x;}
       pieces.push({name:"Ramp "+ri,x0,x1,y0:yTop,y1:yTop+W,ramp:true,dir:heading}); x=heading>0?x1:x0;
       if(r<legs[li]-1 && p.restAfter.includes(ri)){
+        const RW=reW(rj), RD=reD(rj); rj++;
         let a,b; if(heading>0){a=x;b=x+RD;}else{a=x-RD;b=x;}
         pieces.push({name:"Rest",x0:a,x1:b,y0:yTop,y1:yTop+RW,ramp:false}); x=heading>0?b:a;
       }
     }
     if(li<legs.length-1){
+      const TD=tDep(tk); tk++;
       const ny=yTop+PITCH,ly0=Math.min(yTop,ny),ly1=Math.max(yTop+W,ny+W);
       let a,b; if(heading>0){a=x;b=x+TD;}else{a=x-TD;b=x;}
       pieces.push({name:"Turn landing",x0:a,x1:b,y0:ly0,y1:ly1,ramp:false}); yTop=ny; heading=-heading;
     }
   }
-  return finalize(pieces,rise,RUN,n);
+  return finalize(pieces,rise,p.rampRun,n);
 }
 
 function buildNotchDetail(p,G){
@@ -607,7 +614,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","legs","gap","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","groundDrop"];
+const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","gap","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","groundDrop"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -619,7 +626,7 @@ function readParams(){
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
   return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,layout:document.getElementById("layout").value,hasTopLanding:getVal("hasTopLanding"),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
-    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),
+    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:num("gap"),turnDepth:num("turnDepth"),
     topW:(num("topW")||60),topD:(num("topD")||60),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
     taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
@@ -636,7 +643,9 @@ function updateVisibility(){
   show(".only-handrails",document.getElementById("showHandrails").checked);
   show(".only-door",document.getElementById("showDoor").checked);
   show(".only-toplanding",document.getElementById("hasTopLanding").checked);
-  show(".only-persection",document.getElementById("layout").value==="straight"&&!document.getElementById("sameSize").checked);
+  show(".only-persection",!document.getElementById("sameSize").checked);
+  show(".ps-straight",document.getElementById("layout").value==="straight");
+  show(".ps-switchback",document.getElementById("layout").value==="switchback");
   render();
 }
 function mirrorX(g){
@@ -735,7 +744,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.2",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.3",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
