@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.9</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.11</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -81,7 +81,7 @@
         <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
         <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
       </div>
-      <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing deck reference (2' × 10')</label>
+      <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference (2' × 10')</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
       <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
@@ -110,7 +110,7 @@
         </div>
       </div>
 
-      <label class="checkrow"><input type="checkbox" id="topOnExistingDeck"> Top landing on existing deck (2x4 framing)</label>
+      <label class="checkrow"><input type="checkbox" id="topOnExistingDeck"> Top landing on existing structure (2x4 framing)</label>
 
       <div class="sechead">Ramp</div>
       <label class="field"><span class="lab">Layout</span>
@@ -221,7 +221,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.9</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.11</footer>
 
 <script>
 "use strict";
@@ -320,7 +320,7 @@ function buildNotchDetail(p,G){
   else if(p.deckRefSide==="left"){ dbx=-RD; dby=0; dbw=RD; dbh=lh; dlx=-RD-0.2; dly=lh/2; dla="end"; }
   else { dbx=lw; dby=0; dbw=RD; dbh=lh; dlx=lw+RD+0.2; dly=lh/2; dla="start"; }
   s+='<rect x="'+dbx.toFixed(3)+'" y="'+dby.toFixed(3)+'" width="'+dbw.toFixed(3)+'" height="'+dbh.toFixed(3)+'" fill="#ccd0d6" fill-opacity="0.7" stroke="#9aa0a8" stroke-width="0.04" stroke-dasharray="0.22 0.12"/>';
-  s+='<text x="'+dlx.toFixed(3)+'" y="'+dly.toFixed(3)+'" font-size="0.34" text-anchor="'+dla+'" fill="#5a6069" font-weight="700">Existing deck (reference)</text>';
+  s+='<text x="'+dlx.toFixed(3)+'" y="'+dly.toFixed(3)+'" font-size="0.34" text-anchor="'+dla+'" fill="#5a6069" font-weight="700">Existing structure (reference)</text>';
   // ramp reference ATTACHED (flush) on the ramp's shared edge
   const r1=G.pieces.find(pc=>pc.ramp);
   if(r1){ let rbx,rby,rbw,rbh,rlx,rly,rla;
@@ -382,7 +382,7 @@ function buildProfile(p,G){
   s+='<text x="'+(vbX+0.7).toFixed(2)+'" y="'+(Y(deck/2)+0.15).toFixed(2)+'" font-size="0.42" text-anchor="end" fill="#333">'+esc(dimText(deck))+'</text>';
   s+='<line x1="'+X(mnX).toFixed(3)+'" y1="1.5" x2="'+X(mxX).toFixed(3)+'" y2="1.5" stroke="#555" stroke-width="0.03"/>';
   s+='<text x="'+X((mnX+mxX)/2).toFixed(2)+'" y="1.95" font-size="0.5" text-anchor="middle" fill="#333">'+esc(dimText(mxX-mnX))+'</text>';
-  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">2x6 framing + 1" decking'+(p.topOnExistingDeck?", top landing 2x4 on existing deck":"")+"  \u00b7  posts 4x4, rails 2x4  \u00b7  side view of the plan"+(terr?"  \u00b7  ground falls "+esc(dimText(Math.abs(Gd)))+" over the run":"")+"</text>";
+  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">2x6 framing + 1" decking'+(p.topOnExistingDeck?", top landing 2x4 on existing structure":"")+"  \u00b7  posts 4x4, rails 2x4  \u00b7  side view of the plan"+(terr?"  \u00b7  ground falls "+esc(dimText(Math.abs(Gd)))+" over the run":"")+"</text>";
   s+='</svg>'; return s;
 }
 function wrapNotes(txt, maxChars){
@@ -406,7 +406,7 @@ function buildSVG(p,g){
   const F=12;
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
   for(const pc of g.pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);}
-  const x0f=mnX/F,y0f=mnY/F,x1f=mxX/F,y1f=mxY/F, mL=3.4,mR=3.4,mT=(p.notchEnable?4.8:3.6);
+  const x0f=mnX/F,y0f=mnY/F,x1f=mxX/F,y1f=mxY/F, mL=3.8,mR=6.0,mT=(p.notchEnable?6.0:4.8);
   let notesLines=null, notesBW=0, notesBH=0;
   if(p.notes && p.notes.trim()){
     notesLines=wrapNotes(p.notes,34);
@@ -429,7 +429,7 @@ function buildSVG(p,g){
     if(pc.ref){
       s+='<rect x="'+f3(x)+'" y="'+f3(y)+'" width="'+f3(w)+'" height="'+f3(h)+'" fill="#efece5" fill-opacity="0.75" stroke="#b7b3a8" stroke-width="0.04" stroke-dasharray="0.28 0.16"/>';
       const rtf=(w>=h)?'':(' transform="rotate(90 '+f3(cx)+' '+f3(cy)+')"');
-      s+='<text x="'+f3(cx)+'" y="'+f3(cy)+'" font-size="0.42" text-anchor="middle" fill="#c0392b" font-weight="700"'+rtf+'>Existing deck, for reference only.</text>';
+      s+='<text x="'+f3(cx)+'" y="'+f3(cy)+'" font-size="0.42" text-anchor="middle" fill="#c0392b" font-weight="700"'+rtf+'>Existing structure, for reference only.</text>';
       continue;
     }
     if(pc.ramp)lastR=pc;
@@ -620,10 +620,12 @@ function buildSVG(p,g){
   }
   { const cats=[["Top landings",function(pc){return pc.top;}],["Ramps",function(pc){return pc.ramp;}],["Rests",function(pc){return pc.name==="Rest";}],["Hairpins",function(pc){return pc.name==="Turn landing";}]];
     const lines=[];
+    const pfmt=function(d){return ftCompact(d[0])+" \u00d7 "+ftCompact(d[1])+"  ("+inFrac(d[0])+"\" \u00d7 "+inFrac(d[1])+"\")";};
     for(const c of cats){ const it=g.pieces.filter(c[1]); if(!it.length) continue;
       const dm=it.map(function(pc){return [pc.x1-pc.x0,pc.y1-pc.y0];});
       const same=dm.every(function(d){return Math.abs(d[0]-dm[0][0])<0.1&&Math.abs(d[1]-dm[0][1])<0.1;});
-      lines.push(c[0]+": "+it.length+(same?"  \u2014  "+dimBoth(dm[0][0])+" \u00d7 "+dimBoth(dm[0][1]):"  (sizes vary)"));
+      if(same){ lines.push(c[0]+": "+it.length+"  \u2014  "+pfmt(dm[0])); }
+      else { lines.push(c[0]+": "+it.length); for(let k=0;k<dm.length;k++) lines.push("   "+(k+1)+": "+pfmt(dm[k])); }
     }
     if(lines.length){ const fs=0.36, lh=0.52; let mw=0; for(const l of lines) if(l.length>mw) mw=l.length;
       const bw=mw*fs*0.66+0.6, bh=lines.length*lh+0.95, bx2=vbX+vbW-bw-0.3, by2=vbY+(p.showNorth?2.7:0.4);
@@ -744,7 +746,7 @@ function render(){
     else if(p.deckRefSide==="top") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
     else if(p.deckRefSide==="bottom") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
     else d={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2,y1:cy+L/2};
-    g.pieces.push({name:"Existing deck",x0:d.x0,x1:d.x1,y0:d.y0,y1:d.y1,ramp:false,ref:true});
+    g.pieces.push({name:"Existing structure",x0:d.x0,x1:d.x1,y0:d.y0,y1:d.y1,ramp:false,ref:true});
   }
   const sc=slopeClass(g.slopeRatio);
   const box=document.getElementById("roSlopeBox"),slp=document.getElementById("roSlope"),flg=document.getElementById("roFlag");
@@ -775,7 +777,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.9",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.11",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
