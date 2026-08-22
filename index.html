@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.11</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.12</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -171,7 +171,7 @@
       <label class="field"><span class="lab">Notes on the drawing</span>
         <textarea id="notes" rows="4" placeholder="Free text &mdash; appears in a Notes box on the drawing.&#10;e.g. Verify deck height on site.&#10;Existing tree at NE corner."></textarea>
         <span class="hint">Shown in a Notes box in the lower-right of the drawing.</span></label>
-      <label class="field"><span class="lab">Obstacles</span><textarea id="obstacles" rows="3" placeholder="One per line:   x, y: label&#10;e.g.   6, 2: 4x4 post"></textarea><span class="hint">position in feet from the top-left of the drawing; drops a marker + label on the plan</span></label>
+      <label class="field"><span class="lab">Obstacles</span><textarea id="obstacles" rows="3" placeholder="One per line:   x, y: label&#10;e.g.   6, 2: 4x4 post&#10;with direction:   6, 2, above-right: 4x4 post"></textarea><span class="hint">feet from the top-left of the drawing. Optional callout direction after the coordinates: above, below, left, right, above-left, above-right, below-left, below-right &mdash; e.g. 6, 2, above-right: 4x4 post.</span></label>
 
       <div class="sechead">FreeCAD export</div>
       <p class="hint" style="margin:0 0 8px">Paste these into your FreeCAD macro's parameter block. Updates live as you edit.</p>
@@ -221,7 +221,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.11</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.12</footer>
 
 <script>
 "use strict";
@@ -591,16 +591,20 @@ function buildSVG(p,g){
     let ox=Infinity, oy=Infinity;
     for(const pc of g.pieces){ if(pc.ref) continue; if(pc.x0<ox)ox=pc.x0; if(pc.y0<oy)oy=pc.y0; }
     const oxf=ox/F, oyf=oy/F, midYo=(y0f+y1f)/2;
+    const dmap={above:[0,-1],aboveleft:[-1,-1],aboveright:[1,-1],left:[-1,0],right:[1,0],below:[0,1],belowleft:[-1,1],belowright:[1,1],a:[0,-1],al:[-1,-1],ar:[1,-1],l:[-1,0],r:[1,0],b:[0,1],bl:[-1,1],br:[1,1]};
     for(const ob of p.obstacles){
       const mx=oxf+ob.x, my=oyf+ob.y;
       s+='<rect x="'+(mx-0.18).toFixed(2)+'" y="'+(my-0.18).toFixed(2)+'" width="0.36" height="0.36" fill="#8a4b2b" stroke="#3f2010" stroke-width="0.05"/>';
       s+='<line x1="'+(mx-0.34).toFixed(2)+'" y1="'+my.toFixed(2)+'" x2="'+(mx+0.34).toFixed(2)+'" y2="'+my.toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
       s+='<line x1="'+mx.toFixed(2)+'" y1="'+(my-0.34).toFixed(2)+'" x2="'+mx.toFixed(2)+'" y2="'+(my+0.34).toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
       s+='<circle cx="'+mx.toFixed(2)+'" cy="'+my.toFixed(2)+'" r="0.07" fill="#3f2010"/>';
-      const dir=(my<midYo)?-1:1, ly=my+dir*1.5, lab=esc(ob.label), lw=lab.length*0.264+0.5;
-      s+='<line x1="'+mx.toFixed(2)+'" y1="'+(my+dir*0.22).toFixed(2)+'" x2="'+mx.toFixed(2)+'" y2="'+(ly-dir*0.31).toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
-      s+='<rect x="'+(mx-lw/2).toFixed(2)+'" y="'+(ly-0.31).toFixed(2)+'" width="'+lw.toFixed(2)+'" height="0.62" rx="0.1" fill="#fff" fill-opacity="0.93" stroke="#8a4b2b" stroke-width="0.05"/>';
-      s+='<text x="'+mx.toFixed(2)+'" y="'+(ly+0.13).toFixed(2)+'" font-size="0.4" text-anchor="middle" fill="#8a4b2b" font-weight="700">'+lab+'</text>';
+      let dv=dmap[(ob.dir||"").toLowerCase().replace(/[ \-]/g,"")]; if(!dv) dv=[0,(my<midYo)?-1:1];
+      const len=Math.hypot(dv[0],dv[1])||1, ux=dv[0]/len, uy=dv[1]/len, D=1.7;
+      const cax=mx+ux*D, cay=my+uy*D, lab=esc(ob.label), lw=lab.length*0.264+0.5;
+      s+='<line x1="'+(mx+ux*0.25).toFixed(2)+'" y1="'+(my+uy*0.25).toFixed(2)+'" x2="'+cax.toFixed(2)+'" y2="'+cay.toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
+      let ta,bx0; if(dv[0]<0){ta="end";bx0=cax-lw+0.25;}else if(dv[0]>0){ta="start";bx0=cax-0.25;}else{ta="middle";bx0=cax-lw/2;}
+      s+='<rect x="'+bx0.toFixed(2)+'" y="'+(cay-0.31).toFixed(2)+'" width="'+lw.toFixed(2)+'" height="0.62" rx="0.1" fill="#fff" fill-opacity="0.93" stroke="#8a4b2b" stroke-width="0.05"/>';
+      s+='<text x="'+cax.toFixed(2)+'" y="'+(cay+0.13).toFixed(2)+'" font-size="0.4" text-anchor="'+ta+'" fill="#8a4b2b" font-weight="700">'+lab+'</text>';
     }
   }
   if(notesLines){
@@ -647,8 +651,8 @@ function parseOverrides(str){const m={};String(str).split(",").forEach(tok=>{con
 function parseObstacles(txt){
   const out=[];
   for(const line of String(txt).split(String.fromCharCode(10))){
-    const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*:\s*(.+)$/);
-    if(m) out.push({x:parseFloat(m[1]),y:parseFloat(m[2]),label:m[3].trim()});
+    const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*(?:,\s*([^:,]+?)\s*)?:\s*(.+)$/);
+    if(m) out.push({x:parseFloat(m[1]),y:parseFloat(m[2]),dir:(m[3]||"").trim(),label:m[4].trim()});
   }
   return out;
 }
@@ -777,7 +781,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.11",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.12",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
