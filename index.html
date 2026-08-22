@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.4</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.5</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -81,10 +81,10 @@
         <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
         <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
       </div>
-      <label class="checkrow"><input type="checkbox" id="topOnExistingDeck"> Top landing on existing deck (2x4 framing)</label>
       <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing deck reference (2' × 10')</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
+      <label class="field only-deckref"><span class="lab">Deck reference offset <span class="u">(in)</span></span><input id="deckRefOffset" type="number" step="1" value="0"><span class="hint">shift the existing deck sideways relative to the top landing (+ / −)</span></label>
       <label class="checkrow"><input type="checkbox" id="notchEnable"> Notch the deck for an existing step</label>
       <div class="only-notch notchgroup">
         <label class="field"><span class="lab">Notch width <span class="u">(in)</span></span><input id="notchWidth" type="number" step="1" value="48"></label>
@@ -92,6 +92,12 @@
           <label class="field"><span class="lab">Notch depth <span class="u">(in)</span></span><input id="notchDepth" type="number" step="1" value="12"></label>
           <label class="field"><span class="lab">Offset <span class="u">(in)</span></span><input id="notchOffset" type="number" step="1" value="0"></label>
         </div>
+      </div>
+
+      <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
+      <div class="only-door notchgroup">
+        <label class="field"><span class="lab">Door width <span class="u">(in)</span></span><input id="doorWidth" type="number" step="1" value="36"></label>
+        <label class="field"><span class="lab">Hinge side</span><select id="doorHinge"><option value="left">Left hinge (facing door)</option><option value="right">Right hinge (facing door)</option></select></label>
       </div>
 
       <label class="checkrow"><input type="checkbox" id="showSteps"> Show existing steps under the ramp</label>
@@ -103,11 +109,8 @@
         </div>
       </div>
 
-      <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
-      <div class="only-door notchgroup">
-        <label class="field"><span class="lab">Door width <span class="u">(in)</span></span><input id="doorWidth" type="number" step="1" value="36"></label>
-        <label class="field"><span class="lab">Hinge side</span><select id="doorHinge"><option value="left">Left hinge (facing door)</option><option value="right">Right hinge (facing door)</option></select></label>
-      </div>
+
+      <label class="checkrow"><input type="checkbox" id="topOnExistingDeck"> Top landing on existing deck (2x4 framing)</label>
 
       <div class="sechead">Ramp</div>
       <label class="field"><span class="lab">Layout</span>
@@ -217,7 +220,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.4</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.5</footer>
 
 <script>
 "use strict";
@@ -614,7 +617,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","gap","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","groundDrop"];
+const ids=["client","projectType","notes","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","gap","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","deckRefOffset","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","groundDrop"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -629,7 +632,7 @@ function readParams(){
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:num("gap"),turnDepth:num("turnDepth"),
     topW:(num("topW")||60),topD:(num("topD")||60),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,deckRefOffset:num("deckRefOffset"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
@@ -709,11 +712,11 @@ function render(){
   let g=p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p);
   if(p.startSide==="left") g=mirrorX(g);
   if(p.showDeckRef){
-    const tl=g.pieces[0], L=120, D=24, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
-    if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
-    else if(p.deckRefSide==="top") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
-    else if(p.deckRefSide==="bottom") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
-    else d={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2,y1:cy+L/2};
+    const tl=g.pieces[0], L=120, D=24, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, off=(p.deckRefOffset||0); let d;
+    if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2+off,y1:cy+L/2+off};
+    else if(p.deckRefSide==="top") d={x0:cx-L/2+off,x1:cx+L/2+off,y0:tl.y0-D,y1:tl.y0};
+    else if(p.deckRefSide==="bottom") d={x0:cx-L/2+off,x1:cx+L/2+off,y0:tl.y1,y1:tl.y1+D};
+    else d={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2+off,y1:cy+L/2+off};
     g.pieces.push({name:"Existing deck",x0:d.x0,x1:d.x1,y0:d.y0,y1:d.y1,ramp:false,ref:true});
   }
   const sc=slopeClass(g.slopeRatio);
@@ -745,7 +748,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.4",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.5",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
