@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Why the ramp is this long</title>
+<style>
+  :root{ --bg:#fbfaf7; --ink:#22242b; --muted:#6b7280; --line:#d8d4ca; --accent:#2f6fb0; --warn:#c0392b; --ok:#157347; --wood:#e3c690; }
+  *{ box-sizing:border-box; -webkit-text-size-adjust:100%; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); line-height:1.5; }
+  .wrap{ max-width:760px; margin:0 auto; padding:20px 18px 60px; }
+  h1{ font-size:23px; margin:6px 0 2px; }
+  .sub{ color:var(--muted); margin:0 0 18px; font-size:15px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px; margin:14px 0; }
+  .ctl{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  input[type=range]{ flex:1; min-width:180px; height:34px; accent-color:var(--accent); }
+  .htxt{ font-size:15px; }
+  .num{ width:74px; font-size:17px; padding:7px 8px; border:1px solid var(--line); border-radius:8px; text-align:center; }
+  .result{ text-align:center; padding:6px 0 2px; }
+  .big{ font-size:40px; font-weight:800; letter-spacing:-.5px; line-height:1.1; }
+  .big .u{ font-size:20px; font-weight:600; color:var(--muted); }
+  .arrow{ font-size:26px; color:var(--muted); margin:2px 0; }
+  .rule{ background:#eef5fb; border:1px solid #cfe0f0; border-radius:12px; padding:14px 16px; font-size:16px; }
+  .rule b{ color:var(--accent); }
+  svg{ width:100%; height:auto; display:block; }
+  h2{ font-size:16px; margin:2px 0 8px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  p{ margin:8px 0; font-size:15.5px; }
+  .k{ color:var(--warn); font-weight:700; }
+  .foot{ color:var(--muted); font-size:13px; margin-top:22px; text-align:center; }
+  .seg{ font-size:14.5px; }
+  table{ border-collapse:collapse; width:100%; font-size:14.5px; margin-top:6px; }
+  td{ padding:5px 8px; border-bottom:1px solid #eee; }
+  td:last-child{ text-align:right; font-variant-numeric:tabular-nums; }
+  .tot td{ font-weight:800; border-top:2px solid var(--ink); border-bottom:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Why does the ramp need to be this long?</h1>
+  <p class="sub">The 1&#8209;to&#8209;12 rule, in plain terms. Slide to your door height.</p>
+
+  <div class="card">
+    <div class="ctl">
+      <span class="htxt">Door threshold height:</span>
+      <input id="rng" type="range" min="1" max="36" step="1" value="21" aria-label="threshold height inches">
+      <input id="numIn" class="num" type="number" min="1" max="60" step="1" value="21"> <span class="htxt">in</span>
+    </div>
+    <div class="result">
+      <div class="big"><span id="hIn">21</span><span class="u">&nbsp;inches up</span></div>
+      <div class="arrow">&#8595;</div>
+      <div class="big"><span id="rFt">21</span><span class="u">&nbsp;feet of ramp</span></div>
+    </div>
+    <div class="rule">At code slope <b>(1:12)</b>, every <b>1&nbsp;inch</b> of height needs <b>1&nbsp;foot</b> of ramp. So <b><span id="hIn2">21</span>&nbsp;inches</b> up&nbsp;=&nbsp;<b><span id="rFt2">21</span>&nbsp;feet</b> out. It&rsquo;s that simple &mdash; and it can&rsquo;t be shortened without making the ramp too steep to be safe.</div>
+  </div>
+
+  <div class="card">
+    <h2>To scale &mdash; this is the shape</h2>
+    <div id="viz"></div>
+    <p class="seg" style="color:var(--muted);text-align:center;margin-top:4px">A safe ramp is <b>long and gentle</b>, not steep. That&rsquo;s the whole reason it takes room.</p>
+  </div>
+
+  <div class="card">
+    <h2>&ldquo;But after the first section we&rsquo;re lower &mdash; why keep going?&rdquo;</h2>
+    <p>True &mdash; every section drops you a little. But the height you have <i>left</i> still costs the same: <span class="k">a foot of ramp for every inch.</span> The leftover height doesn&rsquo;t shrink the ramp &mdash; it <i>is</i> the ramp.</p>
+    <p class="seg">Here&rsquo;s your <span id="hIn3">21</span>&Prime; broken into 6&#8209;ft sections. Each 6&#8209;ft section drops exactly 6&Prime; &mdash; so you simply need enough sections to use up all the height:</p>
+    <table id="breakdown"></table>
+  </div>
+
+  <div class="card">
+    <h2>What about a landing or a switchback?</h2>
+    <p><b>Landings are flat</b> &mdash; they don&rsquo;t gain any height. They give a rest or let the ramp turn, but they only <i>add</i> length, never subtract it.</p>
+    <p>A <b>switchback</b> (folding the ramp back on itself) fits the ramp in a <i>smaller footprint</i> &mdash; but the ramp you walk is still <b><span id="rFt3">21</span> feet</b> long. You&rsquo;re folding the same length into a tighter space, not shortening it.</p>
+  </div>
+
+  <p class="foot">Care Construction &middot; ramp-length explainer &middot; 1:12 = ADA code slope (30&Prime; max rise per run before a landing)</p>
+</div>
+
+<script>
+  function ftIn(inches){ const ft=Math.floor(inches/12), i=Math.round(inches-ft*12); return ft+"'"+(i?"-"+i+'"':""); }
+  function draw(H){
+    // H = rise in inches; run = 12*H inches. Draw to scale.
+    const runIn = 12*H;
+    const W=680, padL=44, padR=54, padB=40, padT=26;
+    const plotW=W-padL-padR;
+    // scale so the run fills plotW; rise uses the same scale (so 1:12 is honest)
+    const sc = plotW/runIn;
+    const riseP = H*sc, runP = runIn*sc;
+    const groundY = padT+riseP+8;
+    const Ht = groundY, topY = groundY-riseP;
+    const x0=padL, x1=padL+runP;
+    let s='<svg viewBox="0 0 '+W+' '+(groundY+padB)+'" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">';
+    // ground
+    s+='<line x1="8" y1="'+groundY+'" x2="'+(W-8)+'" y2="'+groundY+'" stroke="#7a6a3a" stroke-width="2"/>';
+    // house / threshold block on the left
+    s+='<rect x="'+(x0-30)+'" y="'+(topY-30)+'" width="30" height="'+(riseP+30)+'" fill="#cdd2da" stroke="#9aa0a8"/>';
+    s+='<text x="'+(x0-15)+'" y="'+(topY-16)+'" font-size="11" text-anchor="middle" fill="#5a6069">door</text>';
+    // ramp slab (gentle slope)
+    s+='<path d="M '+x0+' '+topY+' L '+x1+' '+groundY+' L '+x1+' '+(groundY+7)+' L '+x0+' '+(topY+7)+' Z" fill="#e3c690" stroke="#b08d52"/>';
+    // rise dim (left)
+    s+='<line x1="'+(x0-40)+'" y1="'+topY+'" x2="'+(x0-40)+'" y2="'+groundY+'" stroke="#c0392b" stroke-width="1.5"/>';
+    s+='<line x1="'+(x0-44)+'" y1="'+topY+'" x2="'+(x0-36)+'" y2="'+topY+'" stroke="#c0392b" stroke-width="1.5"/>';
+    s+='<line x1="'+(x0-44)+'" y1="'+groundY+'" x2="'+(x0-36)+'" y2="'+groundY+'" stroke="#c0392b" stroke-width="1.5"/>';
+    s+='<text x="'+(x0-38)+'" y="'+((topY+groundY)/2)+'" font-size="12" fill="#c0392b" font-weight="700" transform="rotate(-90 '+(x0-38)+' '+((topY+groundY)/2)+')" text-anchor="middle">'+H+'&#8221; rise</text>';
+    // run dim (bottom)
+    const rd=groundY+22;
+    s+='<line x1="'+x0+'" y1="'+rd+'" x2="'+x1+'" y2="'+rd+'" stroke="#2f6fb0" stroke-width="1.5"/>';
+    s+='<line x1="'+x0+'" y1="'+(rd-4)+'" x2="'+x0+'" y2="'+(rd+4)+'" stroke="#2f6fb0" stroke-width="1.5"/>';
+    s+='<line x1="'+x1+'" y1="'+(rd-4)+'" x2="'+x1+'" y2="'+(rd+4)+'" stroke="#2f6fb0" stroke-width="1.5"/>';
+    s+='<text x="'+((x0+x1)/2)+'" y="'+(rd+15)+'" font-size="13" fill="#2f6fb0" font-weight="700" text-anchor="middle">'+(runIn/12)+' ft of ramp ('+ftIn(runIn)+')</text>';
+    // 1:12 label on slope
+    s+='<text x="'+((x0+x1)/2)+'" y="'+(topY+(groundY-topY)/2-6)+'" font-size="12" fill="#7a5a2e" text-anchor="middle">1:12 slope</text>';
+    s+='</svg>';
+    document.getElementById("viz").innerHTML=s;
+  }
+  function breakdown(H){
+    let rows="", left=H, drop=6, run=6, secs=[];
+    while(left>0.001){
+      const d=Math.min(drop,left); const r=d/drop*run;  // 6" per 6ft
+      secs.push([r,d]); left-=d;
+    }
+    let totR=0,totD=0;
+    secs.forEach((sd,i)=>{ totR+=sd[0]; totD+=sd[1];
+      rows+='<tr><td>Section '+(i+1)+' &mdash; '+ (sd[0]%1?sd[0].toFixed(1):sd[0]) +' ft ramp</td><td>drops '+(sd[1]%1?sd[1].toFixed(1):sd[1])+'&#8221;</td></tr>';
+    });
+    rows+='<tr class="tot"><td>Total ramp: '+(totR%1?totR.toFixed(1):totR)+' ft</td><td>total drop: '+H+'&#8221;</td></tr>';
+    document.getElementById("breakdown").innerHTML=rows;
+  }
+  function update(H){
+    H=Math.max(1,Math.min(60,Math.round(H)));
+    const ft = H; // 1:12 -> inches of rise == feet of run
+    document.getElementById("hIn").textContent=H;
+    document.getElementById("hIn2").textContent=H;
+    document.getElementById("hIn3").textContent=H;
+    document.getElementById("rFt").textContent=ft;
+    document.getElementById("rFt2").textContent=ft;
+    document.getElementById("rFt3").textContent=ft;
+    draw(H); breakdown(H);
+  }
+  const rng=document.getElementById("rng"), numIn=document.getElementById("numIn");
+  rng.addEventListener("input", ()=>{ numIn.value=rng.value; update(+rng.value); });
+  numIn.addEventListener("input", ()=>{ let v=+numIn.value||1; if(v>=1&&v<=36) rng.value=v; update(v); });
+  update(21);
+</script>
+</body>
+</html>
