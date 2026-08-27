@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.13</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.14</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -164,6 +164,17 @@
       <label class="checkrow"><input type="checkbox" id="showCorners"> Show corner coordinates</label>
       <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (side view)</label>
       <div class="sechead">Terrain</div>
+      <label class="field"><span class="lab">Detailed ground survey</span><textarea id="survey" rows="6" placeholder="A: 0, 0&#10;B: 18, 0&#10;A>B  18: 4&#10;C: 24, 8&#10;B>C  10: 12"></textarea></label>
+      <label class="checkrow"><input type="checkbox" id="surveyDatum"> Drops measured from the datum (A). Uncheck = re-leveled per leg.</label>
+      <details style="margin:2px 0 8px"><summary class="hint" style="cursor:pointer;font-weight:700">How to enter a survey</summary>
+        <div class="hint" style="margin-top:6px;line-height:1.55">
+          <b>1. Corners</b> &mdash; mark every outside corner of the path (paint/flags). Enter each as <b>letter: x, y</b> in feet from the start; A is the datum at 0, 0:<br>
+          &nbsp;&nbsp;A: 0, 0<br>&nbsp;&nbsp;B: 18, 0<br>&nbsp;&nbsp;C: 24, 8<br>
+          <b>2. Drops</b> &mdash; run a level string along each leg, read the low spots. Enter as <b>leg&nbsp;&nbsp;distance: drop</b> (feet along that leg : inches down). Several per leg, comma-separated:<br>
+          &nbsp;&nbsp;A&gt;B&nbsp;&nbsp;12: 3, 18: 4<br>&nbsp;&nbsp;B&gt;C&nbsp;&nbsp;10: 12<br>
+          <b>3. Datum toggle</b> &mdash; <b>check</b> it if you kept one reference for the whole site (water level from A); <b>uncheck</b> it if you re-leveled the string at each corner (the app chains the legs). Datum is more accurate on long runs; per-leg is easier in the field.
+        </div>
+      </details>
       <label class="field only-straight"><span class="lab">Ground fall over the run <span class="u">(in)</span></span><input id="groundDrop" type="number" step="0.25" value="0">
         <span class="hint">how much the ground drops from the top (deck) end to the bottom (foot) of the run. + = downhill toward the foot, 0 = flat. Shown as a sloped ground line in the side profile (straight runs for now).</span></label>
 
@@ -219,9 +230,13 @@
         <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Notch detail</h2>
         <div class="paper" id="notchPaper"></div>
       </div>
+      <div id="surveyWrap" style="margin-top:16px">
+        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Ground survey &mdash; top view</h2>
+        <div class="paper" id="surveyPaper"></div>
+      </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.13</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.14</footer>
 
 <script>
 "use strict";
@@ -299,6 +314,39 @@ function switchbackGeometry(p){
   return finalize(pieces,p.deckHeight,p.rampRun,n);
 }
 
+function parseSurvey(txt){
+  const corners={}, order=[], legs=[];
+  for(const raw of String(txt).split(String.fromCharCode(10))){
+    const line=raw.trim(); if(!line) continue;
+    let m=line.match(/^([A-Za-z]+)\s*:\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
+    if(m){ const L=m[1].toUpperCase(); if(!(L in corners))order.push(L); corners[L]={x:parseFloat(m[2]),y:parseFloat(m[3])}; continue; }
+    m=line.match(/^([A-Za-z]+)\s*>\s*([A-Za-z]+)\s+(.+)$/);
+    if(m){ const reads=[]; for(const pr of m[3].split(",")){ const q=pr.trim().match(/^(-?\d+\.?\d*)\s*:\s*(-?\d+\.?\d*)$/); if(q)reads.push({d:parseFloat(q[1]),drop:parseFloat(q[2])}); } if(reads.length) legs.push({from:m[1].toUpperCase(),to:m[2].toUpperCase(),readings:reads}); }
+  }
+  return {corners,order,legs};
+}
+function surveyPoints(sv,fromDatum){
+  const cz={}; if(sv.order.length) cz[sv.order[0]]=0;
+  for(const leg of sv.legs){ const A=sv.corners[leg.from],B=sv.corners[leg.to]; if(!A||!B)continue; const ref=fromDatum?0:(cz[leg.from]!=null?cz[leg.from]:0); const last=leg.readings[leg.readings.length-1]; cz[leg.to]=ref-last.drop; }
+  const pts=[];
+  for(const leg of sv.legs){ const A=sv.corners[leg.from],B=sv.corners[leg.to]; if(!A||!B)continue; const legLen=Math.hypot(B.x-A.x,B.y-A.y)||1, ux=(B.x-A.x)/legLen, uy=(B.y-A.y)/legLen, ref=fromDatum?0:(cz[leg.from]!=null?cz[leg.from]:0);
+    for(const r of leg.readings){ if(Math.abs(r.d-legLen)<0.5)continue; pts.push({x:A.x+ux*r.d,y:A.y+uy*r.d,z:ref-r.drop,drop:r.drop}); } }
+  return {pts,cz};
+}
+function buildSurveyMap(p){
+  const sv=parseSurvey(p.survey); if(!sv.order.length) return '<svg viewBox="0 0 20 4" xmlns="http://www.w3.org/2000/svg"><text x="0.4" y="2.2" font-size="0.8" fill="#999">Enter corners (A: 0, 0) to see the survey map.</text></svg>';
+  const r=surveyPoints(sv,p.surveyDatum), pts=r.pts, cz=r.cz;
+  let mnx=Infinity,mxx=-Infinity,mny=Infinity,mxy=-Infinity;
+  for(const L of sv.order){ const c=sv.corners[L]; if(!c)continue; mnx=Math.min(mnx,c.x);mxx=Math.max(mxx,c.x);mny=Math.min(mny,c.y);mxy=Math.max(mxy,c.y); }
+  for(const pt of pts){ mnx=Math.min(mnx,pt.x);mxx=Math.max(mxx,pt.x);mny=Math.min(mny,pt.y);mxy=Math.max(mxy,pt.y); }
+  const pad=3.5, vbW=Math.max((mxx-mnx)+2*pad,10), vbH=Math.max((mxy-mny)+2*pad,8);
+  let s='<svg viewBox="'+(mnx-pad).toFixed(2)+' '+(mny-pad).toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">';
+  const cp=sv.order.map(function(L){return sv.corners[L];}).filter(Boolean);
+  if(cp.length>1) s+='<polyline points="'+cp.map(function(c){return c.x.toFixed(2)+","+c.y.toFixed(2);}).join(" ")+'" fill="none" stroke="#2f6fb0" stroke-width="0.12"/>';
+  for(const pt of pts){ s+='<circle cx="'+pt.x.toFixed(2)+'" cy="'+pt.y.toFixed(2)+'" r="0.17" fill="#c0392b"/>'; s+='<text x="'+(pt.x+0.3).toFixed(2)+'" y="'+(pt.y+0.2).toFixed(2)+'" font-size="0.55" fill="#c0392b" font-weight="700">'+inFrac(pt.drop)+'\u2033\u2193</text>'; }
+  for(const L of sv.order){ const c=sv.corners[L]; if(!c)continue; s+='<circle cx="'+c.x.toFixed(2)+'" cy="'+c.y.toFixed(2)+'" r="0.26" fill="#2f6fb0"/>'; s+='<text x="'+c.x.toFixed(2)+'" y="'+(c.y-0.5).toFixed(2)+'" font-size="0.75" text-anchor="middle" fill="#2f6fb0" font-weight="700">'+L+'</text>'; s+='<text x="'+c.x.toFixed(2)+'" y="'+(c.y+0.85).toFixed(2)+'" font-size="0.5" text-anchor="middle" fill="#555">'+((cz[L]||0)===0?"datum":inFrac(-(cz[L]||0))+'\u2033\u2193')+'</text>'; }
+  return s;
+}
 function buildNotchDetail(p,G){
   if(!p.notchEnable || !(p.notchWidth>0) || !(p.notchDepth>0)) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Turn on \u201cNotch the deck for an existing step\u201d to see the notch detail.</div>';
   const tl=G.pieces[0]; if(!tl || !tl.top) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">The notch detail needs a top landing.</div>';
@@ -603,8 +651,8 @@ function buildSVG(p,g){
       const cax=mx+ux*D, cay=my+uy*D, lab=esc(ob.label), lw=lab.length*0.264+0.5;
       s+='<line x1="'+(mx+ux*0.25).toFixed(2)+'" y1="'+(my+uy*0.25).toFixed(2)+'" x2="'+cax.toFixed(2)+'" y2="'+cay.toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
       let ta,bx0; if(dv[0]<0){ta="end";bx0=cax-lw+0.25;}else if(dv[0]>0){ta="start";bx0=cax-0.25;}else{ta="middle";bx0=cax-lw/2;}
-      s+='<rect x="'+bx0.toFixed(2)+'" y="'+(cay-0.31).toFixed(2)+'" width="'+lw.toFixed(2)+'" height="0.62" rx="0.1" fill="#fff" fill-opacity="0.93" stroke="#8a4b2b" stroke-width="0.05"/>';
-      s+='<text x="'+cax.toFixed(2)+'" y="'+(cay+0.13).toFixed(2)+'" font-size="0.4" text-anchor="'+ta+'" fill="#8a4b2b" font-weight="700">'+lab+'</text>';
+      s+='<rect x="'+bx0.toFixed(2)+'" y="'+(cay-0.31).toFixed(2)+'" width="'+lw.toFixed(2)+'" height="0.62" rx="0.1" fill="#c0392b" stroke="#7a2518" stroke-width="0.05"/>';
+      s+='<text x="'+cax.toFixed(2)+'" y="'+(cay+0.13).toFixed(2)+'" font-size="0.4" text-anchor="'+ta+'" fill="#fff" font-weight="700">'+lab+'</text>';
     }
   }
   if(notesLines){
@@ -641,7 +689,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["client","projectType","notes","obstacles","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","groundDrop"];
+const ids=["client","projectType","notes","obstacles","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","groundDrop","survey","surveyDatum"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -664,7 +712,7 @@ function readParams(){
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(num("topW")||60),topD:(num("topD")||60),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,surveyDatum:getVal("surveyDatum"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
@@ -769,6 +817,8 @@ function render(){
   if(p.showProfile) document.getElementById("profilePaper").innerHTML=buildProfile(p,g);
   document.getElementById("notchWrap").style.display=p.notchEnable?"":"none";
   if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,g);
+  document.getElementById("surveyWrap").style.display=(p.survey&&p.survey.trim())?"":"none";
+  if(p.survey&&p.survey.trim()) document.getElementById("surveyPaper").innerHTML=buildSurveyMap(p);
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
   document.getElementById("caption").innerHTML=
     (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(g.maxGroupRise>30?'<b style="color:#c0392b">\u26a0 '+inFrac(g.maxGroupRise)+'" continuous rise, no landing \u2014 30" max, add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
@@ -780,7 +830,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.13",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.14",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
