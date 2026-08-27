@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.14</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.15</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -155,7 +155,7 @@
       <label class="checkrow"><input type="checkbox" id="showHandrails"> Show handrails</label>
       <div class="only-handrails notchgroup">
         <div class="row2">
-          <label class="field"><span class="lab">Handrail height <span class="u">(in)</span></span><input id="handrailHeight" type="number" step="1" value="36"></label>
+          <label class="field"><span class="lab">Handrail post height <span class="u">(in, above deck)</span></span><input id="handrailHeight" type="number" step="1" value="35"></label>
           <label class="field"><span class="lab">Max post spacing <span class="u">(in)</span></span><input id="postSpacingMax" type="number" step="1" value="72"></label>
         </div>
       </div>
@@ -236,7 +236,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.14</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.15</footer>
 
 <script>
 "use strict";
@@ -394,7 +394,7 @@ function buildNotchDetail(p,G){
   s+='</svg>'; return s;
 }
 function buildProfile(p,G){
-  const F=12, deck=p.deckHeight, hh=(p.handrailHeight>0?p.handrailHeight:36);
+  const F=12, deck=p.deckHeight, hh=(p.handrailHeight>0?p.handrailHeight:35);
   const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1, slabMax=Math.max(framR,framT)+deckingT;
   let totalRamps=0; for(const pc of G.pieces) if(pc.ramp) totalRamps++;
   if(totalRamps<1) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the profile.</div>';
@@ -424,7 +424,7 @@ function buildProfile(p,G){
   for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=Math.max(1,Math.ceil(len/postSp));
     for(let i=0;i<=n;i++){ const t=i/n, xx=sg.x0+(sg.x1-sg.x0)*t, zs=sg.zx0+(sg.zx1-sg.zx0)*t, top=zs+hh;
       s+='<rect x="'+(X(xx)-PW/2).toFixed(3)+'" y="'+Y(top).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(Y(groundZ(xx))-Y(top)).toFixed(3)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; }
-    for(const rh of [hh, hh*0.5, 3]){ const th=(rh===hh?1.5:3.5)/F;
+    for(const rh of [hh, 21, 3]){ const th=(rh===hh?1.5:3.5)/F;
       s+='<line x1="'+X(sg.x0).toFixed(3)+'" y1="'+Y(sg.zx0+rh).toFixed(3)+'" x2="'+X(sg.x1).toFixed(3)+'" y2="'+Y(sg.zx1+rh).toFixed(3)+'" stroke="#7a5a2e" stroke-width="'+th+'" stroke-linecap="round"/>'; }
   }
   // dims
@@ -432,7 +432,7 @@ function buildProfile(p,G){
   s+='<text x="'+(vbX+0.7).toFixed(2)+'" y="'+(Y(deck/2)+0.15).toFixed(2)+'" font-size="0.42" text-anchor="end" fill="#333">'+esc(dimText(deck))+'</text>';
   s+='<line x1="'+X(mnX).toFixed(3)+'" y1="1.5" x2="'+X(mxX).toFixed(3)+'" y2="1.5" stroke="#555" stroke-width="0.03"/>';
   s+='<text x="'+X((mnX+mxX)/2).toFixed(2)+'" y="1.95" font-size="0.5" text-anchor="middle" fill="#333">'+esc(dimText(mxX-mnX))+'</text>';
-  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">2x6 framing + 1" decking'+(p.topOnExistingDeck?", top landing 2x4 on existing structure":"")+"  \u00b7  posts 4x4, rails 2x4  \u00b7  side view of the plan"+(terr?"  \u00b7  ground falls "+esc(dimText(Math.abs(Gd)))+" over the run":"")+"</text>";
+  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">2x6 framing + 5/4 decking'+(p.topOnExistingDeck?", top landing 2x4 on existing structure":"")+"  \u00b7  posts 4x4 (35\" above deck), top rail 5/4 on 2x4, mid rail 2x4 (top 21\"), toe rail 2x4 (1.5\" above)  \u00b7  side view of the plan"+(terr?"  \u00b7  ground falls "+esc(dimText(Math.abs(Gd)))+" over the run":"")+"</text>";
   s+='</svg>'; return s;
 }
 function wrapNotes(txt, maxChars){
@@ -758,10 +758,13 @@ function buildFreecad(p,g){
   L.push("REST_LANDING_D = "+q(p.restD));
   L.push("REST_AFTER     = ["+p.restAfter.join(", ")+"]");
   if(p.layout==="switchback"){ L.push("GAP            = "+q(p.gap)); L.push("TURN_DEPTH     = "+q(p.turnDepth)); }
-  L.push("HANDRAIL_H     = "+q(p.handrailHeight||36));
+  L.push("POST_H_DECK    = "+q(p.handrailHeight||35)+"   # 4x4 post top above deck (36 above frame)");
+  L.push('TOP_RAIL       = "5/4 decking on 2x4"   # 2x4 along post tops, 5/4 board on top');
+  L.push("MID_RAIL_TOP   = 21    # 2x4, top 21 in above deck");
+  L.push("TOE_RAIL_ABOVE = 1.5   # 2x4, 1.5 in above deck");
   L.push("POST_SPACING   = "+q(p.postSpacingMax||72));
   L.push('FRAMING        = "2x6"');
-  L.push("DECKING        = 1.0");
+  L.push("DECKING        = 1.0   # 5/4 deck board");
   L.push("TOP_ON_DECK    = "+(p.topOnExistingDeck?"True":"False"));
   L.push("TAPER_LAST     = "+(p.taper?"True":"False")+"   # last ramp tapers to grade (taper 0)");
   L.push('DECK_REF_SIDE  = "'+p.deckRefSide+'"');
@@ -830,7 +833,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.14",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.15",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
