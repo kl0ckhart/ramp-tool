@@ -28,7 +28,7 @@
   button.sec{font:600 13px system-ui;color:var(--blue);background:#fff;border:1px solid #cdd6df;padding:8px 12px;border-radius:8px;cursor:pointer}
   button.sec:hover{background:#f2f6fa;border-color:var(--blue2)}
   .field{display:block;margin-bottom:13px}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px} .row2 .field .lab{min-height:2.6em;line-height:1.3}
   .field .lab{display:block;font-size:13px;color:#414653;margin-bottom:4px} .field .u{color:var(--muted);font-weight:400}
   .field input,.field select,.field textarea{width:100%;padding:10px 11px;font-size:16px;color:var(--ink);background:#fdfdfc;border:1px solid #d8d4ca;border-radius:8px;font-family:inherit;}
   .field textarea{resize:vertical;min-height:64px;line-height:1.35}
@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.16</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.50</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -71,7 +71,7 @@
       </div>
       <label class="field"><span class="lab">Client name</span><input id="client" type="text" placeholder="e.g. Williams" autocomplete="off"></label>
       <label class="field"><span class="lab">Project type</span><input id="projectType" type="text" value="Ramp Project"></label>
-      <label class="checkrow"><input type="checkbox" id="showNorth" checked> Show north arrow</label>
+      <label class="checkrow"><input type="checkbox" id="showNorth"> Show north arrow</label>
       <label class="field only-north"><span class="lab">North bearing <span class="u">(°, 0 = up)</span></span><input id="northBearing" type="number" step="5" value="0"></label>
 
       <div class="sechead">Top deck</div>
@@ -81,11 +81,17 @@
         <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
         <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
       </div>
-      <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference (2' × 12')</label>
+      <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
+      <div class="row2 only-deckref">
+        <label class="field"><span class="lab">Structure length <span class="u">(ft)</span></span><input id="existingLen" type="number" step="0.5" value="12"></label>
+        <label class="field"><span class="lab">Structure depth <span class="u">(ft)</span></span><input id="existingDepth" type="number" step="0.5" value="2"></label>
+      </div>
+      <label class="checkrow only-deckref"><input type="checkbox" id="attachExisting"> Ramp attaches to the existing structure (use it as the top)</label>
       <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
       <div class="only-door notchgroup">
+        <label class="checkrow"><input type="checkbox" id="doorInside"> Door swings in (toward the structure)</label>
         <label class="field"><span class="lab">Door width <span class="u">(in)</span></span><input id="doorWidth" type="number" step="1" value="36"></label>
         <label class="field"><span class="lab">Hinge side</span><select id="doorHinge"><option value="left">Left hinge (facing door)</option><option value="right">Right hinge (facing door)</option></select></label>
         <label class="field"><span class="lab">Door offset <span class="u">(in)</span></span><input id="doorOffset" type="number" step="1" value="0"><span class="hint">slide the door along the deck edge (+ / −)</span></label>
@@ -114,12 +120,13 @@
 
       <div class="sechead">Ramp</div>
       <label class="field"><span class="lab">Layout</span>
-        <select id="layout"><option value="straight">Straight run</option><option value="switchback">Switchback (hairpin)</option></select></label>
+        <select id="layout"><option value="compound">Compound (segment list)</option><option value="straight">Straight run</option><option value="switchback">Switchback (hairpin)</option></select></label>
+      <label class="field only-compound"><span class="lab">Segments</span><textarea id="segments" rows="9" placeholder="ramp 8 down&#10;landing 5x5&#10;turn right&#10;ramp 8 down&#10;ramp 8 straight&#10;ramp 8 down&#10;hairpin 4x8&#10;ramp 8 down&#10;ramp 8 taper"></textarea><span class="hint">one per line: ramp &lt;ft&gt; &lt;down|straight|taper&gt; [left|right|center] &middot; landing &lt;ft&gt;x&lt;ft&gt; [left|right|center] &middot; turn &lt;left|right&gt; &middot; hairpin &lt;ft&gt;x&lt;ft&gt;. Ramps default flush-left; add right or center to change. Add norail to a ramp or landing to skip its handrails.</span></label>
       <label class="field only-straight"><span class="lab">Ramp alignment</span>
         <select id="align"><option value="top">Flush to top edge</option><option value="bottom" selected>Flush to bottom edge</option><option value="center">Centered</option></select>
         <span class="hint">which landing edge the ramps line up with by default</span></label>
       <label class="field"><span class="lab">First ramp comes off the</span>
-        <select id="startSide"><option value="right">Right side of the top landing</option><option value="left">Left side of the top landing</option></select>
+        <select id="startSide"><option value="right">Right of the top landing</option><option value="left">Left of the top landing</option><option value="bottom">Below the top landing</option><option value="top">Above the top landing</option></select>
         <span class="hint">flips the whole run to the other side — everything stays connected</span></label>
       <label class="field only-uniform"><span class="lab">Design to a target slope</span>
         <select id="targetSlope"><option value="manual">Set run length manually</option><option value="12">1:12 (accessible)</option><option value="10">1:10</option><option value="8">1:8 (steepest safe)</option></select>
@@ -158,21 +165,24 @@
           <label class="field"><span class="lab">Handrail post height <span class="u">(in, above deck)</span></span><input id="handrailHeight" type="number" step="1" value="35"></label>
           <label class="field"><span class="lab">Max post spacing <span class="u">(in)</span></span><input id="postSpacingMax" type="number" step="1" value="72"></label>
         </div>
+        <label class="checkrow"><input type="checkbox" id="railTopLanding" checked> Handrails on the top landing</label>
       </div>
 
       <div class="sechead">Drawing</div>
       <label class="checkrow"><input type="checkbox" id="showCorners"> Show corner coordinates</label>
       <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (side view)</label>
       <div class="sechead">Terrain</div>
-      <label class="field"><span class="lab">Detailed ground survey</span><textarea id="survey" rows="6" placeholder="A: 0, 0&#10;B: 18, 0&#10;A>B  18: 4&#10;C: 24, 8&#10;B>C  10: 12"></textarea></label>
-      <label class="checkrow"><input type="checkbox" id="surveyDatum"> Drops measured from the datum (A). Uncheck = re-leveled per leg.</label>
-      <details style="margin:2px 0 8px"><summary class="hint" style="cursor:pointer;font-weight:700">How to enter a survey</summary>
-        <div class="hint" style="margin-top:6px;line-height:1.55">
-          <b>1. Corners</b> &mdash; mark every outside corner of the path (paint/flags). Enter each as <b>letter: x, y</b> in feet from the start; A is the datum at 0, 0:<br>
-          &nbsp;&nbsp;A: 0, 0<br>&nbsp;&nbsp;B: 18, 0<br>&nbsp;&nbsp;C: 24, 8<br>
-          <b>2. Drops</b> &mdash; run a level string along each leg, read the low spots. Enter as <b>leg&nbsp;&nbsp;distance: drop</b> (feet along that leg : inches down). Several per leg, comma-separated:<br>
-          &nbsp;&nbsp;A&gt;B&nbsp;&nbsp;12: 3, 18: 4<br>&nbsp;&nbsp;B&gt;C&nbsp;&nbsp;10: 12<br>
-          <b>3. Datum toggle</b> &mdash; <b>check</b> it if you kept one reference for the whole site (water level from A); <b>uncheck</b> it if you re-leveled the string at each corner (the app chains the legs). Datum is more accurate on long runs; per-leg is easier in the field.
+            <label class="field"><span class="lab">Ground survey</span><textarea id="survey" rows="6" placeholder="A to B: 4&#10;B to C: 12&#10;C to D: 2"></textarea></label>
+      <details style="margin:2px 0 8px"><summary class="hint" style="cursor:pointer;font-weight:700">How to enter the survey</summary>
+        <div class="hint" style="margin-top:6px;line-height:1.6">
+          Type <b>one line for each section</b> of the path:<br>
+          &nbsp;&nbsp;<b>A to B: 4</b> &mdash; from A to B, the ground drops 4 inches<br>
+          &nbsp;&nbsp;<b>B to C: 12</b><br>
+          &nbsp;&nbsp;<b>C to D: 2</b><br>
+          Use as many points as you need (A, B, C, D, E&hellip;).<br><br>
+          <b>To see where the points are</b>, add a position line for each &mdash; feet from the ramp start (0, 0):<br>
+          &nbsp;&nbsp;<b>A: 0, 0</b><br>&nbsp;&nbsp;<b>B: 18, 0</b><br>&nbsp;&nbsp;<b>C: 24, 8</b><br>
+          Any point with a position is drawn, labeled, on the main plan &mdash; and the side view uses those spacings automatically.
         </div>
       </details>
       <label class="field only-straight"><span class="lab">Ground fall over the run <span class="u">(in)</span></span><input id="groundDrop" type="number" step="0.25" value="0">
@@ -181,8 +191,8 @@
       <div class="sechead">Notes</div>
       <label class="field"><span class="lab">Notes on the drawing</span>
         <textarea id="notes" rows="4" placeholder="Free text &mdash; appears in a Notes box on the drawing.&#10;e.g. Verify deck height on site.&#10;Existing tree at NE corner."></textarea>
-        <span class="hint">Shown in a Notes box in the lower-right of the drawing.</span></label>
-      <label class="field"><span class="lab">Obstacles</span><textarea id="obstacles" rows="3" placeholder="One per line:   x, y: label&#10;e.g.   6, 2: 4x4 post&#10;with direction:   6, 2, above-right: 4x4 post"></textarea><span class="hint">feet from the top-left of the drawing. Optional callout direction after the coordinates: above, below, left, right, above-left, above-right, below-left, below-right &mdash; e.g. 6, 2, above-right: 4x4 post.</span></label>
+        <span class="hint">Shown in a Notes box in the top-left of the drawing.</span></label>
+      <label class="field"><span class="lab">Obstacles</span><textarea id="obstacles" rows="3" placeholder="One per line:   x, y: label&#10;e.g.   6, 2: 4x4 post&#10;with direction:   6, 2, above-right: 4x4 post"></textarea><span class="hint">feet from the ramp start (0, 0 = top landing corner). Optional callout direction after the coordinates: above, below, left, right, above-left, above-right, below-left, below-right &mdash; e.g. 6, 2, above-right: 4x4 post.</span></label>
 
       <div class="sechead">FreeCAD export</div>
       <p class="hint" style="margin:0 0 8px">Paste these into your FreeCAD macro's parameter block. Updates live as you edit.</p>
@@ -231,12 +241,12 @@
         <div class="paper" id="notchPaper"></div>
       </div>
       <div id="surveyWrap" style="margin-top:16px">
-        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Ground survey &mdash; side profile (legs stacked)</h2>
+        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Terrain &mdash; side view (ramp on the surveyed ground)</h2>
         <div class="paper" id="surveyPaper"></div>
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.16</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.50</footer>
 
 <script>
 "use strict";
@@ -256,12 +266,47 @@ function slopeClass(r){
 }
 function finalize(pieces,deckHeight,RUN,n){
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity,sum=0,maxRun=0;
-  for(const pc of pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);if(pc.ramp){const r=pc.x1-pc.x0;sum+=r;if(r>maxRun)maxRun=r;}}
+  for(const pc of pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);if(pc.ramp){const r=(pc.run||(pc.x1-pc.x0));sum+=r;if(r>maxRun)maxRun=r;}}
   const slopeRatio = sum>0 ? sum/deckHeight : RUN/(deckHeight/n);
   const rise = sum>0 ? (maxRun/sum)*deckHeight : deckHeight/n;
-  let maxGroupRun=0,gr=0; for(const pc of pieces){ if(pc.ramp){gr+=(pc.x1-pc.x0);} else if(!pc.ref){if(gr>maxGroupRun)maxGroupRun=gr;gr=0;} } if(gr>maxGroupRun)maxGroupRun=gr;
-  const maxGroupRise = sum>0 ? (maxGroupRun/sum)*deckHeight : 0;
+  let maxGroupRun=0,gr=0; for(const pc of pieces){ if(pc.ramp){gr+=(pc.run||(pc.x1-pc.x0));} else if(!pc.ref){if(gr>maxGroupRun)maxGroupRun=gr;gr=0;} } if(gr>maxGroupRun)maxGroupRun=gr;
+  const maxGroupRise = maxGroupRun/12;
   return{pieces,rise,slopeRatio,totalRamps:n,totalRampRun:sum,footW:mxX-mnX,footH:mxY-mnY,maxGroupRise};
+}
+function parseSegments(txt){
+  const out=[];
+  for(const raw of String(txt).split(String.fromCharCode(10))){
+    const line=raw.trim().toLowerCase(); if(!line) continue; let m;
+    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; else if(/left/.test(r))al="left"; out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,norail:/no\s*rails?/.test(r)}); }
+    else if(m=line.match(/^landing\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:parseFloat(m[1]),across:parseFloat(m[2]),align:al,norail:/no\s*rails?/.test(r)}); }
+    else if(m=line.match(/^turn\s+(left|right)/)) out.push({t:"turn",dir:m[1]});
+    else if(m=line.match(/^hairpin\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/)) out.push({t:"hairpin",along:parseFloat(m[1]),across:parseFloat(m[2])});
+  }
+  return out;
+}
+function compoundGeometry(p){
+  const segs=parseSegments(p.segments||""), W=p.width||40, deck=p.deckHeight;
+  const rects=function(px,py,hx,hy,L,lo,hi){ const ppx=-hy,ppy=hx;
+    const cs=[[px-ppx*lo,py-ppy*lo],[px+hx*L-ppx*lo,py+hy*L-ppy*lo],[px+hx*L+ppx*hi,py+hy*L+ppy*hi],[px+ppx*hi,py+ppy*hi]];
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9; for(const c of cs){x0=Math.min(x0,c[0]);x1=Math.max(x1,c[0]);y0=Math.min(y0,c[1]);y1=Math.max(y1,c[1]);}
+    return {x0:x0,x1:x1,y0:y0,y1:y1}; };
+  const rect=function(px,py,hx,hy,L,Wd){ return rects(px,py,hx,hy,L,Wd/2,Wd/2); };
+  const edgeC=function(pc,hx,hy){ if(hx>0)return[pc.x1,(pc.y0+pc.y1)/2]; if(hx<0)return[pc.x0,(pc.y0+pc.y1)/2]; if(hy>0)return[(pc.x0+pc.x1)/2,pc.y1]; return[(pc.x0+pc.x1)/2,pc.y0]; };
+  let rampN=0; for(const sg of segs) if(sg.t==="ramp") rampN++;
+  const pieces=[]; let hx=1,hy=0,px=0,py=0,rampNo=0,dev=0,noAlign=false,fdir=1,fx=0;
+  const topD=(p.topD>0?p.topD:60), topW=(p.topW>0?p.topW:60);
+  if(p.hasTopLanding!==false){ pieces.push({name:(p.attachExisting?"Existing structure":"Top landing"),x0:0,x1:topD,y0:0,y1:topW,ramp:false,top:true,dev0:0,dev1:topD,fx0:0,fx1:topD}); px=topD; py=topW/2; dev=topD; fx=topD; }
+  for(const sg of segs){
+    if(sg.t==="ramp"){ rampNo++; const L=sg.len*12;
+      { const prev=pieces[pieces.length-1]; if(prev && sg.align!=="center" && !noAlign){ const ppx=-hy,ppy=hx; const ps=[prev.x0*ppx+prev.y0*ppy,prev.x1*ppx+prev.y0*ppy,prev.x0*ppx+prev.y1*ppy,prev.x1*ppx+prev.y1*ppy]; const emin=Math.min.apply(null,ps),emax=Math.max.apply(null,ps),half=((emax-emin)-W)/2; const shift=(sg.align==="right")?half:-half; px+=shift*ppx; py+=shift*ppy; } noAlign=false; }
+      const pc=rect(px,py,hx,hy,L,W); pc.ramp=true; pc.dir=(hx+hy>=0?1:-1); pc.ddx=hx; pc.ddy=hy; pc.run=L; pc.cut=sg.cut; pc.norail=!!sg.norail; pc.name="Ramp "+rampNo; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
+    else if(sg.t==="landing"){ const L=sg.along*12, A=sg.across*12; { const prev=pieces[pieces.length-1]; if(prev && sg.align!=="center" && !noAlign){ const ppx=-hy,ppy=hx; const ps=[prev.x0*ppx+prev.y0*ppy,prev.x1*ppx+prev.y0*ppy,prev.x0*ppx+prev.y1*ppy,prev.x1*ppx+prev.y1*ppy]; const emin=Math.min.apply(null,ps),emax=Math.max.apply(null,ps),half=((emax-emin)-A)/2; const shift=(sg.align==="right")?half:-half; px+=shift*ppx; py+=shift*ppy; } noAlign=false; } const pc=rect(px,py,hx,hy,L,A); pc.name="Landing"; pc.norail=!!sg.norail; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
+    else if(sg.t==="turn"){ const prev=pieces[pieces.length-1]||{x0:px,x1:px,y0:py,y1:py}; const nh=(sg.dir==="right")?[-hy,hx]:[hy,-hx]; hx=nh[0];hy=nh[1]; const ec=edgeC(prev,hx,hy); px=ec[0]; py=ec[1]; }
+    else if(sg.t==="hairpin"){ const depth=sg.along*12, across=sg.across*12, pitch=across-W;
+      const pc=rects(px,py,hx,hy,depth,W/2,across-W/2); pc.name="Hairpin"; pc.dev0=dev; dev+=depth; pc.dev1=dev; pc.fx0=fx; fx+=fdir*depth; pc.fx1=fx; fdir=-fdir; pieces.push(pc);
+      px+=(-hy)*pitch; py+=hx*pitch; hx=-hx; hy=-hy; noAlign=true; }
+  }
+  return finalize(pieces, deck, W, rampN||1);
 }
 function straightGeometry(p){
   const rise=p.deckHeight/p.runs, hasTL=p.hasTopLanding, uni=p.sameSize;
@@ -315,15 +360,21 @@ function switchbackGeometry(p){
 }
 
 function parseSurvey(txt){
-  const corners={}, order=[], legs=[];
+  const legs=[], order=[], seen={}, pos={};
   for(const raw of String(txt).split(String.fromCharCode(10))){
     const line=raw.trim(); if(!line) continue;
-    let m=line.match(/^([A-Za-z]+)\s*:\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
-    if(m){ const L=m[1].toUpperCase(); if(!(L in corners))order.push(L); corners[L]={x:parseFloat(m[2]),y:parseFloat(m[3])}; continue; }
-    m=line.match(/^([A-Za-z]+)\s*>\s*([A-Za-z]+)\s+(.+)$/);
-    if(m){ const reads=[]; for(const pr of m[3].split(",")){ const q=pr.trim().match(/^(-?\d+\.?\d*)\s*:\s*(-?\d+\.?\d*)$/); if(q)reads.push({d:parseFloat(q[1]),drop:parseFloat(q[2])}); } if(reads.length) legs.push({from:m[1].toUpperCase(),to:m[2].toUpperCase(),readings:reads}); }
+    let m=line.match(/^([A-Za-z]+)\s*:\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*$/);
+    if(m){ const L=m[1].toUpperCase(); pos[L]={x:parseFloat(m[2]),y:parseFloat(m[3])}; if(!seen[L]){order.push(L);seen[L]=1;} continue; }
+    m=line.match(/^([A-Za-z]+)\s*(?:to|>|-)\s*([A-Za-z]+)\s*:\s*(-?\d+\.?\d*)(?:\s*,\s*(-?\d+\.?\d*))?/i);
+    if(!m) continue;
+    const from=m[1].toUpperCase(), to=m[2].toUpperCase();
+    let dist=null, drop;
+    if(m[4]!=null){ dist=parseFloat(m[3]); drop=parseFloat(m[4]); } else { drop=parseFloat(m[3]); }
+    if(!seen[from]){order.push(from);seen[from]=1;}
+    if(!seen[to]){order.push(to);seen[to]=1;}
+    legs.push({from:from,to:to,drop:drop,dist:dist});
   }
-  return {corners,order,legs};
+  return {legs:legs,order:order,pos:pos};
 }
 function surveyPoints(sv,fromDatum){
   const cz={}; if(sv.order.length) cz[sv.order[0]]=0;
@@ -334,29 +385,101 @@ function surveyPoints(sv,fromDatum){
   return {pts,cz};
 }
 function buildSurveyMap(p){
-  const sv=parseSurvey(p.survey); if(!sv.legs.length) return '<svg viewBox="0 0 26 5" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace"><text x="0.4" y="2.7" font-size="0.9" fill="#999">Enter a survey (corners + drops) to see the side profile.</text></svg>';
-  const r=surveyPoints(sv,p.surveyDatum), cz=r.cz, EX=4;
-  const rows=[]; let maxLen=1, maxDropFt=0.6;
-  for(const leg of sv.legs){ const A=sv.corners[leg.from],B=sv.corners[leg.to]; if(!A||!B)continue;
-    const legLen=Math.hypot(B.x-A.x,B.y-A.y)||1, ref=p.surveyDatum?0:(cz[leg.from]||0), s0=(cz[leg.from]||0);
-    const pts=[{d:0,z:s0}]; for(const rd of leg.readings) pts.push({d:rd.d,z:ref-rd.drop,drop:rd.drop});
-    if(Math.abs(pts[pts.length-1].d-legLen)>0.5) pts.push({d:legLen,z:(cz[leg.to]!=null?cz[leg.to]:ref)});
-    rows.push({name:leg.from+"\u2192"+leg.to,from:leg.from,to:leg.to,len:legLen,pts:pts,s0:s0,e0:(cz[leg.to]||0)});
-    maxLen=Math.max(maxLen,legLen); for(const pt of pts) maxDropFt=Math.max(maxDropFt,(s0-pt.z)*EX/12);
+  const sv=parseSurvey(p.survey); if(!sv.legs.length) return '<svg viewBox="0 0 26 5" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace"><text x="0.4" y="2.7" font-size="0.9" fill="#999">Enter the survey (A to B: 4 ...) to see the terrain profiles.</text></svg>';
+  const cz={}; if(sv.order.length) cz[sv.order[0]]=0;
+  for(const leg of sv.legs){ if(cz[leg.from]==null)cz[leg.from]=0; cz[leg.to]=cz[leg.from]-leg.drop; }
+  const EX=4, deckH=(p.deckHeight||0), Wft=(p.width||40)/12;
+  let dist=0; const gp=[{d:0,z:(cz[sv.order[0]]||0)}]; let footZ=0;
+  for(const leg of sv.legs){ const len=(leg.dist>0?leg.dist:10); dist+=len; gp.push({d:dist,z:(cz[leg.to]||0)}); footZ=(cz[leg.to]||0); }
+  const pathLen=dist||1;
+  const gZ=function(d){ for(let i=1;i<gp.length;i++){ if(d<=gp[i].d){ const a=gp[i-1],b=gp[i],t=(d-a.d)/((b.d-a.d)||1); return a.z+(b.z-a.z)*t; } } return gp[gp.length-1].z; };
+  const rampZ=function(d){ return deckH+(footZ-deckH)*(d/pathLen); };
+  let zTop=deckH+2, zBot=Math.min(footZ, gp.reduce(function(m,g){return Math.min(m,g.z);},0))-2;
+  const zft=function(z){ return (zTop-z)*EX/12; }, totH=zft(zBot);
+  const mL=6, sideW=pathLen, sideTop=1.6, SX=function(d){return mL+d;}, SY=function(z){return sideTop+zft(z);};
+  let s='<svg viewBox="0 0 '+(mL+sideW+3).toFixed(1)+' '+(sideTop+totH+totH+9).toFixed(1)+'" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">';
+  s+='<text x="0.3" y="0.95" font-size="0.62" fill="#777">SIDE VIEW \u00b7 vertical exaggerated '+EX+'\u00d7 \u00b7 ramp on the surveyed ground</text>';
+  s+='<polygon points="'+SX(0).toFixed(2)+","+(sideTop+totH).toFixed(2)+" "+gp.map(function(g){return SX(g.d).toFixed(2)+","+SY(g.z).toFixed(2);}).join(" ")+" "+SX(pathLen).toFixed(2)+","+(sideTop+totH).toFixed(2)+'" fill="#efe6d2" fill-opacity="0.6"/>';
+  s+='<polyline points="'+gp.map(function(g){return SX(g.d).toFixed(2)+","+SY(g.z).toFixed(2);}).join(" ")+'" fill="none" stroke="#7a6a3a" stroke-width="0.11"/>';
+  gp.forEach(function(g,i){ const L=sv.order[i]; if(!L)return; s+='<circle cx="'+SX(g.d).toFixed(2)+'" cy="'+SY(g.z).toFixed(2)+'" r="0.12" fill="#2f6fb0"/><text x="'+SX(g.d).toFixed(2)+'" y="'+(SY(g.z)+0.62).toFixed(2)+'" font-size="0.55" text-anchor="middle" fill="#2f6fb0" font-weight="700">'+L+((g.z||0)===0?"":" "+inFrac(-g.z)+'\u2033')+'</text>'; });
+  s+='<line x1="'+SX(0).toFixed(2)+'" y1="'+SY(deckH).toFixed(2)+'" x2="'+SX(pathLen).toFixed(2)+'" y2="'+SY(footZ).toFixed(2)+'" stroke="#2f6fb0" stroke-width="0.16"/>';
+  const nP=Math.max(2,Math.round(pathLen/4));
+  for(let i=0;i<=nP;i++){ const d=pathLen*i/nP, rz=rampZ(d), gz=gZ(d); if(rz-gz<0.5)continue; s+='<line x1="'+SX(d).toFixed(2)+'" y1="'+SY(rz).toFixed(2)+'" x2="'+SX(d).toFixed(2)+'" y2="'+SY(gz).toFixed(2)+'" stroke="#8a6a3a" stroke-width="0.07"/>'; }
+  s+='<text x="'+(mL-0.4).toFixed(2)+'" y="'+SY(deckH).toFixed(2)+'" font-size="0.6" text-anchor="end" fill="#2f6fb0" font-weight="700">deck</text>';
+  function endView(cx, topY, label, deckAboveGround){
+    let e='<text x="'+cx.toFixed(2)+'" y="'+(topY-0.4).toFixed(2)+'" font-size="0.62" text-anchor="middle" fill="#777">'+label+'</text>';
+    const half=Wft/2, gY=topY+(deckH*EX/12)+2.0, deckY=gY-(deckAboveGround*EX/12);
+    e+='<polygon points="'+(cx-half-1.5).toFixed(2)+","+gY.toFixed(2)+" "+(cx+half+1.5).toFixed(2)+","+gY.toFixed(2)+" "+(cx+half+1.5).toFixed(2)+","+(gY+1.1).toFixed(2)+" "+(cx-half-1.5).toFixed(2)+","+(gY+1.1).toFixed(2)+'" fill="#efe6d2" fill-opacity="0.6"/>';
+    e+='<line x1="'+(cx-half-1.5).toFixed(2)+'" y1="'+gY.toFixed(2)+'" x2="'+(cx+half+1.5).toFixed(2)+'" y2="'+gY.toFixed(2)+'" stroke="#7a6a3a" stroke-width="0.11"/>';
+    e+='<rect x="'+(cx-half).toFixed(2)+'" y="'+deckY.toFixed(2)+'" width="'+Wft.toFixed(2)+'" height="0.5" fill="#c9a86a" stroke="#8a6a3a" stroke-width="0.04"/>';
+    if(deckAboveGround>2){ for(const sx of [cx-half, cx+half]){ e+='<line x1="'+sx.toFixed(2)+'" y1="'+(deckY-35*EX/12).toFixed(2)+'" x2="'+sx.toFixed(2)+'" y2="'+gY.toFixed(2)+'" stroke="#8a6a3a" stroke-width="0.13"/>'; }
+      e+='<line x1="'+(cx-half).toFixed(2)+'" y1="'+(deckY-35*EX/12).toFixed(2)+'" x2="'+(cx+half).toFixed(2)+'" y2="'+(deckY-35*EX/12).toFixed(2)+'" stroke="#7a5a2e" stroke-width="0.1"/>'; }
+    e+='<text x="'+cx.toFixed(2)+'" y="'+(gY+0.95).toFixed(2)+'" font-size="0.48" text-anchor="middle" fill="#555">'+inFrac(Wft*12)+'\u2033 wide</text>';
+    return e;
   }
-  const padL=6, padR=4.5, bandH=maxDropFt+3.4, W=maxLen+padL+padR, H=rows.length*bandH+2.4;
-  let s='<svg viewBox="0 0 '+W.toFixed(1)+' '+H.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,monospace">';
-  s+='<text x="0.3" y="1.1" font-size="0.62" fill="#777">drop exaggerated '+EX+'\u00d7 vertically \u00b7 dashed line = level string from the leg start</text>';
-  rows.forEach(function(row,k){ const baseY=2.3+k*bandH, X=function(d){return padL+d;}, Y=function(z){return baseY+(row.s0-z)*EX/12;};
-    s+='<line x1="'+padL.toFixed(2)+'" y1="'+baseY.toFixed(2)+'" x2="'+(padL+row.len).toFixed(2)+'" y2="'+baseY.toFixed(2)+'" stroke="#bbb" stroke-width="0.04" stroke-dasharray="0.35 0.25"/>';
-    s+='<polyline points="'+row.pts.map(function(pt){return X(pt.d).toFixed(2)+","+Y(pt.z).toFixed(2);}).join(" ")+'" fill="none" stroke="#7a6a3a" stroke-width="0.11"/>';
-    s+='<text x="'+(padL-0.4).toFixed(2)+'" y="'+(baseY+0.15).toFixed(2)+'" font-size="0.75" text-anchor="end" fill="#2f6fb0" font-weight="700">'+row.name+'</text>';
-    s+='<text x="'+(padL-0.4).toFixed(2)+'" y="'+(baseY+0.95).toFixed(2)+'" font-size="0.5" text-anchor="end" fill="#666">'+row.len.toFixed(0)+' ft leg</text>';
-    s+='<circle cx="'+X(0).toFixed(2)+'" cy="'+Y(row.s0).toFixed(2)+'" r="0.13" fill="#2f6fb0"/><text x="'+X(0).toFixed(2)+'" y="'+(Y(row.s0)-0.28).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#2f6fb0" font-weight="700">'+row.from+'</text>';
-    s+='<circle cx="'+X(row.len).toFixed(2)+'" cy="'+Y(row.e0).toFixed(2)+'" r="0.13" fill="#2f6fb0"/><text x="'+(X(row.len)+0.35).toFixed(2)+'" y="'+(Y(row.e0)+0.2).toFixed(2)+'" font-size="0.6" text-anchor="start" fill="#2f6fb0" font-weight="700">'+row.to+' ('+((row.e0)===0?"0":inFrac(-row.e0)+'\u2033')+' below datum)</text>';
-    for(const pt of row.pts){ if(pt.drop==null)continue; s+='<circle cx="'+X(pt.d).toFixed(2)+'" cy="'+Y(pt.z).toFixed(2)+'" r="0.1" fill="#c0392b"/><text x="'+X(pt.d).toFixed(2)+'" y="'+(Y(pt.z)+0.55).toFixed(2)+'" font-size="0.52" text-anchor="middle" fill="#c0392b" font-weight="700">'+inFrac(pt.drop)+'\u2033</text>'; }
-  });
+  const endTop=sideTop+totH+3.5;
+  s+=endView(mL+sideW*0.28, endTop, "TOP END (looking in)", deckH);
+  s+=endView(mL+sideW*0.72, endTop, "FOOT END (looking in)", 0);
+  s+='</svg>';
   return s;
+}
+function buildTerrainProfile(p,G){
+  const F=12, deck=p.deckHeight, hh=(p.handrailHeight>0?p.handrailHeight:35);
+  const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1;
+  let totalRamps=0; for(const pc of G.pieces) if(pc.ramp) totalRamps++;
+  if(totalRamps<1) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the terrain side view.</div>';
+  const sv=parseSurvey(p.survey);
+  if(!sv.legs.length) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Enter a ground survey (e.g. A to B: 4) to see the terrain side view.</div>';
+  const cz={}; if(sv.order.length) cz[sv.order[0]]=0;
+  for(const leg of sv.legs){ if(cz[leg.from]==null)cz[leg.from]=0; cz[leg.to]=cz[leg.from]-leg.drop; }
+  let sd=0; const spts=[{d:0,z:(cz[sv.order[0]]||0)}];
+  for(const leg of sv.legs){ let len=(leg.dist>0?leg.dist:10); const pf=sv.pos[leg.from], pt=sv.pos[leg.to]; if(pf&&pt){ const dd=Math.hypot(pt.x-pf.x,pt.y-pf.y); if(dd>0)len=dd; } sd+=len; spts.push({d:sd,z:(cz[leg.to]||0)}); }
+  const surveyLen=sd||1;
+  const surveyElevAt=function(dd){ for(let i=1;i<spts.length;i++){ if(dd<=spts[i].d){ const a=spts[i-1],b=spts[i],t=(dd-a.d)/((b.d-a.d)||1); return a.z+(b.z-a.z)*t; } } return spts[spts.length-1].z; };
+  let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.x1-pc.x0);
+  const segs=[]; let z=deck;
+  for(const pc of G.pieces){ if(pc.ref) continue;
+    if(pc.ramp){ const run=pc.x1-pc.x0, ri=(totalRun>0?(run/totalRun)*deck:deck/totalRamps); const dir=pc.dir||1; let zx0,zx1; if(dir>0){zx0=z;zx1=z-ri;}else{zx1=z;zx0=z-ri;}
+      segs.push({x0:pc.x0,x1:pc.x1,zx0:zx0,zx1:zx1,ramp:true}); z-=ri;
+    } else { segs.push({x0:pc.x0,x1:pc.x1,zx0:z,zx1:z,top:!!pc.top}); } }
+  let mnX=1e9,mxX=-1e9; for(const sg of segs){ if(sg.x0<mnX)mnX=sg.x0; if(sg.x1>mxX)mxX=sg.x1; }
+  const X=x=>x/F, Y=zz=>-zz/F;
+  const groundZ=function(ax){ const t=(ax-mnX)/((mxX-mnX)||1); return surveyElevAt(t*surveyLen); };
+  const vbX=mnX/F-3.0, xR=mxX/F+2.0, vbW=xR-vbX;
+  let loG=0; for(let i=0;i<=48;i++){ const gz=groundZ(mnX+(mxX-mnX)*i/48); if(gz<loG)loG=gz; }
+  const vbY=Y(deck+hh)-1.4, yBot=Y(loG)+1.8, vbH=yBot-vbY;
+  let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.5).toFixed(2)+'cm" height="'+(vbH*0.5).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
+  for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  let gpoly=''; for(let i=0;i<=48;i++){ const ax=mnX+(mxX-mnX)*i/48; gpoly+=(i?' ':'')+X(ax).toFixed(3)+','+Y(groundZ(ax)).toFixed(3); }
+  s+='<polygon points="'+X(mnX).toFixed(3)+','+(vbY+vbH).toFixed(2)+' '+gpoly+' '+X(mxX).toFixed(3)+','+(vbY+vbH).toFixed(2)+'" fill="#efe6d2" fill-opacity="0.55"/>';
+  s+='<polyline points="'+gpoly+'" fill="none" stroke="#7a6a3a" stroke-width="0.06"/>';
+  s+='<text x="'+xR.toFixed(2)+'" y="'+(Y(groundZ(mxX))-0.15).toFixed(2)+'" font-size="0.35" text-anchor="end" fill="#7a6a3a">GROUND (survey)</text>';
+  for(let i=0;i<spts.length;i++){ const L=sv.order[i]; if(!L)continue; const ax=mnX+(spts[i].d/surveyLen)*(mxX-mnX), gx=X(ax), gy=Y(spts[i].z);
+    s+='<line x1="'+gx.toFixed(2)+'" y1="'+gy.toFixed(2)+'" x2="'+gx.toFixed(2)+'" y2="'+(gy+0.9).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
+    s+='<circle cx="'+gx.toFixed(2)+'" cy="'+gy.toFixed(2)+'" r="0.13" fill="#c0392b"/>';
+    s+='<text x="'+gx.toFixed(2)+'" y="'+(gy+1.35).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#c0392b" font-weight="700">'+L+'</text>'; }
+  let lastR=null; for(const sg of segs) if(sg.ramp) lastR=sg;
+  for(const sg of segs){ const sl_in=(sg.top?framT:framR)+deckingT, sl=sl_in/F;
+    if(p.taper && sg===lastR){
+      const lowAt1=(sg.zx1<=sg.zx0), footX=lowAt1?sg.x1:sg.x0, topX=lowAt1?sg.x0:sg.x1, footZ=lowAt1?sg.zx1:sg.zx0, topZ=lowAt1?sg.zx0:sg.zx1;
+      const ri=(topZ-footZ)||1, tt=Math.max(0,Math.min(1,1-sl_in/ri)), xT=topX+(footX-topX)*tt;
+      s+='<path d="M '+X(topX).toFixed(3)+' '+Y(topZ).toFixed(3)+' L '+X(footX).toFixed(3)+' '+Y(footZ).toFixed(3)+' L '+X(xT).toFixed(3)+' '+Y(groundZ(xT)).toFixed(3)+' L '+X(topX).toFixed(3)+' '+(Y(topZ)+sl).toFixed(3)+' Z" fill="#e3c690" fill-opacity="0.7" stroke="#b08d52" stroke-width="0.03"/>';
+    } else {
+      s+='<path d="M '+X(sg.x0).toFixed(3)+' '+Y(sg.zx0).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+Y(sg.zx1).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+(Y(sg.zx1)+sl).toFixed(3)+' L '+X(sg.x0).toFixed(3)+' '+(Y(sg.zx0)+sl).toFixed(3)+' Z" fill="#e3c690" fill-opacity="0.7" stroke="#b08d52" stroke-width="0.03"/>';
+    }
+  }
+  const postSp=(p.postSpacingMax>0?p.postSpacingMax:72), PW=3.5/F;
+  for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=Math.max(1,Math.ceil(len/postSp));
+    for(let i=0;i<=n;i++){ const t=i/n, xx=sg.x0+(sg.x1-sg.x0)*t, zs=sg.zx0+(sg.zx1-sg.zx0)*t, top=zs+hh;
+      s+='<rect x="'+(X(xx)-PW/2).toFixed(3)+'" y="'+Y(top).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(Y(groundZ(xx))-Y(top)).toFixed(3)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; }
+    for(const rh of [hh, 21, 3]){ const th=(rh===hh?1.5:3.5)/F;
+      s+='<line x1="'+X(sg.x0).toFixed(3)+'" y1="'+Y(sg.zx0+rh).toFixed(3)+'" x2="'+X(sg.x1).toFixed(3)+'" y2="'+Y(sg.zx1+rh).toFixed(3)+'" stroke="#7a5a2e" stroke-width="'+th+'" stroke-linecap="round"/>'; }
+  }
+  s+='<line x1="'+(vbX+1.0).toFixed(2)+'" y1="0" x2="'+(vbX+1.0).toFixed(2)+'" y2="'+Y(deck).toFixed(2)+'" stroke="#555" stroke-width="0.03"/>';
+  s+='<text x="'+(vbX+0.7).toFixed(2)+'" y="'+(Y(deck/2)+0.15).toFixed(2)+'" font-size="0.42" text-anchor="end" fill="#333">'+esc(dimText(deck))+'</text>';
+  s+='<text x="'+vbX.toFixed(2)+'" y="'+(vbY+vbH-0.3).toFixed(2)+'" font-size="0.32" text-anchor="start" fill="#6b7280">side view on the surveyed ground \u00b7 posts run to grade</text>';
+  s+='</svg>'; return s;
 }
 function buildNotchDetail(p,G){
   if(!p.notchEnable || !(p.notchWidth>0) || !(p.notchDepth>0)) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Turn on \u201cNotch the deck for an existing step\u201d to see the notch detail.</div>';
@@ -404,18 +527,51 @@ function buildNotchDetail(p,G){
   s+=hdim(0, a, nd+1.35, "from left edge  "+dimBoth(nx0-tl.x0));
   s+='</svg>'; return s;
 }
+function buildSideView(p,G){
+  const F=12, deck=p.deckHeight, TH=5.5;
+  let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.run||(pc.x1-pc.x0));
+  if(totalRun<=0) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the side view.</div>';
+  const rows=[]; let z=deck;
+  for(const pc of G.pieces){ if(pc.ref) continue;
+    if(pc.top){ rows.push({pc:pc,zh:deck,zl:deck}); continue; }
+    if(pc.ramp){ const run=(pc.run||(pc.x1-pc.x0)), ri=(totalRun>0?(run/totalRun)*deck:0); rows.push({pc:pc,zh:z,zl:z-ri}); z-=ri; }
+    else { rows.push({pc:pc,zh:z,zl:z}); } }
+  const X=y=>-y/F, Y=zz=>-zz/F;
+  let mnX=1e9,mxX=-1e9; for(const r of rows){ const a=X(r.pc.y0),b=X(r.pc.y1); mnX=Math.min(mnX,a,b); mxX=Math.max(mxX,a,b); }
+  const vbX=mnX-2.2, vbW=(mxX-mnX)+4.4, vbY=Y(deck)-1.6, vbH=(Y(0)-Y(deck))+3.4;
+  let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.5).toFixed(2)+'cm" height="'+(vbH*0.5).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
+  for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
+  s+='<line x1="'+vbX.toFixed(2)+'" y1="'+Y(0).toFixed(2)+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+Y(0).toFixed(2)+'" stroke="#7a6a3a" stroke-width="0.05"/>';
+  s+='<text x="'+(vbX+vbW-0.2).toFixed(2)+'" y="'+(Y(0)-0.15).toFixed(2)+'" font-size="0.34" text-anchor="end" fill="#7a6a3a" font-weight="700">GROUND</text>';
+  s+='<text x="'+(vbX+0.2).toFixed(2)+'" y="'+(Y(deck)+0.12).toFixed(2)+'" font-size="0.36" fill="#2b2f36">'+esc(dimText(deck))+'</text>';
+  for(const r of rows){ const pc=r.pc; const alongY=Math.abs(pc.ddy||0)>Math.abs(pc.ddx||0);
+    if(pc.top){ const a=X(pc.y0),b=X(pc.y1),xl=Math.min(a,b),w=Math.abs(b-a);
+      s+='<rect x="'+xl.toFixed(2)+'" y="'+Y(deck).toFixed(2)+'" width="'+w.toFixed(2)+'" height="'+(TH/F).toFixed(2)+'" fill="#c9ccd1" stroke="#9aa0a8" stroke-width="0.03"/>'; continue; }
+    if(alongY){ const yH=(pc.ddy>0?pc.y0:pc.y1), yL=(pc.ddy>0?pc.y1:pc.y0), xH=X(yH), xL=X(yL);
+      s+='<path d="M '+xH.toFixed(2)+' '+Y(r.zh).toFixed(2)+' L '+xL.toFixed(2)+' '+Y(r.zl).toFixed(2)+' L '+xL.toFixed(2)+' '+Y(r.zl-TH).toFixed(2)+' L '+xH.toFixed(2)+' '+Y(r.zh-TH).toFixed(2)+' Z" fill="#e3c690" fill-opacity="0.9" stroke="#b08d52" stroke-width="0.045"/>';
+      s+='<text x="'+((xH+xL)/2).toFixed(2)+'" y="'+(Y((r.zh+r.zl)/2)-TH/F-0.15).toFixed(2)+'" font-size="0.3" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
+    } else { const a=X(pc.y0),b=X(pc.y1),xl=Math.min(a,b),w=Math.abs(b-a),col=pc.ramp?'#dcc78e':'#cfd8cf';
+      s+='<rect x="'+xl.toFixed(2)+'" y="'+Y(r.zh).toFixed(2)+'" width="'+w.toFixed(2)+'" height="'+((r.zh-r.zl+TH)/F).toFixed(2)+'" fill="'+col+'" fill-opacity="0.85" stroke="#b08d52" stroke-width="0.04"/>';
+      s+='<text x="'+((a+b)/2).toFixed(2)+'" y="'+(Y(r.zh)-0.18).toFixed(2)+'" font-size="0.28" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
+    } }
+  s+='</svg>'; return s;
+}
+
 function buildProfile(p,G){
   const F=12, deck=p.deckHeight, hh=(p.handrailHeight>0?p.handrailHeight:35);
   const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1, slabMax=Math.max(framR,framT)+deckingT;
   let totalRamps=0; for(const pc of G.pieces) if(pc.ramp) totalRamps++;
   if(totalRamps<1) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the profile.</div>';
-  let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.x1-pc.x0);
-  // walk in travel order to get height, but keep each piece at its real PLAN X (so switchbacks stay folded)
+  let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.run||(pc.x1-pc.x0));
+  // walk in travel order; use developed distance (dev) when present (compound) so turned legs unroll
   const segs=[]; let z=deck;
   for(const pc of G.pieces){ if(pc.ref) continue;
-    if(pc.ramp){ const run=pc.x1-pc.x0, ri=(totalRun>0?(run/totalRun)*deck:deck/totalRamps); const dir=pc.dir||1; let zx0,zx1; if(dir>0){zx0=z;zx1=z-ri;}else{zx1=z;zx0=z-ri;}
-      segs.push({x0:pc.x0,x1:pc.x1,zx0:zx0,zx1:zx1,ramp:true}); z-=ri;
-    } else { segs.push({x0:pc.x0,x1:pc.x1,zx0:z,zx1:z,top:!!pc.top}); } }
+    const ax0=(pc.fx0!=null?pc.fx0:(pc.dev0!=null?pc.dev0:pc.x0)), ax1=(pc.fx1!=null?pc.fx1:(pc.dev1!=null?pc.dev1:pc.x1));
+    if(pc.ramp){ const run=(pc.run||(pc.x1-pc.x0)), ri=(totalRun>0?(run/totalRun)*deck:deck/totalRamps); let zx0,zx1;
+      if(pc.dev0!=null){ zx0=z; zx1=z-ri; } else { const dir=pc.dir||1; if(dir>0){zx0=z;zx1=z-ri;}else{zx1=z;zx0=z-ri;} }
+      segs.push({x0:ax0,x1:ax1,zx0:zx0,zx1:zx1,ramp:true}); z-=ri;
+    } else { segs.push({x0:ax0,x1:ax1,zx0:z,zx1:z,top:!!pc.top}); } }
   let mnX=1e9,mxX=-1e9; for(const sg of segs){ if(sg.x0<mnX)mnX=sg.x0; if(sg.x1>mxX)mxX=sg.x1; }
   const X=x=>x/F, Y=zz=>-zz/F;
   const Gd=(p.groundDrop||0), terr=(p.layout==="straight" && Math.abs(Gd)>0.01);
@@ -428,8 +584,16 @@ function buildProfile(p,G){
   s+='<polyline points="'+vbX.toFixed(2)+','+Y(groundZ(mnX)).toFixed(3)+' '+X(mnX).toFixed(3)+','+Y(groundZ(mnX)).toFixed(3)+' '+X(mxX).toFixed(3)+','+Y(groundZ(mxX)).toFixed(3)+' '+xR.toFixed(2)+','+Y(groundZ(mxX)).toFixed(3)+'" fill="none" stroke="#7a6a3a" stroke-width="0.05"/>';
   s+='<text x="'+xR.toFixed(2)+'" y="0.42" font-size="0.35" text-anchor="end" fill="#7a6a3a">GROUND</text>';
   // slabs/surfaces first (translucent so stacked legs both read)
-  for(const sg of segs){ const sl=((sg.top?framT:framR)+deckingT)/F;
-    s+='<path d="M '+X(sg.x0).toFixed(3)+' '+Y(sg.zx0).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+Y(sg.zx1).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+(Y(sg.zx1)+sl).toFixed(3)+' L '+X(sg.x0).toFixed(3)+' '+(Y(sg.zx0)+sl).toFixed(3)+' Z" fill="#e3c690" fill-opacity="0.7" stroke="#b08d52" stroke-width="0.03"/>'; }
+  let lastR=null; for(const sg of segs) if(sg.ramp) lastR=sg;
+  for(const sg of segs){ const sl_in=(sg.top?framT:framR)+deckingT, sl=sl_in/F;
+    if(p.taper && sg===lastR){
+      const lowAt1=(sg.zx1<=sg.zx0), footX=lowAt1?sg.x1:sg.x0, topX=lowAt1?sg.x0:sg.x1, footZ=lowAt1?sg.zx1:sg.zx0, topZ=lowAt1?sg.zx0:sg.zx1;
+      const ri=(topZ-footZ)||1, tt=Math.max(0,Math.min(1,1-sl_in/ri)), xT=topX+(footX-topX)*tt;
+      s+='<path d="M '+X(topX).toFixed(3)+' '+Y(topZ).toFixed(3)+' L '+X(footX).toFixed(3)+' '+Y(footZ).toFixed(3)+' L '+X(xT).toFixed(3)+' '+Y(groundZ(xT)).toFixed(3)+' L '+X(topX).toFixed(3)+' '+(Y(topZ)+sl).toFixed(3)+' Z" fill="#e3c690" fill-opacity="0.7" stroke="#b08d52" stroke-width="0.03"/>';
+    } else {
+      s+='<path d="M '+X(sg.x0).toFixed(3)+' '+Y(sg.zx0).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+Y(sg.zx1).toFixed(3)+' L '+X(sg.x1).toFixed(3)+' '+(Y(sg.zx1)+sl).toFixed(3)+' L '+X(sg.x0).toFixed(3)+' '+(Y(sg.zx0)+sl).toFixed(3)+' Z" fill="#e3c690" fill-opacity="0.7" stroke="#b08d52" stroke-width="0.03"/>';
+    }
+  }
   // posts + rails on top
   const postSp=(p.postSpacingMax>0?p.postSpacingMax:72), PW=3.5/F;
   for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=Math.max(1,Math.ceil(len/postSp));
@@ -475,8 +639,8 @@ function buildSVG(p,g){
     notesBW=mw*0.4*0.66+0.6; notesBH=notesLines.length*0.56+1.0;
   }
   let mcE=0; { let cons=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>mcE)mcE=cons;} else if(!pc.ref){cons=0;} } }
-  const mB=Math.max(3.4, (g.maxGroupRise>30?5.0:3.8), notesBH>0 ? notesBH+1.6 : 0);
-  const vbX=x0f-mL,vbY=y0f-mT,vbW=Math.max((x1f-x0f)+mL+mR, notesBW+0.7),vbH=(y1f-y0f)+mT+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
+  const mB=Math.max(3.4, (g.maxGroupRise>30?5.0:3.8));
+  const mTn=Math.max(mT, notesBH>0?notesBH+0.7:0); const vbX=x0f-mL,vbY=y0f-mTn,vbW=Math.max((x1f-x0f)+mL+mR, notesBW+0.7),vbH=(y1f-y0f)+mTn+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+
         '" width="'+(vbW*cm).toFixed(2)+'cm" height="'+(vbH*cm).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   let grid="";
@@ -509,19 +673,29 @@ function buildSVG(p,g){
     } else {
       s+='<rect x="'+f3(x)+'" y="'+f3(y)+'" width="'+f3(w)+'" height="'+f3(h)+'" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
     }
-    if(pc.ramp){const dir=pc.dir||1,tip=(dir>0?(pc.x1/F-0.12):(pc.x0/F+0.12)),tail=tip-dir*0.5,ay=y+0.4;
-      s+='<line x1="'+f3(tail)+'" y1="'+f3(ay)+'" x2="'+f3(tip)+'" y2="'+f3(ay)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
-         '<path d="M '+f3(tip)+' '+f3(ay)+' l '+(-dir*0.22)+' -0.13 l 0 0.26 z" fill="'+stroke+'"/>';}
+    if(pc.ramp){const dir=pc.dir||1;
+      if(h>w){ const tip=(dir>0?(pc.y1/F-0.12):(pc.y0/F+0.12)), tail=tip-dir*0.5, ax=x+0.4;
+        s+='<line x1="'+f3(ax)+'" y1="'+f3(tail)+'" x2="'+f3(ax)+'" y2="'+f3(tip)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
+           '<path d="M '+f3(ax)+' '+f3(tip)+' l -0.13 '+(-dir*0.22)+' l 0.26 0 z" fill="'+stroke+'"/>';
+      } else { const tip=(dir>0?(pc.x1/F-0.12):(pc.x0/F+0.12)), tail=tip-dir*0.5, ay=y+0.4;
+        s+='<line x1="'+f3(tail)+'" y1="'+f3(ay)+'" x2="'+f3(tip)+'" y2="'+f3(ay)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
+           '<path d="M '+f3(tip)+' '+f3(ay)+' l '+(-dir*0.22)+' -0.13 l 0 0.26 z" fill="'+stroke+'"/>';
+      }}
     const ftinTxt=ftCompact(pc.x1-pc.x0)+" \u00d7 "+ftCompact(pc.y1-pc.y0);
     const inTxt="("+inFrac(pc.x1-pc.x0)+"\" \u00d7 "+inFrac(pc.y1-pc.y0)+"\")";
     const yOff=pc.top?0.8:0;
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.5+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.12+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47">'+esc(ftinTxt)+'</text>';
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.6+yOff)+'" font-size="0.33" text-anchor="middle" fill="#6b7280">'+esc(inTxt)+'</text>';
-    if(pc.ramp){const dir=pc.dir||1, hiX=(dir>0?pc.x0:pc.x1)/F+dir*0.55, loX=(dir>0?pc.x1:pc.x0)/F-dir*0.55;
-      s+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">Down</text>';
-      const loLbl=(pc===lastRampPiece && p.taper)?"Taper 0\u0338":"Straight";
-      s+='<text x="'+f3(loX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(loX)+' '+f3(cy)+')">'+loLbl+'</text>';}
+    const longY=(pc.ramp && h>w), plblT=longY?(' transform="rotate(90 '+f3(cx)+' '+f3(cy)+')"'):'';
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.5+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36"'+plblT+'>'+esc(pc.name)+'</text>';
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.12+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47"'+plblT+'>'+esc(ftinTxt)+'</text>';
+    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.6+yOff)+'" font-size="0.33" text-anchor="middle" fill="#6b7280"'+plblT+'>'+esc(inTxt)+'</text>';
+    if(pc.ramp){const dir=pc.dir||1; const hiLbl=(pc.cut==="straight")?"Straight":"Down", loLbl=(pc.cut==="taper")?"Taper 0\u0338":"Straight";
+      if(longY){ const hiY=(dir>0?pc.y0:pc.y1)/F+dir*0.55, loY=(dir>0?pc.y1:pc.y0)/F-dir*0.55;
+        s+='<text x="'+f3(cx)+'" y="'+f3(hiY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+hiLbl+'</text>';
+        s+='<text x="'+f3(cx)+'" y="'+f3(loY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+loLbl+'</text>';
+      } else { const hiX=(dir>0?pc.x0:pc.x1)/F+dir*0.55, loX=(dir>0?pc.x1:pc.x0)/F-dir*0.55;
+        s+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">'+hiLbl+'</text>';
+        s+='<text x="'+f3(loX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(loX)+' '+f3(cy)+')">'+loLbl+'</text>';
+      }}
   }
   const ramps=g.pieces.filter(pc=>pc.ramp);
   for(const L of g.pieces){
@@ -535,12 +709,10 @@ function buildSVG(p,g){
       s+='<text x="'+f3(fx)+'" y="'+f3(fy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(fx)+' '+f3(fy)+')">Straight</text>';
     }
   }
-  if(p.taper && lastR){
-    const dir=lastR.dir||1,ex=(dir>0?lastR.x1:lastR.x0)/F,ry0=lastR.y0/F,ry1=lastR.y1/F,cy=(ry0+ry1)/2;
-    s+='<path d="M '+f3(ex)+' '+f3(ry0)+' L '+f3(ex+dir*0.7)+' '+f3(cy)+' L '+f3(ex)+' '+f3(ry1)+' Z" fill="#d8b784" fill-opacity="0.45" stroke="#b08d52" stroke-width="0.03"/>';
-  }
-  if(lastR){const dir=lastR.dir||1,gx=(dir>0?lastR.x1/F:lastR.x0/F)+dir*(p.taper?0.95:0.35),gy=(lastR.y0+lastR.y1)/2/F;
-    s+='<text x="'+f3(gx)+'" y="'+f3(gy+0.15)+'" font-size="0.46" text-anchor="'+(dir>0?"start":"end")+'" fill="#7a6a3a" font-weight="700">GROUND'+(p.taper?" · taper 0\u0338":"")+'</text>';}
+  if(lastR){const dir=lastR.dir||1, longY=(lastR.y1-lastR.y0)>(lastR.x1-lastR.x0); let gx,gy,ganch;
+    if(longY){ gx=(lastR.x0+lastR.x1)/2/F; gy=(dir>0?lastR.y1:lastR.y0)/F+dir*0.5; ganch="middle"; }
+    else { gx=(dir>0?lastR.x1/F:lastR.x0/F)+dir*0.35; gy=(lastR.y0+lastR.y1)/2/F; ganch=(dir>0?"start":"end"); }
+    s+='<text x="'+f3(gx)+'" y="'+f3(gy+0.15)+'" font-size="0.46" text-anchor="'+ganch+'" fill="#7a6a3a" font-weight="700">GROUND</text>';}
   const label="Slope 1:"+g.slopeRatio.toFixed(1)+(sc.word?("   "+sc.word):""), hasFlag=sc.key!=="ok";
   const bw=label.length*0.34+0.7+(hasFlag?0.9:0), bx=vbX+0.3, by=y1f+0.6, bh=1.0;
   s+='<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.18" fill="#22242b"/>';
@@ -563,16 +735,16 @@ function buildSVG(p,g){
   s+='<text x="'+(vbX+0.4).toFixed(2)+'" y="'+(vbY+vbH-0.5).toFixed(2)+'" font-size="0.4" text-anchor="start" fill="#6b7280">Deck height '+esc(dimText(p.deckHeight))+'  \u00b7  ramp width '+esc(dimText(p.width))+'  \u00b7  footprint '+esc(ftCompact(g.footW))+' \u00d7 '+esc(ftCompact(g.footH))+(p.showSteps?'  \u00b7  notch frame for existing steps':'')+'</text>';
   if(p.showHandrails){
     const PW=3.5/F, HI=1.75, maxSp=(p.postSpacingMax>0?p.postSpacingMax:72);
-    const railable=g.pieces.filter(pc=>!pc.ref);
+    const railable=g.pieces.filter(pc=>!pc.ref && !pc.norail && (!pc.top || p.railTopLanding));
     let lastRamp=null; for(const pc of g.pieces) if(pc.ramp) lastRamp=pc;
     const tl=g.pieces[0]; let deckPh=null;
-    if(tl){ const cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, D=24, L=144;
+    if(tl){ const cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, D=(p.existingDepth>0?p.existingDepth:2)*12, L=(p.existingLen>0?p.existingLen:12)*12;
       if(p.deckRefSide==="right") deckPh={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
       else if(p.deckRefSide==="top") deckPh={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
       else if(p.deckRefSide==="bottom") deckPh={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
       else deckPh={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2,y1:cy+L/2};
     }
-    const adj=railable.concat(deckPh?[deckPh]:[]);
+    const adj=g.pieces.filter(pc=>!pc.ref).concat(deckPh?[deckPh]:[]);
     const exposed=(lo,hi,covers)=>{ let sg=[[lo,hi]]; for(const cv of covers){ const c0=cv[0],c1=cv[1],ns=[]; for(const q of sg){ const s0=q[0],s1=q[1]; if(c1<=s0||c0>=s1) ns.push([s0,s1]); else { if(c0>s0)ns.push([s0,c0]); if(c1<s1)ns.push([c1,s1]); } } sg=ns; } return sg.filter(q=>q[1]-q[0]>0.5); };
     const drawRail=(x0,y0,x1,y1)=>{
       const horiz=Math.abs(y1-y0)<Math.abs(x1-x0);
@@ -620,6 +792,7 @@ function buildSVG(p,g){
       const leftEnd=aL>=bL?[Ax,Ay]:[Bx,By], rightEnd=aL>=bL?[Bx,By]:[Ax,Ay];
       const hg=p.doorHinge==="left"?leftEnd:rightEnd, cl=p.doorHinge==="left"?rightEnd:leftEnd;
       let hx=hg[0],hy=hg[1],clx=cl[0],cly=cl[1];
+      if(p.doorInside){ nx=-nx; ny=-ny; }
       const opx=hx+nx*dw, opy=hy+ny*dw;
       s+='<line x1="'+f3(hx/F)+'" y1="'+f3(hy/F)+'" x2="'+f3(opx/F)+'" y2="'+f3(opy/F)+'" stroke="#2f6fb0" stroke-width="0.08"/>';
       const a0=Math.atan2(cly-hy,clx-hx), a1=Math.atan2(opy-hy,opx-hx); let da=a1-a0; while(da>Math.PI)da-=2*Math.PI; while(da<-Math.PI)da+=2*Math.PI;
@@ -646,10 +819,15 @@ function buildSVG(p,g){
       }
     }
   }
+  if(p.survey){ const svp=parseSurvey(p.survey); for(const L of svp.order){ const c=svp.pos&&svp.pos[L]; if(!c)continue;
+      s+='<line x1="'+(c.x-0.5).toFixed(2)+'" y1="'+c.y.toFixed(2)+'" x2="'+(c.x+0.5).toFixed(2)+'" y2="'+c.y.toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
+      s+='<line x1="'+c.x.toFixed(2)+'" y1="'+(c.y-0.5).toFixed(2)+'" x2="'+c.x.toFixed(2)+'" y2="'+(c.y+0.5).toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
+      s+='<circle cx="'+c.x.toFixed(2)+'" cy="'+c.y.toFixed(2)+'" r="0.3" fill="#fff" stroke="#c0392b" stroke-width="0.07"/>';
+      s+='<text x="'+c.x.toFixed(2)+'" y="'+(c.y+0.23).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#c0392b" font-weight="700">'+L+'</text>'; } }
   if(p.obstacles && p.obstacles.length){
     let ox=Infinity, oy=Infinity;
     for(const pc of g.pieces){ if(pc.ref) continue; if(pc.x0<ox)ox=pc.x0; if(pc.y0<oy)oy=pc.y0; }
-    const oxf=ox/F, oyf=oy/F, midYo=(y0f+y1f)/2;
+    const oxf=0, oyf=0, midYo=(y0f+y1f)/2;
     const dmap={above:[0,-1],aboveleft:[-1,-1],aboveright:[1,-1],left:[-1,0],right:[1,0],below:[0,1],belowleft:[-1,1],belowright:[1,1],a:[0,-1],al:[-1,-1],ar:[1,-1],l:[-1,0],r:[1,0],b:[0,1],bl:[-1,1],br:[1,1]};
     for(const ob of p.obstacles){
       const mx=oxf+ob.x, my=oyf+ob.y;
@@ -668,7 +846,7 @@ function buildSVG(p,g){
   }
   if(notesLines){
     const fs=0.4, lh=0.56, bw=notesBW, bh=notesBH;
-    const bx3=Math.max(vbX+0.35, vbX+vbW-bw-0.35), by3=y1f+0.6;
+    const bx3=vbX+0.35, by3=vbY+0.35;
     s+='<rect x="'+bx3.toFixed(2)+'" y="'+by3.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.15" fill="#fffef9" fill-opacity="0.95" stroke="#cfcabf" stroke-width="0.04"/>';
     s+='<text x="'+(bx3+0.35).toFixed(2)+'" y="'+(by3+0.62).toFixed(2)+'" font-size="0.42" font-weight="700" fill="#2b2f36">Notes</text>';
     for(let i=0;i<notesLines.length;i++) s+='<text x="'+(bx3+0.35).toFixed(2)+'" y="'+(by3+1.15+i*lh).toFixed(2)+'" font-size="'+fs+'" fill="#3a3f47">'+esc(notesLines[i])+'</text>';
@@ -700,7 +878,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["client","projectType","notes","obstacles","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","groundDrop","survey","surveyDatum"];
+const ids=["client","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -718,17 +896,17 @@ function parseObstacles(txt){
 function readParams(){
   const num=id=>parseFloat(document.getElementById(id).value)||0;
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
-  return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,hasTopLanding:getVal("hasTopLanding"),
+  return {client:document.getElementById("client").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
-    topW:(num("topW")||60),topD:(num("topD")||60),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,surveyDatum:getVal("surveyDatum"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
   const L=document.getElementById("layout").value;
-  show(".only-straight",L==="straight"); show(".only-switchback",L==="switchback");
+  show(".only-straight",L==="straight"); show(".only-switchback",L==="switchback"); show(".only-compound",L==="compound");
   show(".only-notch",document.getElementById("notchEnable").checked);
   show(".only-deckref",document.getElementById("showDeckRef").checked);
   show(".only-north",document.getElementById("showNorth").checked);
@@ -737,14 +915,22 @@ function updateVisibility(){
   show(".only-handrails",document.getElementById("showHandrails").checked);
   show(".only-door",document.getElementById("showDoor").checked);
   show(".only-toplanding",document.getElementById("hasTopLanding").checked);
-  show(".only-persection",!document.getElementById("sameSize").checked);
-  show(".only-uniform",document.getElementById("sameSize").checked);
+  show(".only-persection",L!=="compound"&&!document.getElementById("sameSize").checked);
+  show(".only-uniform",L!=="compound"&&document.getElementById("sameSize").checked);
   show(".ps-straight",document.getElementById("layout").value==="straight");
   show(".ps-switchback",document.getElementById("layout").value==="switchback");
   render();
 }
 function mirrorX(g){
   for(const pc of g.pieces){const a=pc.x0; pc.x0=-pc.x1; pc.x1=-a; if(pc.dir)pc.dir=-pc.dir;}
+  return g;
+}
+function cloneG(g){ const o={}; for(const k in g) o[k]=g[k]; o.pieces=g.pieces.map(function(pc){const q={};for(const k in pc)q[k]=pc[k];return q;}); return o; }
+function sideTransform(g,side){
+  if(side==="left"){ for(const pc of g.pieces){const a=pc.x0;pc.x0=-pc.x1;pc.x1=-a; if(pc.ddx!=null)pc.ddx=-pc.ddx;} }
+  else if(side==="bottom"){ for(const pc of g.pieces){const x0=pc.x0,y0=pc.y0,x1=pc.x1,y1=pc.y1;pc.x0=-y1;pc.x1=-y0;pc.y0=x0;pc.y1=x1; if(pc.ddx!=null){const dx=pc.ddx,dy=pc.ddy;pc.ddx=-dy;pc.ddy=dx;}} }
+  else if(side==="top"){ for(const pc of g.pieces){const x0=pc.x0,y0=pc.y0,x1=pc.x1,y1=pc.y1;pc.x0=y0;pc.x1=y1;pc.y0=-x1;pc.y1=-x0; if(pc.ddx!=null){const dx=pc.ddx,dy=pc.ddy;pc.ddx=dy;pc.ddy=-dx;}} }
+  for(const pc of g.pieces){ if(pc.ddx!=null){ const h=pc.y1-pc.y0,w=pc.x1-pc.x0; pc.dir=(h>w)?(pc.ddy>0?1:-1):(pc.ddx>0?1:-1); } }
   return g;
 }
 function buildFreecad(p,g){
@@ -804,15 +990,16 @@ function render(){
   document.getElementById("clientLabel").innerHTML=(p.client?esc(p.client):'<span class="ph">[client name]</span>')+' '+esc(p.projectType||"");
   document.title="Care Construction"+(p.client?(" — "+p.client+" "+(p.projectType||"")):"");
   if(p.layout==="switchback"&&p.legs.length===0){ p.legs=[1,1]; p._preview=true; }
-  let g=p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p);
-  if(p.startSide==="left") g=mirrorX(g);
-  if(p.showDeckRef){
-    const tl=g.pieces[0], L=144, D=24, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
+  let g=p.layout==="compound"?compoundGeometry(p):(p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p));
+  if(p.attachExisting && g.pieces[0]) g.pieces[0].name="Existing structure";
+  const gPlan=sideTransform(cloneG(g), p.startSide);
+  if(p.showDeckRef && !p.attachExisting){
+    const tl=gPlan.pieces[0], L=(p.existingLen>0?p.existingLen:12)*12, D=(p.existingDepth>0?p.existingDepth:2)*12, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
     if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
     else if(p.deckRefSide==="top") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
     else if(p.deckRefSide==="bottom") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
     else d={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2,y1:cy+L/2};
-    g.pieces.push({name:"Existing structure",x0:d.x0,x1:d.x1,y0:d.y0,y1:d.y1,ramp:false,ref:true});
+    gPlan.pieces.push({name:"Existing structure",x0:d.x0,x1:d.x1,y0:d.y0,y1:d.y1,ramp:false,ref:true});
   }
   const sc=slopeClass(g.slopeRatio);
   const box=document.getElementById("roSlopeBox"),slp=document.getElementById("roSlope"),flg=document.getElementById("roFlag");
@@ -826,13 +1013,13 @@ function render(){
     if(p.layout==="switchback") parts+="   "+(gapOK?ok+"gap \u2713":warn+"gap \u26a0")+"</span>";
     document.getElementById("roAda").innerHTML=parts;
     document.getElementById("roAdaNote").textContent='ADA: 1:12, rise \u2264 30"/run'+(p.layout==="switchback"?', turn gap <48"':'')+' \u00b7 see ADA notes'; }
-  document.getElementById("paper").innerHTML=buildSVG(p,g);
+  document.getElementById("paper").innerHTML=buildSVG(p,gPlan);
   document.getElementById("profileWrap").style.display=p.showProfile?"":"none";
-  if(p.showProfile) document.getElementById("profilePaper").innerHTML=buildProfile(p,g);
+  if(p.showProfile) document.getElementById("profilePaper").innerHTML=(p.layout==="compound"?buildSideView(p,g):buildProfile(p,g));
   document.getElementById("notchWrap").style.display=p.notchEnable?"":"none";
   if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,g);
   document.getElementById("surveyWrap").style.display=(p.survey&&p.survey.trim())?"":"none";
-  if(p.survey&&p.survey.trim()) document.getElementById("surveyPaper").innerHTML=buildSurveyMap(p);
+  if(p.survey&&p.survey.trim()) document.getElementById("surveyPaper").innerHTML=buildTerrainProfile(p,g);
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
   document.getElementById("caption").innerHTML=
     (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(g.maxGroupRise>30?'<b style="color:#c0392b">\u26a0 '+inFrac(g.maxGroupRise)+'" continuous rise, no landing \u2014 30" max, add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
@@ -844,7 +1031,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.16",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.50",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
