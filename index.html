@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.54</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.55</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -246,7 +246,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.54</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.55</footer>
 
 <script>
 "use strict";
@@ -642,6 +642,30 @@ function wrapNotes(txt, maxChars){
   }
   return out;
 }
+function noteFit(cX,cY,cW,cH,w,h,obst,placed,pref){
+  var GAP=0.3;
+  function ov(a,b){return !(a[2]<=b[0]||a[0]>=b[2]||a[3]<=b[1]||a[1]>=b[3]);}
+  function ok(x,y){
+    if(x<cX+0.05||y<cY+0.05||x+w>cX+cW-0.05||y+h>cY+cH-0.05)return false;
+    var r=[x,y,x+w,y+h],i;
+    for(i=0;i<obst.length;i++)if(ov(r,obst[i]))return false;
+    for(i=0;i<placed.length;i++)if(ov(r,placed[i]))return false;
+    return true;
+  }
+  function cor(k){
+    var x=(k.charAt(1)==="L")?cX+GAP:(k.charAt(1)==="R")?cX+cW-w-GAP:cX+(cW-w)/2;
+    var y=(k.charAt(0)==="T")?cY+GAP:(k.charAt(0)==="B")?cY+cH-h-GAP:cY+(cH-h)/2;
+    return [x,y];
+  }
+  var i,c;
+  for(i=0;i<pref.length;i++){c=cor(pref[i]);if(ok(c[0],c[1]))return c;}
+  var tgt=cor(pref[0]),best=null,bd=1e9,STEP=0.4,x,y,d;
+  for(y=cY+GAP;y+h<=cY+cH-GAP+0.001;y+=STEP)
+    for(x=cX+GAP;x+w<=cX+cW-GAP+0.001;x+=STEP)
+      if(ok(x,y)){d=(x-tgt[0])*(x-tgt[0])+(y-tgt[1])*(y-tgt[1]);if(d<bd){bd=d;best=[x,y];}}
+  return best||cor(pref[0]);
+}
+
 function buildSVG(p,g){
   const F=12;
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
@@ -859,15 +883,35 @@ function buildSVG(p,g){
       s+='<text x="'+cax.toFixed(2)+'" y="'+(cay+0.13).toFixed(2)+'" font-size="0.4" text-anchor="'+ta+'" fill="#fff" font-weight="700">'+lab+'</text>';
     }
   }
+  var _PAD=0.25, obst=[];
+  for(var _oi=0;_oi<g.pieces.length;_oi++){var _op=g.pieces[_oi];obst.push([_op.x0/F-_PAD,_op.y0/F-_PAD,_op.x1/F+_PAD,_op.y1/F+_PAD]);}
+  var _footStr="Deck height "+dimText(p.deckHeight)+"  ramp width "+dimText(p.width)+"  footprint "+ftCompact(g.footW)+"x"+ftCompact(g.footH);
+  var _botW=Math.max(bw, _footStr.length*0.4*0.55, 6.0)+0.4;
+  obst.push([vbX+0.1, y1f+0.45, vbX+0.1+_botW, vbY+vbH+0.2]);
+  var _pcLines=[]; { var _cats=[["Top landings",function(pc){return pc.top;}],["Ramps",function(pc){return pc.ramp;}],["Rests",function(pc){return pc.name==="Rest";}],["Hairpins",function(pc){return pc.name==="Turn landing";}]];
+    var _pfmt=function(d){return ftCompact(d[0])+" \u00d7 "+ftCompact(d[1])+"  ("+inFrac(d[0])+"\" \u00d7 "+inFrac(d[1])+"\")";};
+    for(var _ci=0;_ci<_cats.length;_ci++){var _it=g.pieces.filter(_cats[_ci][1]);if(!_it.length)continue;
+      var _dm=_it.map(function(pc){return [pc.x1-pc.x0,pc.y1-pc.y0];});
+      var _same=_dm.every(function(d){return Math.abs(d[0]-_dm[0][0])<0.1&&Math.abs(d[1]-_dm[0][1])<0.1;});
+      if(_same){_pcLines.push(_cats[_ci][0]+": "+_it.length+"  \u2014  "+_pfmt(_dm[0]));}
+      else{_pcLines.push(_cats[_ci][0]+": "+_it.length);for(var _k=0;_k<_dm.length;_k++)_pcLines.push("   "+(_k+1)+": "+_pfmt(_dm[_k]));}
+    }
+  }
+  var _pcW=0,_pcH=0; if(_pcLines.length){var _mw=0;for(var _li=0;_li<_pcLines.length;_li++)if(_pcLines[_li].length>_mw)_mw=_pcLines[_li].length;_pcW=_mw*0.36*0.66+0.6;_pcH=_pcLines.length*0.52+0.95;}
+  var _noN=2.8, notePos={}, _placed=[];
+  if(notesLines){var _c=noteFit(vbX,vbY,vbW,vbH,notesBW,notesBH,obst,_placed,["TL","TR","BL","BR"]);notePos.notes=_c;_placed.push([_c[0],_c[1],_c[0]+notesBW,_c[1]+notesBH]);}
+  if(p.showNorth){var _c=noteFit(vbX,vbY,vbW,vbH,_noN,_noN,obst,_placed,["TR","TL","BR","BL"]);notePos.north=_c;_placed.push([_c[0],_c[1],_c[0]+_noN,_c[1]+_noN]);}
+  if(_pcLines.length){var _c=noteFit(vbX,vbY,vbW,vbH,_pcW,_pcH,obst,_placed,["TR","TL","BR","BL"]);notePos.pieces=_c;_placed.push([_c[0],_c[1],_c[0]+_pcW,_c[1]+_pcH]);}
+
   if(notesLines){
     const fs=0.4, lh=0.56, bw=notesBW, bh=notesBH;
-    const bx3=vbX+0.35, by3=vbY+0.35;
+    const bx3=notePos.notes[0], by3=notePos.notes[1];
     s+='<rect x="'+bx3.toFixed(2)+'" y="'+by3.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.15" fill="#fffef9" fill-opacity="0.95" stroke="#cfcabf" stroke-width="0.04"/>';
     s+='<text x="'+(bx3+0.35).toFixed(2)+'" y="'+(by3+0.62).toFixed(2)+'" font-size="0.42" font-weight="700" fill="#2b2f36">Notes</text>';
     for(let i=0;i<notesLines.length;i++) s+='<text x="'+(bx3+0.35).toFixed(2)+'" y="'+(by3+1.15+i*lh).toFixed(2)+'" font-size="'+fs+'" fill="#3a3f47">'+esc(notesLines[i])+'</text>';
   }
   if(p.showNorth){
-    const ncx=vbX+vbW-1.3, ncy=vbY+1.3, r=0.85, b=(p.northBearing||0)*Math.PI/180, ux=Math.sin(b), uy=-Math.cos(b);
+    const ncx=notePos.north[0]+1.4, ncy=notePos.north[1]+1.4, r=0.85, b=(p.northBearing||0)*Math.PI/180, ux=Math.sin(b), uy=-Math.cos(b);
     s+='<circle cx="'+ncx.toFixed(2)+'" cy="'+ncy.toFixed(2)+'" r="'+r+'" fill="#ffffff" fill-opacity="0.85" stroke="#8a8f98" stroke-width="0.04"/>';
     const tipx=ncx+ux*r*0.82, tipy=ncy+uy*r*0.82, tlx=ncx-ux*r*0.62, tly=ncy-uy*r*0.62, px=-uy*0.2, py=ux*0.2;
     s+='<path d="M '+tipx.toFixed(2)+' '+tipy.toFixed(2)+' L '+(tlx+px).toFixed(2)+' '+(tly+py).toFixed(2)+' L '+(tlx-px).toFixed(2)+' '+(tly-py).toFixed(2)+' Z" fill="#c0392b"/>';
@@ -884,7 +928,7 @@ function buildSVG(p,g){
       else { lines.push(c[0]+": "+it.length); for(let k=0;k<dm.length;k++) lines.push("   "+(k+1)+": "+pfmt(dm[k])); }
     }
     if(lines.length){ const fs=0.36, lh=0.52; let mw=0; for(const l of lines) if(l.length>mw) mw=l.length;
-      const bw=mw*fs*0.66+0.6, bh=lines.length*lh+0.95, bx2=vbX+vbW-bw-0.3, by2=vbY+(p.showNorth?2.7:0.4);
+      const bw=mw*fs*0.66+0.6, bh=lines.length*lh+0.95, bx2=(notePos.pieces?notePos.pieces[0]:vbX+vbW-bw-0.3), by2=(notePos.pieces?notePos.pieces[1]:vbY+0.4);
       s+='<rect x="'+bx2.toFixed(2)+'" y="'+by2.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.15" fill="#fbfaf7" fill-opacity="0.93" stroke="#cfcabf" stroke-width="0.03"/>';
       s+='<text x="'+(bx2+0.35).toFixed(2)+'" y="'+(by2+0.6).toFixed(2)+'" font-size="0.42" font-weight="700" fill="#2b2f36">Pieces</text>';
       for(let i=0;i<lines.length;i++) s+='<text x="'+(bx2+0.35).toFixed(2)+'" y="'+(by2+1.15+i*lh).toFixed(2)+'" font-size="'+fs+'" fill="#3a3f47">'+esc(lines[i])+'</text>';
@@ -1046,7 +1090,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.54",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.55",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
