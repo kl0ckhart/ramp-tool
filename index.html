@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.51</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.54</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -121,7 +121,7 @@
       <div class="sechead">Ramp</div>
       <label class="field"><span class="lab">Layout</span>
         <select id="layout"><option value="compound">Compound (segment list)</option><option value="straight">Straight run</option><option value="switchback">Switchback (hairpin)</option></select></label>
-      <label class="field only-compound"><span class="lab">Segments</span><textarea id="segments" rows="9" placeholder="ramp 8 down&#10;landing 5x5&#10;turn right&#10;ramp 8 down&#10;ramp 8 straight&#10;ramp 8 down&#10;hairpin 4x8&#10;ramp 8 down&#10;ramp 8 taper"></textarea><span class="hint">one per line: ramp &lt;ft&gt; &lt;down|straight|taper&gt; [left|right|center] &middot; landing &lt;ft&gt;x&lt;ft&gt; [left|right|center] &middot; turn &lt;left|right&gt; &middot; hairpin &lt;ft&gt;x&lt;ft&gt;. Ramps default flush-left; add right or center to change. Add norail to a ramp or landing to skip its handrails.</span></label>
+      <label class="field only-compound"><span class="lab">Segments</span><textarea id="segments" rows="9" placeholder="ramp 8 down&#10;landing 5x5&#10;turn right&#10;ramp 8 down&#10;ramp 8 straight&#10;ramp 8 down&#10;hairpin 4x8&#10;ramp 8 down&#10;ramp 8 taper"></textarea><span class="hint">one per line: ramp &lt;ft&gt; &lt;down|straight|taper|up&gt; [left|right|center] &middot; landing &lt;ft&gt;x&lt;ft&gt; [left|right|center] &middot; turn &lt;left|right&gt; &middot; hairpin &lt;ft&gt;x&lt;ft&gt;. Ramps default flush-left; add right or center to change. Add norail to a ramp or landing to skip its handrails.</span></label>
       <label class="field only-straight"><span class="lab">Ramp alignment</span>
         <select id="align"><option value="top">Flush to top edge</option><option value="bottom" selected>Flush to bottom edge</option><option value="center">Centered</option></select>
         <span class="hint">which landing edge the ramps line up with by default</span></label>
@@ -246,7 +246,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.51</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.54</footer>
 
 <script>
 "use strict";
@@ -277,7 +277,7 @@ function parseSegments(txt){
   const out=[];
   for(const raw of String(txt).split(String.fromCharCode(10))){
     const line=raw.trim().toLowerCase(); if(!line) continue; let m;
-    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; else if(/left/.test(r))al="left"; out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,norail:/no\s*rails?/.test(r)}); }
+    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; else if(/left/.test(r))al="left"; out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,norail:/no\s*rails?/.test(r)}); }
     else if(m=line.match(/^landing\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:parseFloat(m[1]),across:parseFloat(m[2]),align:al,norail:/no\s*rails?/.test(r)}); }
     else if(m=line.match(/^turn\s+(left|right)/)) out.push({t:"turn",dir:m[1]});
     else if(m=line.match(/^hairpin\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/)) out.push({t:"hairpin",along:parseFloat(m[1]),across:parseFloat(m[2])});
@@ -703,7 +703,7 @@ function buildSVG(p,g){
     s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.5+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36"'+plblT+'>'+esc(pc.name)+'</text>';
     s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.12+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47"'+plblT+'>'+esc(ftinTxt)+'</text>';
     s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.6+yOff)+'" font-size="0.33" text-anchor="middle" fill="#6b7280"'+plblT+'>'+esc(inTxt)+'</text>';
-    if(pc.ramp){const dir=pc.dir||1; const hiLbl=(pc.cut==="straight")?"Straight":"Down", loLbl=(pc.cut==="taper")?"Taper 0\u0338":"Straight";
+    if(pc.ramp){const dir=pc.dir||1; const hiLbl=(pc.cut==="straight")?"Straight":"Down", loLbl=(pc.cut==="up")?"Up":(pc.cut==="taper")?"Taper 0\u0338":"Straight";
       if(longY){ const hiY=(dir>0?pc.y0:pc.y1)/F+dir*0.55, loY=(dir>0?pc.y1:pc.y0)/F-dir*0.55;
         s+='<text x="'+f3(cx)+'" y="'+f3(hiY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+hiLbl+'</text>';
         s+='<text x="'+f3(cx)+'" y="'+f3(loY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+loLbl+'</text>';
@@ -1046,7 +1046,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.51",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.54",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
