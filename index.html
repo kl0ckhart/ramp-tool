@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.50</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.51</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -246,7 +246,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.50</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.51</footer>
 
 <script>
 "use strict";
@@ -528,7 +528,7 @@ function buildNotchDetail(p,G){
   s+='</svg>'; return s;
 }
 function buildSideView(p,G){
-  const F=12, deck=p.deckHeight, TH=5.5;
+  const F=12, deck=p.deckHeight, TH=5.5, hh=(p.handrailHeight>0?p.handrailHeight:35), hRail=(p.showHandrails?hh:0), postSp=(p.postSpacingMax>0?p.postSpacingMax:72);
   let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.run||(pc.x1-pc.x0));
   if(totalRun<=0) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the side view.</div>';
   const rows=[]; let z=deck;
@@ -538,23 +538,38 @@ function buildSideView(p,G){
     else { rows.push({pc:pc,zh:z,zl:z}); } }
   const X=y=>-y/F, Y=zz=>-zz/F;
   let mnX=1e9,mxX=-1e9; for(const r of rows){ const a=X(r.pc.y0),b=X(r.pc.y1); mnX=Math.min(mnX,a,b); mxX=Math.max(mxX,a,b); }
-  const vbX=mnX-2.2, vbW=(mxX-mnX)+4.4, vbY=Y(deck)-1.6, vbH=(Y(0)-Y(deck))+3.4;
+  const vbX=mnX-2.2, vbW=(mxX-mnX)+4.4, vbY=Y(deck+hRail)-1.0, vbH=(Y(0)-Y(deck+hRail))+2.8;
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.5).toFixed(2)+'cm" height="'+(vbH*0.5).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   for(let gx=Math.ceil(vbX);gx<=Math.floor(vbX+vbW);gx++) s+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="#eef1f5" stroke-width="0.02"/>';
   for(let gy=Math.ceil(vbY);gy<=Math.floor(vbY+vbH);gy++) s+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="#eef1f5" stroke-width="0.02"/>';
   s+='<line x1="'+vbX.toFixed(2)+'" y1="'+Y(0).toFixed(2)+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+Y(0).toFixed(2)+'" stroke="#7a6a3a" stroke-width="0.05"/>';
   s+='<text x="'+(vbX+vbW-0.2).toFixed(2)+'" y="'+(Y(0)-0.15).toFixed(2)+'" font-size="0.34" text-anchor="end" fill="#7a6a3a" font-weight="700">GROUND</text>';
-  s+='<text x="'+(vbX+0.2).toFixed(2)+'" y="'+(Y(deck)+0.12).toFixed(2)+'" font-size="0.36" fill="#2b2f36">'+esc(dimText(deck))+'</text>';
+  const dimX=mnX-0.6;
+  s+='<line x1="'+dimX.toFixed(2)+'" y1="'+Y(deck).toFixed(2)+'" x2="'+mnX.toFixed(2)+'" y2="'+Y(deck).toFixed(2)+'" stroke="#aaa" stroke-width="0.02"/>';
+  s+='<line x1="'+dimX.toFixed(2)+'" y1="'+Y(0).toFixed(2)+'" x2="'+dimX.toFixed(2)+'" y2="'+Y(deck).toFixed(2)+'" stroke="#555" stroke-width="0.03"/>';
+  s+='<line x1="'+(dimX-0.1).toFixed(2)+'" y1="'+Y(deck).toFixed(2)+'" x2="'+(dimX+0.1).toFixed(2)+'" y2="'+Y(deck).toFixed(2)+'" stroke="#555" stroke-width="0.03"/>';
+  s+='<line x1="'+(dimX-0.1).toFixed(2)+'" y1="'+Y(0).toFixed(2)+'" x2="'+(dimX+0.1).toFixed(2)+'" y2="'+Y(0).toFixed(2)+'" stroke="#555" stroke-width="0.03"/>';
+  s+='<text x="'+(dimX-0.18).toFixed(2)+'" y="'+Y(deck/2).toFixed(2)+'" font-size="0.34" text-anchor="middle" dominant-baseline="central" fill="#2b2f36" transform="rotate(-90 '+(dimX-0.18).toFixed(2)+' '+Y(deck/2).toFixed(2)+')">'+esc(dimText(deck))+'</text>';
+  const RAIL=pc=>(p.showHandrails && !pc.norail && (!pc.top || p.railTopLanding));
+  const railLine=(x1,z1,x2,z2)=>{ for(const rh of [hh,21,3]){ const th=(rh===hh?1.5:3.5)/F; s+='<line x1="'+x1.toFixed(2)+'" y1="'+Y(z1+rh).toFixed(2)+'" x2="'+x2.toFixed(2)+'" y2="'+Y(z2+rh).toFixed(2)+'" stroke="#7a5a2e" stroke-width="'+th.toFixed(3)+'" stroke-linecap="round"/>'; } };
+  const postRow=(x1,z1,x2,z2,runIn)=>{ const PW=3.5/F, n=Math.max(1,Math.ceil((runIn||1)/postSp)); for(let i=0;i<=n;i++){ const t=i/n, px=x1+(x2-x1)*t, pz=z1+(z2-z1)*t; s+='<rect x="'+(px-PW/2).toFixed(2)+'" y="'+Y(pz+hh).toFixed(2)+'" width="'+PW.toFixed(3)+'" height="'+(Y(0)-Y(pz+hh)).toFixed(2)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; } };
+  const slabLabel=(cx,cy,ang,txt)=>{ s+='<text x="'+cx.toFixed(2)+'" y="'+cy.toFixed(2)+'" font-size="0.26" text-anchor="middle" dominant-baseline="central" fill="#2b2f36"'+(ang?' transform="rotate('+ang.toFixed(2)+' '+cx.toFixed(2)+' '+cy.toFixed(2)+')"':'')+'>'+esc(txt)+'</text>'; };
+  const labels=[];
   for(const r of rows){ const pc=r.pc; const alongY=Math.abs(pc.ddy||0)>Math.abs(pc.ddx||0);
-    if(pc.top){ const a=X(pc.y0),b=X(pc.y1),xl=Math.min(a,b),w=Math.abs(b-a);
-      s+='<rect x="'+xl.toFixed(2)+'" y="'+Y(deck).toFixed(2)+'" width="'+w.toFixed(2)+'" height="'+(TH/F).toFixed(2)+'" fill="#c9ccd1" stroke="#9aa0a8" stroke-width="0.03"/>'; continue; }
+    if(pc.top){ const a=X(pc.y0),b=X(pc.y1),xl=Math.min(a,b),xr=Math.max(a,b),w=xr-xl;
+      s+='<rect x="'+xl.toFixed(2)+'" y="'+Y(deck).toFixed(2)+'" width="'+w.toFixed(2)+'" height="'+(TH/F).toFixed(2)+'" fill="#c9ccd1" stroke="#9aa0a8" stroke-width="0.03"/>';
+      if(RAIL(pc)){ railLine(xl,deck,xr,deck); postRow(xl,deck,xr,deck,w*F); } continue; }
     if(alongY){ const yH=(pc.ddy>0?pc.y0:pc.y1), yL=(pc.ddy>0?pc.y1:pc.y0), xH=X(yH), xL=X(yL);
       s+='<path d="M '+xH.toFixed(2)+' '+Y(r.zh).toFixed(2)+' L '+xL.toFixed(2)+' '+Y(r.zl).toFixed(2)+' L '+xL.toFixed(2)+' '+Y(r.zl-TH).toFixed(2)+' L '+xH.toFixed(2)+' '+Y(r.zh-TH).toFixed(2)+' Z" fill="#e3c690" fill-opacity="0.9" stroke="#b08d52" stroke-width="0.045"/>';
-      s+='<text x="'+((xH+xL)/2).toFixed(2)+'" y="'+(Y((r.zh+r.zl)/2)-TH/F-0.15).toFixed(2)+'" font-size="0.3" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
-    } else { const a=X(pc.y0),b=X(pc.y1),xl=Math.min(a,b),w=Math.abs(b-a),col=pc.ramp?'#dcc78e':'#cfd8cf';
-      s+='<rect x="'+xl.toFixed(2)+'" y="'+Y(r.zh).toFixed(2)+'" width="'+w.toFixed(2)+'" height="'+((r.zh-r.zl+TH)/F).toFixed(2)+'" fill="'+col+'" fill-opacity="0.85" stroke="#b08d52" stroke-width="0.04"/>';
-      s+='<text x="'+((a+b)/2).toFixed(2)+'" y="'+(Y(r.zh)-0.18).toFixed(2)+'" font-size="0.28" text-anchor="middle" fill="#2b2f36">'+esc(pc.name)+'</text>';
+      if(RAIL(pc)){ railLine(xH,r.zh,xL,r.zl); postRow(xH,r.zh,xL,r.zl,(pc.run||Math.abs(pc.y1-pc.y0))); }
+      const cx=(xH+xL)/2, cy=Y((r.zh+r.zl)/2)+TH/(2*F); let ang=Math.atan2(Y(r.zl)-Y(r.zh), xL-xH)*180/Math.PI; if(ang>90)ang-=180; else if(ang<-90)ang+=180;
+      labels.push([cx,cy,ang,pc.name]);
+    } else { const a=X(pc.y0),b=X(pc.y1),xl=Math.min(a,b),xr=Math.max(a,b),w=xr-xl,col=pc.ramp?'#dcc78e':'#cfd8cf', rectH=(r.zh-r.zl+TH)/F;
+      s+='<rect x="'+xl.toFixed(2)+'" y="'+Y(r.zh).toFixed(2)+'" width="'+w.toFixed(2)+'" height="'+rectH.toFixed(2)+'" fill="'+col+'" fill-opacity="0.85" stroke="#b08d52" stroke-width="0.04"/>';
+      if(RAIL(pc) && !pc.ramp){ railLine(xl,r.zh,xr,r.zh); postRow(xl,r.zh,xr,r.zh,w*F); }
+      labels.push([(a+b)/2, Y(r.zh)+rectH/2, 0, pc.name]);
     } }
+  for(const L of labels) slabLabel(L[0],L[1],L[2],L[3]);
   s+='</svg>'; return s;
 }
 
@@ -1031,7 +1046,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.50",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.51",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
