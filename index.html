@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.59</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.61</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -252,7 +252,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.59</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.61</footer>
 
 <script>
 "use strict";
@@ -558,7 +558,7 @@ function buildSideView(p,G){
   s+='<text x="'+(dimX-0.18).toFixed(2)+'" y="'+Y(deck/2).toFixed(2)+'" font-size="0.34" text-anchor="middle" dominant-baseline="central" fill="#2b2f36" transform="rotate(-90 '+(dimX-0.18).toFixed(2)+' '+Y(deck/2).toFixed(2)+')">'+esc(dimText(deck))+'</text>';
   const RAIL=pc=>(p.showHandrails && !pc.norail && (!pc.top || p.railTopLanding));
   const railLine=(x1,z1,x2,z2)=>{ for(const rh of [hh,21,3]){ const th=(rh===hh?1.5:3.5)/F; s+='<line x1="'+x1.toFixed(2)+'" y1="'+Y(z1+rh).toFixed(2)+'" x2="'+x2.toFixed(2)+'" y2="'+Y(z2+rh).toFixed(2)+'" stroke="#7a5a2e" stroke-width="'+th.toFixed(3)+'" stroke-linecap="round"/>'; } };
-  const postRow=(x1,z1,x2,z2,runIn)=>{ const PW=3.5/F, n=Math.max(1,Math.ceil((runIn||1)/postSp)); for(let i=0;i<=n;i++){ const t=i/n, px=x1+(x2-x1)*t, pz=z1+(z2-z1)*t; s+='<rect x="'+(px-PW/2).toFixed(2)+'" y="'+Y(pz+hh).toFixed(2)+'" width="'+PW.toFixed(3)+'" height="'+(Y(0)-Y(pz+hh)).toFixed(2)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; } };
+  const postRow=(x1,z1,x2,z2,runIn)=>{ const PW=3.5/F, n=(Math.abs(z2-z1)>0.01)?1:Math.max(1,Math.ceil((runIn||1)/postSp)); for(let i=0;i<=n;i++){ const t=i/n, px=x1+(x2-x1)*t, pz=z1+(z2-z1)*t; s+='<rect x="'+(px-PW/2).toFixed(2)+'" y="'+Y(pz+hh).toFixed(2)+'" width="'+PW.toFixed(3)+'" height="'+(Y(0)-Y(pz+hh)).toFixed(2)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; } };
   const slabLabel=(cx,cy,ang,txt)=>{ s+='<text x="'+cx.toFixed(2)+'" y="'+cy.toFixed(2)+'" font-size="0.26" text-anchor="middle" dominant-baseline="central" fill="#2b2f36"'+(ang?' transform="rotate('+ang.toFixed(2)+' '+cx.toFixed(2)+' '+cy.toFixed(2)+')"':'')+'>'+esc(txt)+'</text>'; };
   const labels=[];
   for(const r of rows){ const pc=r.pc; const alongY=Math.abs(pc.ddy||0)>Math.abs(pc.ddx||0);
@@ -943,7 +943,6 @@ function buildSVG(p,g){
   _iw=Math.max(_iw+0.7,5.0);
   var _custLines=null,_custBW=0,_custBH=0;
   { var _nm=(((p.custFirst||"")+" "+(p.custLast||"")).trim());
-    if(_nm && p.custVer && String(p.custVer).trim()) _nm=_nm+"_v"+String(p.custVer).trim();
     var _cs=[(p.custCity||"").trim(),(p.custState||"").trim()].filter(function(x){return x;}).join(", ");
     if(_nm || (p.custAddress&&p.custAddress.trim()) || _cs || (p.custPhone&&p.custPhone.trim())){
       _custLines=[];
@@ -1094,8 +1093,8 @@ function render(){
     p.rampRun=parseFloat(p.targetSlope)*(p.deckHeight/totalRamps);
     const rr=document.getElementById("rampRun"); rr.value=Math.round(p.rampRun*100)/100; rr.disabled=true;
   } else { document.getElementById("rampRun").disabled=false; }
-  document.getElementById("clientLabel").innerHTML=(p.client?esc(p.custVer?(p.client+"_v"+p.custVer):p.client):'<span class="ph">[client name]</span>')+' '+esc(p.projectType||"");
-  document.title="Care Construction"+(p.client?(" — "+p.client+(p.custVer?"_v"+p.custVer:"")+" "+(p.projectType||"")):"");
+  document.getElementById("clientLabel").innerHTML=((p.custLast&&p.custLast.trim())?esc(p.custLast.trim()+(p.custVer?"_v"+p.custVer:"")):'<span class="ph">[client name]</span>')+' '+esc(p.projectType||"");
+  document.title="Care Construction"+((p.custLast&&p.custLast.trim())?(" — "+p.custLast.trim()+(p.custVer?"_v"+p.custVer:"")+" "+(p.projectType||"")):"");
   if(p.layout==="switchback"&&p.legs.length===0){ p.legs=[1,1]; p._preview=true; }
   let g=p.layout==="compound"?compoundGeometry(p):(p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p));
   if(p.attachExisting && g.pieces[0]) g.pieces[0].name="Existing structure";
@@ -1138,7 +1137,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.59",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.61",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
