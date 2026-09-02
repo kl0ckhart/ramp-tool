@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.55</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.56</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -121,7 +121,7 @@
       <div class="sechead">Ramp</div>
       <label class="field"><span class="lab">Layout</span>
         <select id="layout"><option value="compound">Compound (segment list)</option><option value="straight">Straight run</option><option value="switchback">Switchback (hairpin)</option></select></label>
-      <label class="field only-compound"><span class="lab">Segments</span><textarea id="segments" rows="9" placeholder="ramp 8 down&#10;landing 5x5&#10;turn right&#10;ramp 8 down&#10;ramp 8 straight&#10;ramp 8 down&#10;hairpin 4x8&#10;ramp 8 down&#10;ramp 8 taper"></textarea><span class="hint">one per line: ramp &lt;ft&gt; &lt;down|straight|taper|up&gt; [left|right|center] &middot; landing &lt;ft&gt;x&lt;ft&gt; [left|right|center] &middot; turn &lt;left|right&gt; &middot; hairpin &lt;ft&gt;x&lt;ft&gt;. Ramps default flush-left; add right or center to change. Add norail to a ramp or landing to skip its handrails.</span></label>
+      <label class="field only-compound"><span class="lab">Segments</span><textarea id="segments" rows="9" placeholder="ramp 8 down&#10;landing 5x5&#10;turn right&#10;ramp 8 down&#10;ramp 8 straight&#10;ramp 8 down&#10;hairpin 4x8&#10;ramp 8 down&#10;ramp 8 taper"></textarea><span class="hint">one per line: ramp &lt;ft&gt; &lt;down|straight|up|upS|upD|taper&gt; [left|right|center] &middot; landing &lt;ft&gt;x&lt;ft&gt; [left|right|center] &middot; turn &lt;left|right&gt; &middot; hairpin &lt;ft&gt;x&lt;ft&gt;. Ramps default flush-left; add right or center to change. Add norail to a ramp or landing to skip its handrails.</span></label>
       <label class="field only-straight"><span class="lab">Ramp alignment</span>
         <select id="align"><option value="top">Flush to top edge</option><option value="bottom" selected>Flush to bottom edge</option><option value="center">Centered</option></select>
         <span class="hint">which landing edge the ramps line up with by default</span></label>
@@ -246,7 +246,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.55</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.56</footer>
 
 <script>
 "use strict";
@@ -277,7 +277,7 @@ function parseSegments(txt){
   const out=[];
   for(const raw of String(txt).split(String.fromCharCode(10))){
     const line=raw.trim().toLowerCase(); if(!line) continue; let m;
-    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; else if(/left/.test(r))al="left"; out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,norail:/no\s*rails?/.test(r)}); }
+    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/\bupd\b/.test(r))cut="upd"; else if(/\bups\b/.test(r))cut="ups"; else if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; else if(/left/.test(r))al="left"; out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,norail:/no\s*rails?/.test(r)}); }
     else if(m=line.match(/^landing\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:parseFloat(m[1]),across:parseFloat(m[2]),align:al,norail:/no\s*rails?/.test(r)}); }
     else if(m=line.match(/^turn\s+(left|right)/)) out.push({t:"turn",dir:m[1]});
     else if(m=line.match(/^hairpin\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/)) out.push({t:"hairpin",along:parseFloat(m[1]),across:parseFloat(m[2])});
@@ -470,7 +470,7 @@ function buildTerrainProfile(p,G){
     }
   }
   const postSp=(p.postSpacingMax>0?p.postSpacingMax:72), PW=3.5/F;
-  for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=Math.max(1,Math.ceil(len/postSp));
+  for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=(Math.abs(sg.zx1-sg.zx0)>0.01)?1:Math.max(1,Math.ceil(len/postSp));
     for(let i=0;i<=n;i++){ const t=i/n, xx=sg.x0+(sg.x1-sg.x0)*t, zs=sg.zx0+(sg.zx1-sg.zx0)*t, top=zs+hh;
       s+='<rect x="'+(X(xx)-PW/2).toFixed(3)+'" y="'+Y(top).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(Y(groundZ(xx))-Y(top)).toFixed(3)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; }
     for(const rh of [hh, 21, 3]){ const th=(rh===hh?1.5:3.5)/F;
@@ -611,7 +611,7 @@ function buildProfile(p,G){
   }
   // posts + rails on top
   const postSp=(p.postSpacingMax>0?p.postSpacingMax:72), PW=3.5/F;
-  for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=Math.max(1,Math.ceil(len/postSp));
+  for(const sg of segs){ const len=Math.abs(sg.x1-sg.x0), n=(Math.abs(sg.zx1-sg.zx0)>0.01)?1:Math.max(1,Math.ceil(len/postSp));
     for(let i=0;i<=n;i++){ const t=i/n, xx=sg.x0+(sg.x1-sg.x0)*t, zs=sg.zx0+(sg.zx1-sg.zx0)*t, top=zs+hh;
       s+='<rect x="'+(X(xx)-PW/2).toFixed(3)+'" y="'+Y(top).toFixed(3)+'" width="'+PW.toFixed(3)+'" height="'+(Y(groundZ(xx))-Y(top)).toFixed(3)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; }
     for(const rh of [hh, 21, 3]){ const th=(rh===hh?1.5:3.5)/F;
@@ -664,6 +664,12 @@ function noteFit(cX,cY,cW,cH,w,h,obst,placed,pref){
     for(x=cX+GAP;x+w<=cX+cW-GAP+0.001;x+=STEP)
       if(ok(x,y)){d=(x-tgt[0])*(x-tgt[0])+(y-tgt[1])*(y-tgt[1]);if(d<bd){bd=d;best=[x,y];}}
   return best||cor(pref[0]);
+}
+
+function rampCutLabels(cut){
+  var hi=(cut==="straight"||cut==="ups")?"Straight":"Down";
+  var lo=(cut==="up"||cut==="ups"||cut==="upd")?"Up":(cut==="taper")?"Taper 0\u0338":"Straight";
+  return [hi,lo];
 }
 
 function buildSVG(p,g){
@@ -727,7 +733,7 @@ function buildSVG(p,g){
     s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.5+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36"'+plblT+'>'+esc(pc.name)+'</text>';
     s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.12+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47"'+plblT+'>'+esc(ftinTxt)+'</text>';
     s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.6+yOff)+'" font-size="0.33" text-anchor="middle" fill="#6b7280"'+plblT+'>'+esc(inTxt)+'</text>';
-    if(pc.ramp){const dir=pc.dir||1; const hiLbl=(pc.cut==="straight")?"Straight":"Down", loLbl=(pc.cut==="up")?"Up":(pc.cut==="taper")?"Taper 0\u0338":"Straight";
+    if(pc.ramp){const dir=pc.dir||1; const _cl=rampCutLabels(pc.cut), hiLbl=_cl[0], loLbl=_cl[1];
       if(longY){ const hiY=(dir>0?pc.y0:pc.y1)/F+dir*0.55, loY=(dir>0?pc.y1:pc.y0)/F-dir*0.55;
         s+='<text x="'+f3(cx)+'" y="'+f3(hiY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+hiLbl+'</text>';
         s+='<text x="'+f3(cx)+'" y="'+f3(loY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+loLbl+'</text>';
@@ -785,23 +791,23 @@ function buildSVG(p,g){
     }
     const adj=g.pieces.filter(pc=>!pc.ref).concat(deckPh?[deckPh]:[]);
     const exposed=(lo,hi,covers)=>{ let sg=[[lo,hi]]; for(const cv of covers){ const c0=cv[0],c1=cv[1],ns=[]; for(const q of sg){ const s0=q[0],s1=q[1]; if(c1<=s0||c0>=s1) ns.push([s0,s1]); else { if(c0>s0)ns.push([s0,c0]); if(c1<s1)ns.push([c1,s1]); } } sg=ns; } return sg.filter(q=>q[1]-q[0]>0.5); };
-    const drawRail=(x0,y0,x1,y1)=>{
+    const drawRail=(x0,y0,x1,y1,endsOnly)=>{
       const horiz=Math.abs(y1-y0)<Math.abs(x1-x0);
       if(horiz){ const xa=Math.min(x0,x1),xb=Math.max(x0,x1);
         s+='<rect x="'+f3(xa/F)+'" y="'+f3((y0-HI)/F)+'" width="'+f3((xb-xa)/F)+'" height="'+f3(PW)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
       } else { const ya=Math.min(y0,y1),yb=Math.max(y0,y1);
         s+='<rect x="'+f3((x0-HI)/F)+'" y="'+f3(ya/F)+'" width="'+f3(PW)+'" height="'+f3((yb-ya)/F)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
       }
-      const len=Math.hypot(x1-x0,y1-y0), n=Math.max(1,Math.ceil(len/maxSp));
+      const len=Math.hypot(x1-x0,y1-y0), n=endsOnly?1:Math.max(1,Math.ceil(len/maxSp));
       for(let i=0;i<=n;i++){ const t=i/n, px=x0+(x1-x0)*t, py=y0+(y1-y0)*t;
         s+='<rect x="'+f3((px-HI)/F)+'" y="'+f3((py-HI)/F)+'" width="'+f3(PW)+'" height="'+f3(PW)+'" fill="#efe7d6" stroke="#5a5142" stroke-width="0.05"/>'; }
     };
     for(const A of railable){
       const gnd=(A===lastRamp), dir=A.dir||1;
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x0-A.x1)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir>0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x1,e[0],A.x1,e[1]); }
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x1-A.x0)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir<0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x0,e[0],A.x0,e[1]); }
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y1-A.y0)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y0,e[1],A.y0); }
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y0-A.y1)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y1,e[1],A.y1); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x0-A.x1)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir>0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x1,e[0],A.x1,e[1],A.ramp); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x1-A.x0)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir<0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x0,e[0],A.x0,e[1],A.ramp); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y1-A.y0)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y0,e[1],A.y0,A.ramp); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y0-A.y1)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y1,e[1],A.y1,A.ramp); }
     }
   }
   if(p.showSteps){
@@ -888,14 +894,36 @@ function buildSVG(p,g){
   var _footStr="Deck height "+dimText(p.deckHeight)+"  ramp width "+dimText(p.width)+"  footprint "+ftCompact(g.footW)+"x"+ftCompact(g.footH);
   var _botW=Math.max(bw, _footStr.length*0.4*0.55, 6.0)+0.4;
   obst.push([vbX+0.1, y1f+0.45, vbX+0.1+_botW, vbY+vbH+0.2]);
-  var _pcLines=[]; { var _cats=[["Top landings",function(pc){return pc.top;}],["Ramps",function(pc){return pc.ramp;}],["Rests",function(pc){return pc.name==="Rest";}],["Hairpins",function(pc){return pc.name==="Turn landing";}]];
+  var _pcLines=[]; {
     var _pfmt=function(d){return ftCompact(d[0])+" \u00d7 "+ftCompact(d[1])+"  ("+inFrac(d[0])+"\" \u00d7 "+inFrac(d[1])+"\")";};
-    for(var _ci=0;_ci<_cats.length;_ci++){var _it=g.pieces.filter(_cats[_ci][1]);if(!_it.length)continue;
-      var _dm=_it.map(function(pc){return [pc.x1-pc.x0,pc.y1-pc.y0];});
-      var _same=_dm.every(function(d){return Math.abs(d[0]-_dm[0][0])<0.1&&Math.abs(d[1]-_dm[0][1])<0.1;});
-      if(_same){_pcLines.push(_cats[_ci][0]+": "+_it.length+"  \u2014  "+_pfmt(_dm[0]));}
-      else{_pcLines.push(_cats[_ci][0]+": "+_it.length);for(var _k=0;_k<_dm.length;_k++)_pcLines.push("   "+(_k+1)+": "+_pfmt(_dm[_k]));}
+    var _seq=function(a,b){return Math.abs(a[0]-b[0])<0.1&&Math.abs(a[1]-b[1])<0.1;};
+    var _plain=function(name,it){ if(!it.length)return; var _d=it.map(function(pc){return [pc.x1-pc.x0,pc.y1-pc.y0];});
+      var _s=_d.every(function(d){return _seq(d,_d[0]);});
+      if(_s)_pcLines.push(name+": "+it.length+"  \u2014  "+_pfmt(_d[0]));
+      else{_pcLines.push(name+": "+it.length);for(var _k=0;_k<_d.length;_k++)_pcLines.push("   "+(_k+1)+": "+_pfmt(_d[_k]));} };
+    _plain("Top landings", g.pieces.filter(function(pc){return pc.top;}));
+    var _rp=g.pieces.filter(function(pc){return pc.ramp;});
+    if(_rp.length){
+      var _dimOf=function(pc){var w=Math.min(pc.x1-pc.x0,pc.y1-pc.y0);return [pc.run||Math.max(pc.x1-pc.x0,pc.y1-pc.y0),w];};
+      var _ard=_rp.map(_dimOf);
+      var _uni=_ard.every(function(d){return _seq(d,_ard[0]);});
+      _pcLines.push("Ramps: "+_rp.length+(_uni?"  \u2014  "+_pfmt(_ard[0]):""));
+      var _types=[];
+      for(var _i=0;_i<_rp.length;_i++){ var _lb=rampCutLabels(_rp[_i].cut).join(" / "), _dm=_ard[_i];
+        var _ti=-1; for(var _j=0;_j<_types.length;_j++)if(_types[_j].label===_lb){_ti=_j;break;}
+        if(_ti<0){_types.push({label:_lb,n:0,sizes:[]});_ti=_types.length-1;}
+        _types[_ti].n++;
+        var _si=-1; for(var _k=0;_k<_types[_ti].sizes.length;_k++)if(_seq(_types[_ti].sizes[_k].d,_dm)){_si=_k;break;}
+        if(_si<0)_types[_ti].sizes.push({d:_dm,n:1}); else _types[_ti].sizes[_si].n++;
+      }
+      for(var _t=0;_t<_types.length;_t++){ var _T=_types[_t];
+        if(_uni){ _pcLines.push("   "+_T.label+": "+_T.n); }
+        else if(_T.sizes.length===1){ _pcLines.push("   "+_T.label+": "+_T.n+"  \u2014  "+_pfmt(_T.sizes[0].d)); }
+        else { _pcLines.push("   "+_T.label+": "+_T.n); for(var _z=0;_z<_T.sizes.length;_z++)_pcLines.push("      "+_pfmt(_T.sizes[_z].d)+": "+_T.sizes[_z].n); }
+      }
     }
+    _plain("Rests", g.pieces.filter(function(pc){return pc.name==="Rest";}));
+    _plain("Hairpins", g.pieces.filter(function(pc){return pc.name==="Turn landing";}));
   }
   var _pcW=0,_pcH=0; if(_pcLines.length){var _mw=0;for(var _li=0;_li<_pcLines.length;_li++)if(_pcLines[_li].length>_mw)_mw=_pcLines[_li].length;_pcW=_mw*0.36*0.66+0.6;_pcH=_pcLines.length*0.52+0.95;}
   var _noN=2.8, notePos={}, _placed=[];
@@ -918,21 +946,10 @@ function buildSVG(p,g){
     const nx=ncx+ux*(r+0.3), ny=ncy+uy*(r+0.3);
     s+='<text x="'+nx.toFixed(2)+'" y="'+(ny+0.14).toFixed(2)+'" font-size="0.42" text-anchor="middle" fill="#23252b" font-weight="700">N</text>';
   }
-  { const cats=[["Top landings",function(pc){return pc.top;}],["Ramps",function(pc){return pc.ramp;}],["Rests",function(pc){return pc.name==="Rest";}],["Hairpins",function(pc){return pc.name==="Turn landing";}]];
-    const lines=[];
-    const pfmt=function(d){return ftCompact(d[0])+" \u00d7 "+ftCompact(d[1])+"  ("+inFrac(d[0])+"\" \u00d7 "+inFrac(d[1])+"\")";};
-    for(const c of cats){ const it=g.pieces.filter(c[1]); if(!it.length) continue;
-      const dm=it.map(function(pc){return [pc.x1-pc.x0,pc.y1-pc.y0];});
-      const same=dm.every(function(d){return Math.abs(d[0]-dm[0][0])<0.1&&Math.abs(d[1]-dm[0][1])<0.1;});
-      if(same){ lines.push(c[0]+": "+it.length+"  \u2014  "+pfmt(dm[0])); }
-      else { lines.push(c[0]+": "+it.length); for(let k=0;k<dm.length;k++) lines.push("   "+(k+1)+": "+pfmt(dm[k])); }
-    }
-    if(lines.length){ const fs=0.36, lh=0.52; let mw=0; for(const l of lines) if(l.length>mw) mw=l.length;
-      const bw=mw*fs*0.66+0.6, bh=lines.length*lh+0.95, bx2=(notePos.pieces?notePos.pieces[0]:vbX+vbW-bw-0.3), by2=(notePos.pieces?notePos.pieces[1]:vbY+0.4);
-      s+='<rect x="'+bx2.toFixed(2)+'" y="'+by2.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.15" fill="#fbfaf7" fill-opacity="0.93" stroke="#cfcabf" stroke-width="0.03"/>';
-      s+='<text x="'+(bx2+0.35).toFixed(2)+'" y="'+(by2+0.6).toFixed(2)+'" font-size="0.42" font-weight="700" fill="#2b2f36">Pieces</text>';
-      for(let i=0;i<lines.length;i++) s+='<text x="'+(bx2+0.35).toFixed(2)+'" y="'+(by2+1.15+i*lh).toFixed(2)+'" font-size="'+fs+'" fill="#3a3f47">'+esc(lines[i])+'</text>';
-    }
+  if(_pcLines.length && notePos.pieces){ const fs=0.36, lh=0.52, bw=_pcW, bh=_pcH, bx2=notePos.pieces[0], by2=notePos.pieces[1];
+    s+='<rect x="'+bx2.toFixed(2)+'" y="'+by2.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.15" fill="#fbfaf7" fill-opacity="0.93" stroke="#cfcabf" stroke-width="0.03"/>';
+    s+='<text x="'+(bx2+0.35).toFixed(2)+'" y="'+(by2+0.6).toFixed(2)+'" font-size="0.42" font-weight="700" fill="#2b2f36">Pieces</text>';
+    for(let i=0;i<_pcLines.length;i++){ let _ln=_pcLines[i], _ind=0; while(_ln.charAt(_ind)===" ")_ind++; s+='<text x="'+(bx2+0.35+_ind*0.16).toFixed(2)+'" y="'+(by2+1.15+i*lh).toFixed(2)+'" font-size="'+fs+'" fill="#3a3f47">'+esc(_ln.slice(_ind))+'</text>'; }
   }
   s+='</svg>'; return s;
 }
@@ -1090,7 +1107,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.55",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.56",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
