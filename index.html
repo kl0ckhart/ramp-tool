@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.61</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.62</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -249,10 +249,11 @@
       <div id="surveyWrap" style="margin-top:16px">
         <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Terrain &mdash; side view (ramp on the surveyed ground)</h2>
         <div class="paper" id="surveyPaper"></div>
+        <div id="reachPaper"></div>
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.61</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.62</footer>
 
 <script>
 "use strict";
@@ -429,6 +430,41 @@ function buildSurveyMap(p){
   s+='</svg>';
   return s;
 }
+function reachToGrade(p, G){
+  const deck=(p.deckHeight||0);
+  let L=0; for(const pc of G.pieces){ if(pc.ramp && !pc.ref) L+=(pc.run||(pc.x1-pc.x0)); }
+  if(L<=0) return null;
+  const sv=parseSurvey(p.survey);
+  if(!sv.order.length) return null;
+  const cz={}; cz[sv.order[0]]=0;
+  for(const leg of sv.legs){ if(cz[leg.from]==null)cz[leg.from]=0; cz[leg.to]=cz[leg.from]-leg.drop; }
+  const gEnd=(cz[sv.order[sv.order.length-1]]||0);
+  const footElev=deck - L/12;
+  return { deck:deck, L:L, footElev:footElev, gEnd:gEnd, gap:footElev-gEnd };
+}
+function reachReadoutHTML(r){
+  if(!r) return '';
+  const gm = r.gEnd<-0.05 ? ('fell '+dimText(-r.gEnd)) : (r.gEnd>0.05 ? ('rose '+dimText(r.gEnd)) : 'stayed level');
+  let verdict, detail, tone;
+  if(Math.abs(r.gap)<=1){ tone='#2e7d32'; verdict='The last ramp reaches grade.'; detail='Taper the final ramp to 0 at the ground as planned.'; }
+  else if(r.gap>1){ tone='#b26a00';
+    const extra=r.gap*12, full=Math.floor(extra/96+1e-6), rem=extra-full*96;
+    let need=''; if(full>0) need+=full+" more 8' ramp"+(full>1?'s':'');
+    if(rem>6){ need+=(full>0?' plus ':'')+'a '+ftFrac(rem)+' ramp'; }
+    if(!need) need='a short ramp';
+    verdict='The foot hangs '+dimText(r.gap)+' above grade.';
+    detail='Add '+need+', tapering the final ramp to 0 at the ground.';
+  } else { tone='#b26a00';
+    verdict='The foot lands '+dimText(-r.gap)+' below grade.';
+    detail='The ramp reaches the ground early \u2014 shorten the last ramp by about '+ftFrac((-r.gap)*12)+' and taper it to 0 at the ground.';
+  }
+  return '<div style="margin-top:10px;padding:10px 12px;border:1px solid #e0dccf;border-left:4px solid '+tone+';border-radius:6px;background:#fbfaf7;font-size:13px;line-height:1.5">'
+    +'<div style="font-weight:700;color:'+tone+';margin-bottom:2px">'+esc(verdict)+'</div>'
+    +'<div>'+esc(detail)+'</div>'
+    +'<div style="color:#8a8a8a;margin-top:6px;font-size:12px">Ramp drops '+esc(dimText(r.L/12))+' over '+esc(ftFrac(r.L))+' at 1:12 &middot; ground '+esc(gm)+' across the survey. Survey the whole path (deck to ramp foot) for this to be right.</div>'
+    +'</div>';
+}
+
 function buildTerrainProfile(p,G){
   const F=12, deck=p.deckHeight, hh=(p.handrailHeight>0?p.handrailHeight:35);
   const framR=5.5, framT=(p.topOnExistingDeck?3.5:5.5), deckingT=1;
@@ -1126,6 +1162,7 @@ function render(){
   if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,g);
   document.getElementById("surveyWrap").style.display=(p.survey&&p.survey.trim())?"":"none";
   if(p.survey&&p.survey.trim()) document.getElementById("surveyPaper").innerHTML=buildTerrainProfile(p,g);
+  document.getElementById("reachPaper").innerHTML=(p.survey&&p.survey.trim())?reachReadoutHTML(reachToGrade(p,g)):"";
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
   document.getElementById("caption").innerHTML=
     (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(g.maxGroupRise>30?'<b style="color:#c0392b">\u26a0 '+inFrac(g.maxGroupRise)+'" continuous rise, no landing \u2014 30" max, add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
@@ -1137,7 +1174,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.61",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.62",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
