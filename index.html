@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.69</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.70</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -179,7 +179,7 @@
       <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (side view)</label>
       <div class="sechead">Terrain</div>
             <label class="field"><span class="lab">Ground survey (laser)</span><textarea id="survey" rows="6" placeholder="BM: 4' 2-3/8&#10;13: 3' 1/4&#10;21: 2' 5-1/2"></textarea></label>
-            <label class="field"><span class="lab">BM at <span class="u">(ft from 0,0)</span></span><input id="bmDist" type="number" step="1" value="0"></label>
+            <input type="hidden" id="bmX"><input type="hidden" id="bmY"><input type="hidden" id="notchX"><input type="hidden" id="notchY">
       <details style="margin:2px 0 8px"><summary class="hint" style="cursor:pointer;font-weight:700">How to enter the survey</summary>
         <div class="hint" style="margin-top:6px;line-height:1.6">
           Shoot the <b>benchmark</b> at the deck base, then the rod reading at points going out along the ramp line. One line each &mdash; <b>distance: reading</b>:<br>
@@ -251,7 +251,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.69</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.70</footer>
 
 <script>
 "use strict";
@@ -549,9 +549,6 @@ function buildTerrainProfile(p,G){
     s+='<line x1="'+gx.toFixed(3)+'" y1="'+gy.toFixed(3)+'" x2="'+gx.toFixed(3)+'" y2="'+(gy+0.55).toFixed(3)+'" stroke="#c0392b" stroke-width="0.04"/>';
     s+='<circle cx="'+gx.toFixed(3)+'" cy="'+gy.toFixed(3)+'" r="0.12" fill="#c0392b"/>';
     s+='<text x="'+gx.toFixed(3)+'" y="'+(gy+0.95).toFixed(3)+'" font-size="0.38" text-anchor="middle" fill="#c0392b" font-weight="700">'+(Math.abs(pt.d)<0.001?'0':(ftFrac(pt.d*12)))+'</text>'; }
-  { const bmd=(p.bmDist||0), bgx=X(bmd), bgy=Y(gz(bmd));
-    s+='<circle cx="'+bgx.toFixed(2)+'" cy="'+bgy.toFixed(2)+'" r="0.18" fill="none" stroke="#7a1f14" stroke-width="0.06"/>';
-    s+='<text x="'+bgx.toFixed(2)+'" y="'+(bgy-0.32).toFixed(2)+'" font-size="0.44" text-anchor="middle" fill="#7a1f14" font-weight="700">BM</text>'; }
   s+='</svg>';
   return s;
 }
@@ -746,6 +743,19 @@ function rampCutLabels(cut){
   return [hi,lo];
 }
 
+function svgUserPt(svg,e){ if(!svg.createSVGPoint) return null; const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const m=svg.getScreenCTM(); if(!m) return null; return pt.matrixTransform(m.inverse()); }
+function attachDrag(){
+  const svg=document.querySelector('#paper svg'); if(!svg) return;
+  [['bmMarker','bmX','bmY'],['notchMarker','notchX','notchY']].forEach(function(cfg){
+    const el=svg.querySelector('#'+cfg[0]); if(!el) return;
+    el.style.cursor='move'; el.style.touchAction='none';
+    let start=null, orig=null;
+    el.addEventListener('pointerdown', function(e){ e.preventDefault(); e.stopPropagation(); try{el.setPointerCapture(e.pointerId);}catch(_){}; start=svgUserPt(svg,e); orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0}; });
+    el.addEventListener('pointermove', function(e){ if(!start)return; const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
+    function end(e){ if(!start)return; const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } start=null; el.removeAttribute('transform'); render(); try{saveDesign();}catch(_){} }
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  });
+}
 function buildSVG(p,g){
   const F=12;
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
@@ -778,21 +788,7 @@ function buildSVG(p,g){
       continue;
     }
     if(pc.ramp)lastR=pc;
-    if(pc.top && p.notchEnable && p.notchWidth>0 && p.notchDepth>0){
-      const lcx=(pc.x0+pc.x1)/2;
-      let a=Math.max(pc.x0,lcx+p.notchOffset-p.notchWidth/2)/F,b=Math.min(pc.x1,lcx+p.notchOffset+p.notchWidth/2)/F;
-      const nd=(pc.y0+Math.min(p.notchDepth,pc.y1-pc.y0))/F;
-      s+='<path d="M '+f3(x)+' '+f3(y)+' L '+f3(a)+' '+f3(y)+' L '+f3(a)+' '+f3(nd)+' L '+f3(b)+' '+f3(nd)+' L '+f3(b)+' '+f3(y)+' L '+f3(x+w)+' '+f3(y)+' L '+f3(x+w)+' '+f3(y+h)+' L '+f3(x)+' '+f3(y+h)+' Z" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
-      { const ncx=(a+b)/2, ncy=(y+nd)/2, midX=(x0f+x1f)/2, side=(ncx<=midX)?1:-1, bx=ncx+side*2.6, by=y0f-3.0;
-        s+='<line x1="'+f3(ncx)+'" y1="'+f3(ncy)+'" x2="'+f3(bx-side*0.55)+'" y2="'+f3(by+0.2)+'" stroke="#c0392b" stroke-width="0.05"/>';
-        s+='<circle cx="'+f3(ncx)+'" cy="'+f3(ncy)+'" r="0.1" fill="#c0392b"/>';
-        s+='<circle cx="'+f3(bx)+'" cy="'+f3(by)+'" r="0.62" fill="#fff" stroke="#c0392b" stroke-width="0.07"/>';
-        s+='<circle cx="'+f3(bx-0.11)+'" cy="'+f3(by-0.11)+'" r="0.25" fill="none" stroke="#c0392b" stroke-width="0.06"/>';
-        s+='<line x1="'+f3(bx+0.07)+'" y1="'+f3(by+0.07)+'" x2="'+f3(bx+0.33)+'" y2="'+f3(by+0.33)+'" stroke="#c0392b" stroke-width="0.09" stroke-linecap="round"/>';
-        s+='<text x="'+f3(bx+side*0.9)+'" y="'+f3(by+0.15)+'" font-size="0.44" text-anchor="'+(side>0?"start":"end")+'" fill="#c0392b" font-weight="700">See notch detail below</text>'; }
-    } else {
-      s+='<rect x="'+f3(x)+'" y="'+f3(y)+'" width="'+f3(w)+'" height="'+f3(h)+'" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
-    }
+    s+='<rect x="'+f3(x)+'" y="'+f3(y)+'" width="'+f3(w)+'" height="'+f3(h)+'" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
     if(pc.ramp){const dir=pc.dir||1;
       if(alongY){ const tip=(dir>0?(pc.y1/F-0.12):(pc.y0/F+0.12)), tail=tip-dir*0.5, ax=x+0.4;
         s+='<line x1="'+f3(ax)+'" y1="'+f3(tail)+'" x2="'+f3(ax)+'" y2="'+f3(tip)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
@@ -816,6 +812,15 @@ function buildSVG(p,g){
         s+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">'+hiLbl+'</text>';
         s+='<text x="'+f3(loX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(loX)+' '+f3(cy)+')">'+loLbl+'</text>';
       }}
+  }
+  if(p.notchEnable && p.notchWidth>0 && p.notchDepth>0){ const tl2=g.pieces.find(pc=>pc.top);
+    if(tl2){ const nw=p.notchWidth/F, ndh=p.notchDepth/F;
+      const ncx=(p.notchX!=null?p.notchX:((tl2.x0+tl2.x1)/2/F)), ncy=(p.notchY!=null?p.notchY:(tl2.y0/F+ndh/2));
+      s+='<g id="notchMarker">';
+      s+='<rect x="'+(ncx-nw/2).toFixed(3)+'" y="'+(ncy-ndh/2).toFixed(3)+'" width="'+nw.toFixed(3)+'" height="'+ndh.toFixed(3)+'" fill="#a8c8a0" fill-opacity="0.9" stroke="#5f8f57" stroke-width="0.06" stroke-dasharray="0.24 0.14"/>';
+      s+='<text x="'+ncx.toFixed(3)+'" y="'+(ncy+0.11).toFixed(3)+'" font-size="0.3" text-anchor="middle" fill="#4e7a46" font-weight="700">notch</text>';
+      s+='</g>';
+    }
   }
   const ramps=g.pieces.filter(pc=>pc.ramp);
   for(const L of g.pieces){
@@ -949,10 +954,12 @@ function buildSVG(p,g){
         s+='<line x1="'+cx.toFixed(2)+'" y1="'+(cy-0.42).toFixed(2)+'" x2="'+cx.toFixed(2)+'" y2="'+(cy+0.42).toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
         s+='<text x="'+cx.toFixed(2)+'" y="'+(cy-0.52).toFixed(2)+'" font-size="0.5" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(lbl)+'</text>';
       }
-      { const bmd=(p.bmDist||0), bc=pathPos(path,bmd), bx=bc.x/F, by=bc.y/F;
-        s+='<circle cx="'+bx.toFixed(2)+'" cy="'+by.toFixed(2)+'" r="0.36" fill="none" stroke="#7a1f14" stroke-width="0.09"/>';
+      { const bx=(p.bmX!=null?p.bmX:pathPos(path,0).x/F), by=(p.bmY!=null?p.bmY:pathPos(path,0).y/F);
+        s+='<g id="bmMarker">';
+        s+='<circle cx="'+bx.toFixed(2)+'" cy="'+by.toFixed(2)+'" r="0.42" fill="#fff" fill-opacity="0.5" stroke="#7a1f14" stroke-width="0.09"/>';
         s+='<circle cx="'+bx.toFixed(2)+'" cy="'+by.toFixed(2)+'" r="0.1" fill="#7a1f14"/>';
-        s+='<text x="'+bx.toFixed(2)+'" y="'+(by+0.66).toFixed(2)+'" font-size="0.55" text-anchor="middle" fill="#7a1f14" font-weight="700">BM</text>'; }
+        s+='<text x="'+bx.toFixed(2)+'" y="'+(by+0.7).toFixed(2)+'" font-size="0.55" text-anchor="middle" fill="#7a1f14" font-weight="700">BM</text>';
+        s+='</g>'; }
     }
   }
   if(p.obstacles && p.obstacles.length){
@@ -1064,7 +1071,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmDist"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -1081,13 +1088,14 @@ function parseObstacles(txt){
 }
 function readParams(){
   const num=id=>parseFloat(document.getElementById(id).value)||0;
+  const bnum=id=>{const v=document.getElementById(id).value; return v===""?null:parseFloat(v);};
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
   return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmDist:num("bmDist"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
@@ -1192,6 +1200,9 @@ function render(){
   terrainAdjust(p, g);
   if(p.attachExisting && g.pieces[0]) g.pieces[0].name="Existing structure";
   const gPlan=sideTransform(cloneG(g), p.startSide);
+  { const pth=rampPath(gPlan), tl=gPlan.pieces.find(pc=>pc.top);
+    if(p.bmX==null && pth){ const c=pathPos(pth,0); p.bmX=c.x/12; p.bmY=c.y/12; document.getElementById("bmX").value=p.bmX.toFixed(3); document.getElementById("bmY").value=p.bmY.toFixed(3); }
+    if(p.notchX==null && tl){ p.notchX=((tl.x0+tl.x1)/2)/12; p.notchY=tl.y0/12+(p.notchDepth||6)/24; document.getElementById("notchX").value=p.notchX.toFixed(3); document.getElementById("notchY").value=p.notchY.toFixed(3); } }
   if(p.showDeckRef && !p.attachExisting){
     const tl=gPlan.pieces[0], L=(p.existingLen>0?p.existingLen:12)*12, D=(p.existingDepth>0?p.existingDepth:2)*12, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
     if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
@@ -1224,6 +1235,7 @@ function render(){
   document.getElementById("caption").innerHTML=
     (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(g.maxGroupRise>30?'<b style="color:#c0392b">\u26a0 '+inFrac(g.maxGroupRise)+'" continuous rise, no landing \u2014 30" max, add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
     g.totalRamps+' runs &middot; footprint <span class="mono">'+esc(ftFrac(g.footW))+' \u00d7 '+esc(ftFrac(g.footH))+'</span>'+((g.terrain&&g.terrainReach)?' &middot; <span class="mono" style="color:#2e7d32">reaches grade in '+esc(ftFrac(g.terrainReach*12))+'</span>':'');
+  attachDrag();
 }
 ids.forEach(id=>{const el=document.getElementById(id);
   const visToggle=(id==="layout"||id==="notchEnable"||id==="showDeckRef"||id==="showNorth"||id==="useOverrides"||id==="showSteps"||id==="showHandrails"||id==="showDoor"||id==="hasTopLanding"||id==="sameSize");
@@ -1231,7 +1243,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.69",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.70",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
