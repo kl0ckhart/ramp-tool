@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.71</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.72</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -251,7 +251,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.71</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.72</footer>
 
 <script>
 "use strict";
@@ -740,16 +740,26 @@ function rampCutLabels(cut){
   return [hi,lo];
 }
 
+var _activePtrs=0, _pinch=false;
 function svgUserPt(svg,e){ if(!svg.createSVGPoint) return null; const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const m=svg.getScreenCTM(); if(!m) return null; return pt.matrixTransform(m.inverse()); }
 function attachDrag(){
+  if(!window.__pg){ window.__pg=true;
+    document.addEventListener('pointerdown', function(){ _activePtrs++; if(_activePtrs>1)_pinch=true; }, true);
+    var _d=function(){ _activePtrs=Math.max(0,_activePtrs-1); if(_activePtrs===0)_pinch=false; };
+    document.addEventListener('pointerup', _d, true); document.addEventListener('pointercancel', _d, true);
+  }
   const svg=document.querySelector('#paper svg'); if(!svg) return;
   [['bmMarker','bmX','bmY'],['notchMarker','notchX','notchY']].forEach(function(cfg){
     const el=svg.querySelector('#'+cfg[0]); if(!el) return;
     el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null;
-    el.addEventListener('pointerdown', function(e){ e.preventDefault(); e.stopPropagation(); try{el.setPointerCapture(e.pointerId);}catch(_){}; start=svgUserPt(svg,e); orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0}; });
-    el.addEventListener('pointermove', function(e){ if(!start)return; const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(!start)return; const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } start=null; el.removeAttribute('transform'); render(); }
+    let start=null, orig=null, pid=null;
+    el.addEventListener('pointerdown', function(e){
+      if(_pinch || _activePtrs>1 || e.isPrimary===false){ return; }
+      e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
+      start=svgUserPt(svg,e); orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0};
+    });
+    el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_pinch){ start=null; el.removeAttribute('transform'); return; } const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
+    function end(e){ if(e.pointerId!==pid)return; if(start && !_pinch){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } start=null; pid=null; el.removeAttribute('transform'); render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
 }
@@ -1198,8 +1208,12 @@ function render(){
   if(p.attachExisting && g.pieces[0]) g.pieces[0].name="Existing structure";
   const gPlan=sideTransform(cloneG(g), p.startSide);
   { const pth=rampPath(gPlan), tl=gPlan.pieces.find(pc=>pc.top);
-    if(p.bmX==null && pth){ const c=pathPos(pth,0); p.bmX=c.x/12; p.bmY=c.y/12; document.getElementById("bmX").value=p.bmX.toFixed(3); document.getElementById("bmY").value=p.bmY.toFixed(3); }
-    if(p.notchX==null && tl){ p.notchX=((tl.x0+tl.x1)/2)/12; p.notchY=tl.y0/12+(p.notchDepth||6)/24; document.getElementById("notchX").value=p.notchX.toFixed(3); document.getElementById("notchY").value=p.notchY.toFixed(3); } }
+    if(p.bmX==null && pth){ const c=pathPos(pth,0); p.bmX=c.x/12; p.bmY=c.y/12; }
+    if(p.notchX==null && tl){ p.notchX=((tl.x0+tl.x1)/2)/12; p.notchY=tl.y0/12+(p.notchDepth||6)/24; }
+    if(tl && p.notchX!=null){ p.notchX=Math.max(tl.x0/12,Math.min(tl.x1/12,p.notchX)); p.notchY=Math.max(tl.y0/12,Math.min(tl.y1/12,p.notchY)); }
+    if(p.bmX!=null){ let x0f=1e9,y0f=1e9,x1f=-1e9,y1f=-1e9; for(const pc of gPlan.pieces){ if(pc.x0<x0f)x0f=pc.x0; if(pc.y0<y0f)y0f=pc.y0; if(pc.x1>x1f)x1f=pc.x1; if(pc.y1>y1f)y1f=pc.y1; } p.bmX=Math.max(x0f/12-2,Math.min(x1f/12+2,p.bmX)); p.bmY=Math.max(y0f/12-2,Math.min(y1f/12+2,p.bmY)); }
+    if(p.bmX!=null){ document.getElementById("bmX").value=p.bmX.toFixed(3); document.getElementById("bmY").value=p.bmY.toFixed(3); }
+    if(p.notchX!=null){ document.getElementById("notchX").value=p.notchX.toFixed(3); document.getElementById("notchY").value=p.notchY.toFixed(3); } }
   if(p.showDeckRef && !p.attachExisting){
     const tl=gPlan.pieces[0], L=(p.existingLen>0?p.existingLen:12)*12, D=(p.existingDepth>0?p.existingDepth:2)*12, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
     if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
@@ -1240,7 +1254,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.71",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.72",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
