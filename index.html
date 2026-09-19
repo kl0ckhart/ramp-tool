@@ -47,6 +47,7 @@
   button.print:hover{background:var(--blue2)}
   .paper{border:1px solid #e7e4dc;border-radius:8px;background:#fff;padding:10px;overflow-x:auto;}
   .paper svg{display:block;max-width:100%;height:auto;margin:0 auto}
+  #profilePaper svg,#notchPaper svg{ -webkit-transform:translateZ(0); transform:translateZ(0); }
   .caption{margin-top:10px;font-size:13px;color:#414653} .caption .mono{color:var(--ink)}
   .scale-note{margin-top:4px;font-size:12px;color:var(--muted)}
   footer{padding:6px 20px 26px;color:var(--muted);font-size:12px}
@@ -56,7 +57,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.75</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.77</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -245,13 +246,13 @@
         <div class="paper" id="notchPaper"></div>
       </div>
       <div id="surveyWrap" style="margin-top:16px">
-        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Terrain &mdash; side view (ramp on the surveyed ground)</h2>
-        <div class="paper" id="surveyPaper"></div>
+        <h2 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Terrain reach</h2>
+        <div class="paper" id="surveyPaper" style="display:none"></div>
         <div id="reachPaper"></div>
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.75</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.77</footer>
 
 <script>
 "use strict";
@@ -1289,11 +1290,11 @@ function render(){
     document.getElementById("roAdaNote").textContent='ADA: 1:12, rise \u2264 30"/run'+(p.layout==="switchback"?', turn gap <48"':'')+' \u00b7 see ADA notes'; }
   document.getElementById("paper").innerHTML=buildSVG(p,gPlan);
   document.getElementById("profileWrap").style.display=p.showProfile?"":"none";
-  if(p.showProfile) document.getElementById("profilePaper").innerHTML=(p.layout==="compound"?buildSideView(p,g):buildProfile(p,g));
+  if(p.showProfile) document.getElementById("profilePaper").innerHTML=(p.layout==="compound"?buildDevProfile(p,g):buildProfile(p,g));
   document.getElementById("notchWrap").style.display=p.notchEnable?"":"none";
   if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,gPlan);
   document.getElementById("surveyWrap").style.display=(p.survey&&p.survey.trim())?"":"none";
-  if(p.survey&&p.survey.trim()) document.getElementById("surveyPaper").innerHTML=buildTerrainProfile(p,g);
+
   document.getElementById("reachPaper").innerHTML=(p.survey&&p.survey.trim())?reachReadoutHTML(reachToGrade(p,g)):"";
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
   document.getElementById("caption").innerHTML=
@@ -1307,7 +1308,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.75",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.77",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
