@@ -56,7 +56,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.74</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.75</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -251,7 +251,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.74</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.75</footer>
 
 <script>
 "use strict";
@@ -793,12 +793,12 @@ function rampCutLabels(cut){
   return [hi,lo];
 }
 
-var _activePtrs=0, _pinch=false;
+var _dragPtrs=new Set();
 function svgUserPt(svg,e){ if(!svg.createSVGPoint) return null; const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const m=svg.getScreenCTM(); if(!m) return null; return pt.matrixTransform(m.inverse()); }
 function attachDrag(){
   if(!window.__pg){ window.__pg=true;
-    document.addEventListener('pointerdown', function(){ _activePtrs++; if(_activePtrs>1)_pinch=true; }, true);
-    var _d=function(){ _activePtrs=Math.max(0,_activePtrs-1); if(_activePtrs===0)_pinch=false; };
+    document.addEventListener('pointerdown', function(e){ if(e.isPrimary) _dragPtrs.clear(); _dragPtrs.add(e.pointerId); }, true);
+    var _d=function(e){ _dragPtrs.delete(e.pointerId); };
     document.addEventListener('pointerup', _d, true); document.addEventListener('pointercancel', _d, true);
   }
   const svg=document.querySelector('#paper svg'); if(!svg) return;
@@ -807,12 +807,12 @@ function attachDrag(){
     el.style.cursor='move'; el.style.touchAction='none';
     let start=null, orig=null, pid=null;
     el.addEventListener('pointerdown', function(e){
-      if(_pinch || _activePtrs>1 || e.isPrimary===false){ return; }
+      if(_dragPtrs.size>1 || e.isPrimary===false){ return; }
       e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
       start=svgUserPt(svg,e); orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0};
     });
-    el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_pinch){ start=null; el.removeAttribute('transform'); return; } const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; if(start && !_pinch){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } start=null; pid=null; el.removeAttribute('transform'); render(); }
+    el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){ start=null; el.removeAttribute('transform'); return; } const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
+    function end(e){ if(e.pointerId!==pid)return; if(start && _dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } start=null; pid=null; el.removeAttribute('transform'); render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
 }
@@ -1307,7 +1307,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.74",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.75",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
