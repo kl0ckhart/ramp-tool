@@ -59,7 +59,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.82</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.83</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -254,7 +254,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.82</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.83</footer>
 
 <script>
 "use strict";
@@ -634,6 +634,21 @@ function buildDevProfile(p, G){
     let ds=[]; if(pc.ramp){ ds=[d0,d1]; } else { const n=Math.max(1,Math.ceil((sg.len*12)/postSp)); for(let i=0;i<=n;i++) ds.push(d0+(d1-d0)*i/n); }
     for(const d of ds){ const zt=sf(d)+hh, zb=gz(d); s+='<rect x="'+(X(d)-PW/2).toFixed(2)+'" y="'+Y(zt).toFixed(2)+'" width="'+PW.toFixed(3)+'" height="'+Math.max(0,(Y(zb)-Y(zt))).toFixed(2)+'" fill="#8a6a3a" fill-opacity="0.85" stroke="#5a4326" stroke-width="0.025"/>'; }
   } }
+  { var _lastDir=null,_lastEnd=null;
+    for(var _si=0;_si<path.segs.length;_si++){ var _sg=path.segs[_si], _pc=_sg.pc;
+      if(_pc.ramp){ var _dir={x:_pc.ddx||0,y:_pc.ddy||0};
+        if(_lastDir){ var _cr=_lastDir.x*_dir.y-_lastDir.y*_dir.x, _dt=_lastDir.x*_dir.x+_lastDir.y*_dir.y;
+          if(Math.abs(_cr)>0.01||_dt<-0.01){ var _td=(_lastEnd+_sg.d0)/2, _is180=_dt<-0.5, _sd=_cr<-0.01?"left":(_cr>0.01?"right":"");
+            var _lbl=_is180?"\u21BA switchback 180\u00B0":((_sd==="left"?"\u21B0":"\u21B1")+" turn "+(_sd==="left"?"left":"right"));
+            var _tx=X(_td), _tyB=Y(sf(_td)), _tyT=Y(sf(_td)+hh)-0.55;
+            s+='<line x1="'+_tx.toFixed(2)+'" y1="'+_tyB.toFixed(2)+'" x2="'+_tx.toFixed(2)+'" y2="'+_tyT.toFixed(2)+'" stroke="#8a3ffc" stroke-width="0.05" stroke-dasharray="0.16 0.1"/>';
+            s+='<text x="'+_tx.toFixed(2)+'" y="'+(_tyT-0.14).toFixed(2)+'" font-size="0.4" text-anchor="middle" fill="#7a2fd6" font-weight="700">'+_lbl+'</text>';
+          }
+        }
+        _lastDir=_dir; _lastEnd=_sg.d1;
+      }
+    }
+  }
   s+='<line x1="0" y1="'+Y(g0).toFixed(2)+'" x2="0" y2="'+Y(base).toFixed(2)+'" stroke="#555" stroke-width="0.04"/>';
   s+='<text x="-0.4" y="'+(Y(base)+0.5).toFixed(2)+'" font-size="0.32" text-anchor="end" fill="#555">deck</text>';
   s+='<text x="-0.4" y="'+(Y(base)+0.95).toFixed(2)+'" font-size="0.32" text-anchor="end" fill="#555">'+ftFrac(deck)+'</text>';
@@ -1313,7 +1328,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.82",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.83",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
