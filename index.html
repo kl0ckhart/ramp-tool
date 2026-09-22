@@ -59,7 +59,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.81</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.82</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -254,7 +254,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.81</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.82</footer>
 
 <script>
 "use strict";
@@ -618,7 +618,7 @@ function buildDevProfile(p, G){
   let gp=''; const N=90; for(let i=0;i<=N;i++){ const d=xMax*i/N; gp+=(i?' ':'')+X(d).toFixed(3)+','+Y(gz(d)).toFixed(3); }
   s+='<polygon points="'+X(0).toFixed(3)+','+(vbY+vbH).toFixed(2)+' '+gp+' '+X(xMax).toFixed(3)+','+(vbY+vbH).toFixed(2)+'" fill="#efe6d2" fill-opacity="0.5"/>';
   s+='<polyline points="'+gp+'" fill="none" stroke="#7a6a3a" stroke-width="0.05"/>';
-  s+='<text x="'+X(xMax).toFixed(2)+'" y="'+(Y(gz(xMax))+0.5).toFixed(2)+'" font-size="0.34" text-anchor="end" fill="#7a6a3a" font-weight="700">GROUND'+(hasSurvey?' (survey)':'')+'</text>';
+  s+='<text x="'+X(0.4).toFixed(2)+'" y="'+(vbY+vbH-0.35).toFixed(2)+'" font-size="0.34" text-anchor="start" fill="#7a6a3a" font-weight="700">GROUND'+(hasSurvey?' (survey)':'')+'</text>';
   const RAIL=pc=>(p.showHandrails && !pc.norail && (!pc.top || p.railTopLanding));
   const th=TH/F;
   for(const sg of path.segs){ const pc=sg.pc, d0=sg.d0, d1=sg.d1, z0=sf(d0), z1=sf(d1);
@@ -637,7 +637,7 @@ function buildDevProfile(p, G){
   s+='<line x1="0" y1="'+Y(g0).toFixed(2)+'" x2="0" y2="'+Y(base).toFixed(2)+'" stroke="#555" stroke-width="0.04"/>';
   s+='<text x="-0.4" y="'+(Y(base)+0.5).toFixed(2)+'" font-size="0.32" text-anchor="end" fill="#555">deck</text>';
   s+='<text x="-0.4" y="'+(Y(base)+0.95).toFixed(2)+'" font-size="0.32" text-anchor="end" fill="#555">'+ftFrac(deck)+'</text>';
-  if(cross!=null){ s+='<circle cx="'+X(cross).toFixed(2)+'" cy="'+Y(gz(cross)).toFixed(2)+'" r="0.12" fill="#b26a00"/>'; s+='<text x="'+X(cross).toFixed(2)+'" y="'+(Y(gz(cross))-0.28).toFixed(2)+'" font-size="0.36" text-anchor="middle" fill="#b26a00" font-weight="700">taper 0'+(hasSurvey?' @ '+ftFrac(cross*12):'')+'</text>'; }
+  if(cross!=null){ s+='<circle cx="'+X(cross).toFixed(2)+'" cy="'+Y(gz(cross)).toFixed(2)+'" r="0.12" fill="#b26a00"/>'; s+='<text x="'+X(cross).toFixed(2)+'" y="'+(Y(gz(cross))+0.62).toFixed(2)+'" font-size="0.36" text-anchor="middle" fill="#b26a00" font-weight="700">taper 0'+(hasSurvey?' @ '+ftFrac(cross*12):'')+'</text>'; }
   if(hasSurvey){ for(const pt of P){ if(pt.d<0.01) continue; const gx=X(pt.d), gy=Y(pt.z);
     s+='<line x1="'+gx.toFixed(2)+'" y1="'+gy.toFixed(2)+'" x2="'+gx.toFixed(2)+'" y2="'+(gy+0.5).toFixed(2)+'" stroke="#c0392b" stroke-width="0.04"/>';
     s+='<circle cx="'+gx.toFixed(2)+'" cy="'+gy.toFixed(2)+'" r="0.1" fill="#c0392b"/>';
@@ -1295,7 +1295,7 @@ function render(){
   document.getElementById("paper").innerHTML=buildSVG(p,gPlan);
   document.getElementById("profileWrap").style.display=p.showProfile?"":"none";
   if(p.showProfile) document.getElementById("profilePaper").innerHTML=(p.layout==="compound"?buildSideView(p,g):buildProfile(p,g));
-  if(p.survey&&p.survey.trim()) document.getElementById("surveyPaper").innerHTML=buildTerrainProfile(p,g);
+  if(p.survey&&p.survey.trim()) document.getElementById("surveyPaper").innerHTML=buildDevProfile(p,g);
   document.getElementById("notchWrap").style.display=p.notchEnable?"":"none";
   if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,gPlan);
   document.getElementById("surveyWrap").style.display=(p.survey&&p.survey.trim())?"":"none";
@@ -1313,7 +1313,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.81",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.82",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
