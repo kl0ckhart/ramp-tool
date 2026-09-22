@@ -53,11 +53,13 @@
   footer{padding:6px 20px 26px;color:var(--muted);font-size:12px}
   @page{size:landscape;margin:12mm}
   @media print{body{background:#fff} header .ver,.inputs,.planhead button,.scale-note,footer{display:none !important}
-    main{display:block;padding:0} .plan{border:0;padding:0;position:static;max-height:none;overflow:visible} .paper{border:0;padding:0;overflow:visible} .planhead h2{display:none} .brand{font-size:18px}}
+    main{display:block;padding:0} .plan{border:0;padding:0;position:static;max-height:none;overflow:visible} .paper{border:0;padding:0;overflow:visible} .planhead h2{display:none} .brand{font-size:18px}
+    #paper svg{max-width:100% !important;max-height:150mm !important;width:auto !important;height:auto !important}
+    .plan,.paper{break-inside:avoid;page-break-inside:avoid}}
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.80</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.81</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -252,7 +254,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.80</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.81</footer>
 
 <script>
 "use strict";
@@ -824,7 +826,7 @@ function buildSVG(p,g){
   }
   let mcE=0; { let cons=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>mcE)mcE=cons;} else if(!pc.ref){cons=0;} } }
   const mB=Math.max(3.4, (g.maxGroupRise>30?5.0:3.8));
-  const mTn=Math.max(mT, notesBH>0?notesBH+0.7:0); const vbX=x0f-mL,vbY=y0f-mTn,vbW=Math.max((x1f-x0f)+mL+mR, notesBW+0.7),vbH=(y1f-y0f)+mTn+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
+  const mTn=mT; const vbX=x0f-mL,vbY=y0f-mTn,vbW=(x1f-x0f)+mL+mR,vbH=(y1f-y0f)+mTn+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
   let s='<svg viewBox="@@VB@@" width="@@W@@cm" height="@@H@@cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   let grid="";
   for(let gx=Math.floor(vbX);gx<=Math.ceil(vbX+vbW);gx++){const M=(gx%5===0);grid+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
@@ -1311,7 +1313,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.80",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.81",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
