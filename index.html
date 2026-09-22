@@ -59,7 +59,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.84</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.85</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -254,7 +254,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.84</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.85</footer>
 
 <script>
 "use strict";
@@ -642,8 +642,8 @@ function buildDevProfile(p, G){
             var _lbl=_is180?"SWITCHBACK 180\u00B0":("TURN "+(_sd==="left"?"LEFT":"RIGHT"));
             var _tx=X(_td), _tyB=Y(sf(_td)), _tyT=Y(sf(_td)+hh)-0.5, _tw=_lbl.length*0.235+0.45, _th=0.62;
             s+='<line x1="'+_tx.toFixed(2)+'" y1="'+_tyB.toFixed(2)+'" x2="'+_tx.toFixed(2)+'" y2="'+_tyT.toFixed(2)+'" stroke="#8a3ffc" stroke-width="0.06" stroke-dasharray="0.16 0.1"/>';
-            s+='<rect x="'+(_tx-_tw/2).toFixed(2)+'" y="'+(_tyT-_th).toFixed(2)+'" width="'+_tw.toFixed(2)+'" height="'+_th.toFixed(2)+'" rx="0.12" fill="#7a2fd6" stroke="#4a1d90" stroke-width="0.03"/>';
-            s+='<text x="'+_tx.toFixed(2)+'" y="'+(_tyT-_th/2+0.12).toFixed(2)+'" font-size="0.34" text-anchor="middle" fill="#ffffff" font-weight="700">'+_lbl+'</text>';
+            s+='<rect x="'+(_tx-_tw/2).toFixed(2)+'" y="'+(_tyT-_th).toFixed(2)+'" width="'+_tw.toFixed(2)+'" height="'+_th.toFixed(2)+'" rx="0.1" fill="#ffffff" fill-opacity="0.9" stroke="#7a2fd6" stroke-width="0.05"/>';
+            s+='<text x="'+_tx.toFixed(2)+'" y="'+(_tyT-_th/2+0.11).toFixed(2)+'" font-size="0.32" text-anchor="middle" fill="#6a1fb0" font-weight="700">'+_lbl+'</text>';
           }
         }
         _lastDir=_dir; _lastEnd=_sg.d1;
@@ -1329,7 +1329,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.84",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.85",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
