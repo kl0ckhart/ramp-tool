@@ -55,11 +55,13 @@
   @media print{body{background:#fff} header .ver,.inputs,.planhead button,.scale-note,footer{display:none !important}
     main{display:block;padding:0} .plan{border:0;padding:0;position:static;max-height:none;overflow:visible} .paper{border:0;padding:0;overflow:visible} .planhead h2{display:none} .brand{font-size:18px}
     #paper svg{max-width:100% !important;max-height:150mm !important;width:auto !important;height:auto !important}
-    .plan,.paper,#reachBox{break-inside:avoid;page-break-inside:avoid}}
+    .plan,.paper,#reachBox{break-inside:avoid;page-break-inside:avoid}
+    #profileWrap,#notchWrap{break-inside:avoid;page-break-inside:avoid}
+    #profileWrap h2,#notchWrap h2,#surveyWrap h2{break-after:avoid;page-break-after:avoid}}
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.90</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.91</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -254,7 +256,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.90</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.91</footer>
 
 <script>
 "use strict";
@@ -1355,7 +1357,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.90",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.91",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
