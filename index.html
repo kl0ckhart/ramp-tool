@@ -55,11 +55,11 @@
   @media print{body{background:#fff} header .ver,.inputs,.planhead button,.scale-note,footer{display:none !important}
     main{display:block;padding:0} .plan{border:0;padding:0;position:static;max-height:none;overflow:visible} .paper{border:0;padding:0;overflow:visible} .planhead h2{display:none} .brand{font-size:18px}
     #paper svg{max-width:100% !important;max-height:150mm !important;width:auto !important;height:auto !important}
-    .plan,.paper{break-inside:avoid;page-break-inside:avoid}}
+    .plan,.paper,#reachBox{break-inside:avoid;page-break-inside:avoid}}
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.86</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.88</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -254,7 +254,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.86</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.88</footer>
 
 <script>
 "use strict";
@@ -512,13 +512,19 @@ function reachReadoutHTML(r){
   const fa=r.footAboveStart;
   const footTxt = Math.abs(fa)<0.5 ? 'right at the 0,0 ground level' : (fa>0? (ftFrac(fa)+' above 0,0 \u2014 the ground rose to meet it') : (ftFrac(-fa)+' below 0,0'));
   const ada = r.drop>30 ? '<div style="color:#b26a00;margin-top:5px">Note: '+inFrac(r.drop)+'\u2033 total drop exceeds the 30\u2033 ADA limit \u2014 add a landing (or two), which adds length beyond this.</div>' : '';
-  const beyond = (r.cross > r.lastSurveyD+0.1) ? '<div style="color:#8a8a8a;margin-top:6px;font-size:12px">Meets grade about '+ftFrac((r.cross-r.lastSurveyD)*12)+' past your last shot ('+ftFrac(r.lastSurveyD*12)+' out); I carried that last slope forward. Shoot one more point near '+Math.round(r.cross)+'\u2032 to confirm.</div>' : '';
-  const leadTxt = r.flatLead>0.1 ? '<div style="color:#8a8a8a;margin-top:6px;font-size:12px">Measured from 0,0: the foot lands '+ftFrac(r.cross*12)+' out, past the first '+ftFrac(r.flatLead*12)+' of flat landing.</div>' : '';
-  return '<div style="margin-top:10px;padding:10px 12px;border:1px solid #e0dccf;border-left:4px solid #2e7d32;border-radius:6px;background:#fbfaf7;font-size:13px;line-height:1.55">'
-    +'<div style="font-weight:700;color:#2e7d32;font-size:14px">Ramp length to grade: '+ftFrac(len*12)+'</div>'
+  const beyond = (r.cross > r.lastSurveyD+0.1) ? '<div style="color:#8a8a8a;margin-top:6px;font-size:0.92em">Meets grade about '+ftFrac((r.cross-r.lastSurveyD)*12)+' past your last shot ('+ftFrac(r.lastSurveyD*12)+' out); I carried that last slope forward. Shoot one more point near '+Math.round(r.cross)+'\u2032 to confirm.</div>' : '';
+  const leadTxt = r.flatLead>0.1 ? '<div style="color:#8a8a8a;margin-top:6px;font-size:0.92em">Measured from 0,0: the foot lands '+ftFrac(r.cross*12)+' out, past the first '+ftFrac(r.flatLead*12)+' of flat landing.</div>' : '';
+  return '<div id="reachBox" style="margin-top:10px;padding:10px 12px;border:1px solid #e0dccf;border-left:4px solid #2e7d32;border-radius:6px;background:#fbfaf7;font-size:13px;line-height:1.5">'
+    +'<div style="font-weight:700;color:#2e7d32;font-size:1.08em">Ramp length to grade: '+ftFrac(len*12)+'</div>'
     +'<div style="margin-top:2px">'+inFrac(r.drop)+'\u2033 of drop at 1:12, ending at a taper 0 '+footTxt+'.</div>'
     +'<div style="margin-top:4px">Sections: '+esc(secTxt)+'</div>'
     +leadTxt+ada+beyond+'</div>';
+}
+function fitReachBox(){
+  var box=document.getElementById('reachBox'); if(!box) return;
+  var fs=13; box.style.fontSize=fs+'px';
+  var CAP=540, guard=0;
+  while(box.scrollHeight>CAP && fs>8){ fs-=0.5; box.style.fontSize=fs+'px'; if(++guard>40) break; }
 }
 function buildTerrainProfile(p,G){
   const deck=p.deckHeight||0;
@@ -564,7 +570,7 @@ function buildNotchDetail(p,G){
   const nx0=nxc-p.notchWidth/2, nx1=nxc+p.notchWidth/2, ny0=nyc-p.notchDepth/2, ny1=nyc+p.notchDepth/2;
   const X=x=>(x-tl.x0)/F, Y=y=>(y-tl.y0)/F;
   const lw=(tl.x1-tl.x0)/F, lh=(tl.y1-tl.y0)/F, RD=24/F;
-  const mL=3.6, mR=6.2, mT=3.2, mB=1.0, vbX=-mL, vbY=-mT, vbW=lw+mL+mR, vbH=lh+mT+mB;
+  const mL=3.6, mR=6.2, mT=3.2, mB=1.9, vbX=-mL, vbY=-mT, vbW=lw+mL+mR, vbH=lh+mT+mB;
   const hdim=(x0,x1,y,label)=>'<line x1="'+x0.toFixed(3)+'" y1="'+y.toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+y.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x0.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x0.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+x1.toFixed(3)+'" y1="'+(y-0.14).toFixed(3)+'" x2="'+x1.toFixed(3)+'" y2="'+(y+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+((x0+x1)/2).toFixed(3)+'" y="'+(y-0.22).toFixed(3)+'" font-size="0.36" text-anchor="middle" fill="#333">'+esc(label)+'</text>';
   const vdim=(x,y0,y1,label)=>'<line x1="'+x.toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+x.toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y0.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y0.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><line x1="'+(x-0.14).toFixed(3)+'" y1="'+y1.toFixed(3)+'" x2="'+(x+0.14).toFixed(3)+'" y2="'+y1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/><text x="'+(x+0.2).toFixed(3)+'" y="'+((y0+y1)/2+0.12).toFixed(3)+'" font-size="0.36" text-anchor="start" fill="#333">'+esc(label)+'</text>';
   let s='<svg viewBox="'+vbX.toFixed(2)+' '+vbY.toFixed(2)+' '+vbW.toFixed(2)+' '+vbH.toFixed(2)+'" width="'+(vbW*0.85).toFixed(2)+'cm" height="'+(vbH*0.85).toFixed(2)+'cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
@@ -594,8 +600,12 @@ function buildNotchDetail(p,G){
   s+=hdim(a, b, nbot+0.55, dimBoth(nx1-nx0));
   s+=vdim(b+0.6, ntop, nbot, dimBoth(ny1-ny0));
   s+='<text x="'+((a+b)/2).toFixed(3)+'" y="'+((ntop+nbot)/2+0.12).toFixed(3)+'" font-size="0.3" text-anchor="middle" fill="#4e7a46" font-weight="700">notch</text>';
-  s+=hdim(0, a, nbot+1.3, "from left  "+dimBoth(nx0-tl.x0));
-  s+='<text x="0" y="'+(nbot+1.95).toFixed(3)+'" font-size="0.34" text-anchor="start" fill="#333">from top  '+esc(dimBoth(ny0-tl.y0))+'</text>';
+  s+=hdim(0, a, lh+1.35, "from left  "+dimBoth(nx0-tl.x0));
+  { var _ftx=-1.0, _fy0=0, _fy1=ntop, _fmy=(_fy0+_fy1)/2;
+    s+='<line x1="'+_ftx.toFixed(3)+'" y1="'+_fy0.toFixed(3)+'" x2="'+_ftx.toFixed(3)+'" y2="'+_fy1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
+    s+='<line x1="'+(_ftx-0.14).toFixed(3)+'" y1="'+_fy0.toFixed(3)+'" x2="'+(_ftx+0.14).toFixed(3)+'" y2="'+_fy0.toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
+    s+='<line x1="'+(_ftx-0.14).toFixed(3)+'" y1="'+_fy1.toFixed(3)+'" x2="'+(_ftx+0.14).toFixed(3)+'" y2="'+_fy1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
+    s+='<text x="'+(_ftx-0.22).toFixed(3)+'" y="'+_fmy.toFixed(3)+'" font-size="0.34" text-anchor="middle" fill="#333" transform="rotate(-90 '+(_ftx-0.22).toFixed(3)+' '+_fmy.toFixed(3)+')">from top  '+esc(dimBoth(ny0-tl.y0))+'</text>'; }
   s+='</svg>'; return s;
 }
 function buildDevProfile(p, G){
@@ -653,7 +663,10 @@ function buildDevProfile(p, G){
   s+='<line x1="0" y1="'+Y(g0).toFixed(2)+'" x2="0" y2="'+Y(base).toFixed(2)+'" stroke="#555" stroke-width="0.04"/>';
   s+='<text x="-0.4" y="'+(Y(base)+0.5).toFixed(2)+'" font-size="0.32" text-anchor="end" fill="#555">deck</text>';
   s+='<text x="-0.4" y="'+(Y(base)+0.95).toFixed(2)+'" font-size="0.32" text-anchor="end" fill="#555">'+ftFrac(deck)+'</text>';
-  if(cross!=null){ s+='<circle cx="'+X(cross).toFixed(2)+'" cy="'+Y(gz(cross)).toFixed(2)+'" r="0.12" fill="#b26a00"/>'; s+='<text x="'+X(cross).toFixed(2)+'" y="'+(Y(gz(cross))+0.62).toFixed(2)+'" font-size="0.36" text-anchor="middle" fill="#b26a00" font-weight="700">taper 0'+(hasSurvey?' @ '+ftFrac(cross*12):'')+'</text>'; }
+  if(cross!=null){ var _cx=X(cross), _cyG=Y(gz(cross)), _ly=_cyG+1.5;
+    s+='<circle cx="'+_cx.toFixed(2)+'" cy="'+_cyG.toFixed(2)+'" r="0.12" fill="#b26a00"/>';
+    s+='<line x1="'+_cx.toFixed(2)+'" y1="'+(_cyG+0.12).toFixed(2)+'" x2="'+_cx.toFixed(2)+'" y2="'+(_ly-0.28).toFixed(2)+'" stroke="#b26a00" stroke-width="0.03"/>';
+    s+='<text x="'+_cx.toFixed(2)+'" y="'+_ly.toFixed(2)+'" font-size="0.36" text-anchor="middle" fill="#b26a00" font-weight="700">taper 0'+(hasSurvey?' @ '+ftFrac(cross*12):'')+'</text>'; }
   if(hasSurvey){ for(const pt of P){ if(pt.d<0.01) continue; const gx=X(pt.d), gy=Y(pt.z);
     s+='<line x1="'+gx.toFixed(2)+'" y1="'+gy.toFixed(2)+'" x2="'+gx.toFixed(2)+'" y2="'+(gy+0.5).toFixed(2)+'" stroke="#c0392b" stroke-width="0.04"/>';
     s+='<circle cx="'+gx.toFixed(2)+'" cy="'+gy.toFixed(2)+'" r="0.1" fill="#c0392b"/>';
@@ -1024,7 +1037,12 @@ function buildSVG(p,g){
         s+='<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="0.32" fill="#fff" fill-opacity="0.92" stroke="#c0392b" stroke-width="0.07"/>';
         s+='<line x1="'+(cx-0.42).toFixed(2)+'" y1="'+cy.toFixed(2)+'" x2="'+(cx+0.42).toFixed(2)+'" y2="'+cy.toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
         s+='<line x1="'+cx.toFixed(2)+'" y1="'+(cy-0.42).toFixed(2)+'" x2="'+cx.toFixed(2)+'" y2="'+(cy+0.42).toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
-        s+='<text x="'+cx.toFixed(2)+'" y="'+(cy-0.52).toFixed(2)+'" font-size="0.5" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(lbl)+'</text>';
+        { var _a0=pathPos(path,Math.max(0,pt.d-0.2)), _a1=pathPos(path,pt.d+0.2);
+          var _tx=(_a1.x-_a0.x), _ty=(_a1.y-_a0.y), _tn=Math.hypot(_tx,_ty)||1; _tx/=_tn; _ty/=_tn;
+          var _px=-_ty, _py=_tx, _off=(p.width?p.width/F/2:1.7)+0.95;
+          var _lx=cx+_px*_off, _ly=cy+_py*_off;
+          s+='<line x1="'+(cx+_px*0.45).toFixed(2)+'" y1="'+(cy+_py*0.45).toFixed(2)+'" x2="'+(_lx-_px*0.32).toFixed(2)+'" y2="'+(_ly-_py*0.32).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
+          s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.17).toFixed(2)+'" font-size="0.5" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(lbl)+'</text>'; }
       }
       { const bx=(p.bmX!=null?p.bmX:pathPos(path,0).x/F), by=(p.bmY!=null?p.bmY:pathPos(path,0).y/F);
         s+='<g id="bmMarker">';
@@ -1317,6 +1335,7 @@ function render(){
   document.getElementById("surveyWrap").style.display=(p.survey&&p.survey.trim())?"":"none";
 
   document.getElementById("reachPaper").innerHTML=(p.survey&&p.survey.trim())?reachReadoutHTML(reachToGrade(p,g)):"";
+  fitReachBox();
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
   document.getElementById("caption").innerHTML=
     (p._preview?'<b style="color:#c0392b">Preview \u2014 fill in the blanks.</b> ':'')+(g.maxGroupRise>30?'<b style="color:#c0392b">\u26a0 '+inFrac(g.maxGroupRise)+'" continuous rise, no landing \u2014 30" max, add a rest or turn.</b> ':'')+'Top landing deck height <span class="mono">'+esc(dimText(p.deckHeight))+'</span> &middot; slope <span class="mono" style="color:'+sc.color+';font-weight:700">1:'+g.slopeRatio.toFixed(1)+'</span> &middot; '+
@@ -1329,7 +1348,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.86",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.88",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
