@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.93</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.96</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -256,7 +256,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.93</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.96</footer>
 
 <script>
 "use strict";
@@ -539,6 +539,7 @@ function getSurvey(p,g,alreadyPlan){
   return {ok:dd.length>=2, bm:parsed.bm, points:dd, shots:shots, path:path};
 }
 function parseShotPos(v){ try{ var m=JSON.parse(v||'{}'); return (m&&typeof m==='object')?m:{}; }catch(_){ return {}; } }
+function _shotLabelClear(g,F,lx,ly,extra){ var hw=1.15,hh=0.7,mg=0.1; for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; var a=pc.x0/F-mg,b=pc.x1/F+mg,c=pc.y0/F-mg,d=pc.y1/F+mg; if(lx+hw>a && lx-hw<b && ly+hh>c && ly-hh<d) return false; } if(extra){ for(var j=0;j<extra.length;j++){ var r=extra[j]; if(!r)continue; if(lx+hw>r[0]-mg && lx-hw<r[2]+mg && ly+hh>r[1]-mg && ly-hh<r[3]+mg) return false; } } return true; }
 function setShotPos(label,x,y){ var el=document.getElementById('shotPos'); if(!el)return; var m={}; try{m=JSON.parse(el.value||'{}')||{};}catch(_){m={};} m[label]=[Math.round(x*1000)/1000,Math.round(y*1000)/1000]; el.value=JSON.stringify(m); }
 function reachToGrade(p, G){
   const deck=(p.deckHeight||0); if(deck<=0) return null;
@@ -556,7 +557,7 @@ function reachToGrade(p, G){
   const firstRamp=path.segs.find(s=>s.ramp); const flatLead=firstRamp?firstRamp.d0:0;
   return {deck:deck, cross:cross, footZ:footZ, footAboveStart:footZ-g0, drop:drop, rampRunFt:rampRunFt, flatLead:flatLead, lastSurveyD:P[P.length-1].d, points:P, path:path, base:base, g0:g0};
 }
-function reachReadoutHTML(r){
+function reachReadoutHTML(r,g){
   if(!r) return '';
   if(r.noReach) return '<div style="margin-top:10px;padding:10px 12px;border:1px solid #e0dccf;border-left:4px solid #c0392b;border-radius:6px;background:#fbfaf7;font-size:13px">Couldn\u2019t find where the ramp meets grade over this survey \u2014 double-check the benchmark and shots.</div>';
   const len=r.rampRunFt;
@@ -565,7 +566,7 @@ function reachReadoutHTML(r){
   let secTxt=secs.join(' + ')+(secs.length?' (last tapered to 0)':'');
   const fa=r.footAboveStart;
   const footTxt = Math.abs(fa)<0.5 ? 'right at the 0,0 ground level' : (fa>0? (ftFrac(fa)+' above 0,0 \u2014 the ground rose to meet it') : (ftFrac(-fa)+' below 0,0'));
-  const ada = r.drop>30 ? '<div style="color:#b26a00;margin-top:5px">Note: '+inFrac(r.drop)+'\u2033 total drop exceeds the 30\u2033 ADA limit \u2014 add a landing (or two), which adds length beyond this.</div>' : '';
+  const ada = (g && g.maxGroupRise>30) ? '<div style="color:#b26a00;margin-top:5px">Note: '+inFrac(g.maxGroupRise)+'\u2033 of continuous rise with no landing exceeds the 30\u2033 ADA limit \u2014 add a rest or turn. (Landings and hairpins reset this.)</div>' : '';
   const beyond = (r.cross > r.lastSurveyD+0.1) ? '<div style="color:#8a8a8a;margin-top:6px;font-size:0.92em">Meets grade about '+ftFrac((r.cross-r.lastSurveyD)*12)+' past your last shot ('+ftFrac(r.lastSurveyD*12)+' out); I carried that last slope forward. Shoot one more point near '+Math.round(r.cross)+'\u2032 to confirm.</div>' : '';
   const leadTxt = r.flatLead>0.1 ? '<div style="color:#8a8a8a;margin-top:6px;font-size:0.92em">Measured from 0,0: the foot lands '+ftFrac(r.cross*12)+' out, past the first '+ftFrac(r.flatLead*12)+' of flat landing.</div>' : '';
   return '<div id="reachBox" style="margin-top:10px;padding:10px 12px;border:1px solid #e0dccf;border-left:4px solid #2e7d32;border-radius:6px;background:#fbfaf7;font-size:13px;line-height:1.5">'
@@ -1096,30 +1097,6 @@ function buildSVG(p,g){
       }
     }
   }
-  if(p.survey && p.survey.trim()){ const surv=getSurvey(p,g,true); const path=surv.path;
-    if(surv.ok && path){
-      for(const sh of surv.shots){ const cx=sh.x, cy=sh.y;
-        s+='<g class="shotMarker" data-label="'+esc(sh.label)+'" data-x="'+cx.toFixed(3)+'" data-y="'+cy.toFixed(3)+'">';
-        s+='<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="0.32" fill="#fff" fill-opacity="0.92" stroke="#c0392b" stroke-width="0.07"/>';
-        s+='<line x1="'+(cx-0.42).toFixed(2)+'" y1="'+cy.toFixed(2)+'" x2="'+(cx+0.42).toFixed(2)+'" y2="'+cy.toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
-        s+='<line x1="'+cx.toFixed(2)+'" y1="'+(cy-0.42).toFixed(2)+'" x2="'+cx.toFixed(2)+'" y2="'+(cy+0.42).toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
-        var _a0=pathPos(path,Math.max(0,sh.d-0.2)), _a1=pathPos(path,sh.d+0.2);
-        var _tx=(_a1.x-_a0.x), _ty=(_a1.y-_a0.y), _tn=Math.hypot(_tx,_ty)||1; _tx/=_tn; _ty/=_tn;
-        var _px=-_ty, _py=_tx, _off=(p.width?p.width/F/2:1.7)+0.9;
-        var _lx=cx+_px*_off, _ly=cy+_py*_off;
-        s+='<line x1="'+(cx+_px*0.45).toFixed(2)+'" y1="'+(cy+_py*0.45).toFixed(2)+'" x2="'+(_lx-_px*0.3).toFixed(2)+'" y2="'+(_ly-_py*0.3).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
-        s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.05).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(sh.label)+'</text>';
-        s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.55).toFixed(2)+'" font-size="0.34" text-anchor="middle" fill="#c0392b">'+esc(ftCompact(sh.d*12))+'</text>';
-        s+='</g>';
-      }
-      { const bx=(p.bmX!=null?p.bmX:pathPos(path,0).x/F), by=(p.bmY!=null?p.bmY:pathPos(path,0).y/F);
-        s+='<g id="bmMarker">';
-        s+='<circle cx="'+bx.toFixed(2)+'" cy="'+by.toFixed(2)+'" r="0.42" fill="#fff" fill-opacity="0.5" stroke="#7a1f14" stroke-width="0.09"/>';
-        s+='<circle cx="'+bx.toFixed(2)+'" cy="'+by.toFixed(2)+'" r="0.1" fill="#7a1f14"/>';
-        s+='<text x="'+bx.toFixed(2)+'" y="'+(by+0.7).toFixed(2)+'" font-size="0.55" text-anchor="middle" fill="#7a1f14" font-weight="700">BM</text>';
-        s+='</g>'; }
-    }
-  }
   if(p.obstacles && p.obstacles.length){
     let ox=Infinity, oy=Infinity;
     for(const pc of g.pieces){ if(pc.ref) continue; if(pc.x0<ox)ox=pc.x0; if(pc.y0<oy)oy=pc.y0; }
@@ -1194,7 +1171,7 @@ function buildSVG(p,g){
       if(_nm)_custLines.push(_nm);
       if(p.custAddress&&p.custAddress.trim()){var _aw=wrapNotes(p.custAddress.trim(),28);for(var _ai=0;_ai<_aw.length;_ai++)_custLines.push(_aw[_ai]);}
       if(_cs)_custLines.push(_cs);
-      if(p.custPhone&&p.custPhone.trim())_custLines.push(p.custPhone.trim());
+      var _phoneLine=(p.custPhone&&p.custPhone.trim())?p.custPhone.trim():null; if(_phoneLine)_custLines.push(_phoneLine);
       var _cmw=8;for(var _cli=0;_cli<_custLines.length;_cli++)if(_custLines[_cli].length>_cmw)_cmw=_custLines[_cli].length;
       _custBW=_cmw*0.4*0.66+0.6;_custBH=_custLines.length*0.56+1.0;
     }
@@ -1213,7 +1190,11 @@ function buildSVG(p,g){
   if(_custLines && notePos.cust){ var _bxc=notePos.cust[0],_byc=notePos.cust[1],_fsc=0.4,_lhc=0.56;
     s+='<rect x="'+_bxc.toFixed(2)+'" y="'+_byc.toFixed(2)+'" width="'+_custBW.toFixed(2)+'" height="'+_custBH.toFixed(2)+'" rx="0.15" fill="#f3f7fb" fill-opacity="0.96" stroke="#b3c3d3" stroke-width="0.04"/>';
     s+='<text x="'+(_bxc+0.35).toFixed(2)+'" y="'+(_byc+0.62).toFixed(2)+'" font-size="0.42" font-weight="700" fill="#274156">Customer</text>';
-    for(var _cdi=0;_cdi<_custLines.length;_cdi++) s+='<text x="'+(_bxc+0.35).toFixed(2)+'" y="'+(_byc+1.15+_cdi*_lhc).toFixed(2)+'" font-size="'+_fsc+'" fill="#3a3f47">'+esc(_custLines[_cdi])+'</text>';
+    for(var _cdi=0;_cdi<_custLines.length;_cdi++){ var _cl=_custLines[_cdi], _ty=(_byc+1.15+_cdi*_lhc).toFixed(2);
+      if(_phoneLine && _cl===_phoneLine){ var _tel=_cl.replace(/[^0-9+]/g,'');
+        s+='<a href="tel:'+esc(_tel)+'"><text x="'+(_bxc+0.35).toFixed(2)+'" y="'+_ty+'" font-size="'+_fsc+'" fill="#1a6fd0" text-decoration="underline" style="cursor:pointer">'+esc(_cl)+'</text></a>'; }
+      else s+='<text x="'+(_bxc+0.35).toFixed(2)+'" y="'+_ty+'" font-size="'+_fsc+'" fill="#3a3f47">'+esc(_cl)+'</text>';
+    }
   }
   if(_rows.length && notePos.info){ var _bxi=notePos.info[0],_byi=notePos.info[1],_yy=_byi+0.15;
     s+='<rect x="'+_bxi.toFixed(2)+'" y="'+_byi.toFixed(2)+'" width="'+_iw.toFixed(2)+'" height="'+_ih.toFixed(2)+'" rx="0.15" fill="#fbfaf7" fill-opacity="0.95" stroke="#cfcabf" stroke-width="0.04"/>';
@@ -1232,6 +1213,38 @@ function buildSVG(p,g){
     s+='<text x="'+nx.toFixed(2)+'" y="'+(ny+0.14).toFixed(2)+'" font-size="0.42" text-anchor="middle" fill="#23252b" font-weight="700">N</text>';
   }
 
+  if(p.survey && p.survey.trim()){ const surv=getSurvey(p,g,true); const path=surv.path;
+    if(surv.ok && path){
+      var _avoid=_placed.concat(obst);
+      for(const sh of surv.shots){ const cx=sh.x, cy=sh.y;
+        s+='<g class="shotMarker" data-label="'+esc(sh.label)+'" data-x="'+cx.toFixed(3)+'" data-y="'+cy.toFixed(3)+'">';
+        s+='<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="0.32" fill="#fff" fill-opacity="0.92" stroke="#c0392b" stroke-width="0.07"/>';
+        s+='<line x1="'+(cx-0.42).toFixed(2)+'" y1="'+cy.toFixed(2)+'" x2="'+(cx+0.42).toFixed(2)+'" y2="'+cy.toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
+        s+='<line x1="'+cx.toFixed(2)+'" y1="'+(cy-0.42).toFixed(2)+'" x2="'+cx.toFixed(2)+'" y2="'+(cy+0.42).toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
+        var _a0=pathPos(path,Math.max(0,sh.d-0.2)), _a1=pathPos(path,sh.d+0.2);
+        var _tx=(_a1.x-_a0.x), _ty=(_a1.y-_a0.y), _tn=Math.hypot(_tx,_ty)||1; _tx/=_tn; _ty/=_tn;
+        var _px=-_ty, _py=_tx, _off=(p.width?p.width/F/2:1.7)+0.9;
+        var _lx,_ly,_found=false, _dl=[_off,_off+0.9,_off+1.8,_off+2.7,_off+3.6];
+        for(var _di2=0; _di2<_dl.length && !_found; _di2++){ for(var _sg2=0; _sg2<2 && !_found; _sg2++){ var _sn=_sg2?-1:1;
+          var _Lx=cx+_px*_sn*_dl[_di2], _Ly=cy+_py*_sn*_dl[_di2];
+          if(_shotLabelClear(g,F,_Lx,_Ly,_avoid)){ _lx=_Lx; _ly=_Ly; _found=true; } } }
+        if(!_found){ _lx=cx+_px*(_off+3.6); _ly=cy+_py*(_off+3.6); }
+        _exp.x0=Math.min(_exp.x0,Math.min(cx,_lx)-1.3); _exp.x1=Math.max(_exp.x1,Math.max(cx,_lx)+1.3); _exp.y0=Math.min(_exp.y0,Math.min(cy,_ly)-0.9); _exp.y1=Math.max(_exp.y1,Math.max(cy,_ly)+0.9);
+        var _ldx=_lx-cx,_ldy=_ly-cy,_ln=Math.hypot(_ldx,_ldy)||1; _ldx/=_ln; _ldy/=_ln;
+        s+='<line x1="'+(cx+_ldx*0.45).toFixed(2)+'" y1="'+(cy+_ldy*0.45).toFixed(2)+'" x2="'+(_lx-_ldx*0.55).toFixed(2)+'" y2="'+(_ly-_ldy*0.55).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
+        s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly-0.08).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(sh.label)+'</text>';
+        s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.42).toFixed(2)+'" font-size="0.34" text-anchor="middle" fill="#c0392b">'+esc(ftCompact(sh.d*12))+'</text>';
+        s+='</g>';
+      }
+      { const bx=(p.bmX!=null?p.bmX:pathPos(path,0).x/F), by=(p.bmY!=null?p.bmY:pathPos(path,0).y/F);
+        _exp.x0=Math.min(_exp.x0,bx-0.8); _exp.x1=Math.max(_exp.x1,bx+0.8); _exp.y0=Math.min(_exp.y0,by-0.8); _exp.y1=Math.max(_exp.y1,by+1.0);
+        s+='<g id="bmMarker">';
+        s+='<circle cx="'+bx.toFixed(2)+'" cy="'+by.toFixed(2)+'" r="0.42" fill="#fff" fill-opacity="0.5" stroke="#7a1f14" stroke-width="0.09"/>';
+        s+='<circle cx="'+bx.toFixed(2)+'" cy="'+by.toFixed(2)+'" r="0.1" fill="#7a1f14"/>';
+        s+='<text x="'+bx.toFixed(2)+'" y="'+(by+0.7).toFixed(2)+'" font-size="0.55" text-anchor="middle" fill="#7a1f14" font-weight="700">BM</text>';
+        s+='</g>'; }
+    }
+  }
   { var _fvw=_exp.x1-_exp.x0, _fvh=_exp.y1-_exp.y0;
     s=s.replace("@@VB@@", _exp.x0.toFixed(2)+" "+_exp.y0.toFixed(2)+" "+_fvw.toFixed(2)+" "+_fvh.toFixed(2));
     s=s.replace("@@W@@",(_fvw*cm).toFixed(2)); s=s.replace("@@H@@",(_fvh*cm).toFixed(2)); }
@@ -1405,7 +1418,7 @@ function render(){
   if(p.notchEnable) document.getElementById("notchPaper").innerHTML=buildNotchDetail(p,gPlan);
   document.getElementById("surveyWrap").style.display=(p.survey&&p.survey.trim())?"":"none";
 
-  document.getElementById("reachPaper").innerHTML=(p.survey&&p.survey.trim())?reachReadoutHTML(reachToGrade(p,g)):"";
+  document.getElementById("reachPaper").innerHTML=(p.survey&&p.survey.trim())?reachReadoutHTML(reachToGrade(p,g),g):"";
   fitReachBox();
   try{ document.getElementById("fcexport").value=buildFreecad(p,g); }catch(e){}
   document.getElementById("caption").innerHTML=
@@ -1419,7 +1432,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.93",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.96",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
