@@ -59,7 +59,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.88</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.90</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -254,7 +254,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.88</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.90</footer>
 
 <script>
 "use strict";
@@ -600,7 +600,11 @@ function buildNotchDetail(p,G){
   s+=hdim(a, b, nbot+0.55, dimBoth(nx1-nx0));
   s+=vdim(b+0.6, ntop, nbot, dimBoth(ny1-ny0));
   s+='<text x="'+((a+b)/2).toFixed(3)+'" y="'+((ntop+nbot)/2+0.12).toFixed(3)+'" font-size="0.3" text-anchor="middle" fill="#4e7a46" font-weight="700">notch</text>';
-  s+=hdim(0, a, lh+1.35, "from left  "+dimBoth(nx0-tl.x0));
+  { var _fly=lh+1.35;
+    s+='<line x1="0" y1="'+_fly.toFixed(3)+'" x2="'+a.toFixed(3)+'" y2="'+_fly.toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
+    s+='<line x1="0" y1="'+(_fly-0.14).toFixed(3)+'" x2="0" y2="'+(_fly+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
+    s+='<line x1="'+a.toFixed(3)+'" y1="'+(_fly-0.14).toFixed(3)+'" x2="'+a.toFixed(3)+'" y2="'+(_fly+0.14).toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
+    s+='<text x="0" y="'+(_fly-0.24).toFixed(3)+'" font-size="0.34" text-anchor="start" fill="#333">from left  '+esc(dimBoth(nx0-tl.x0))+'</text>'; }
   { var _ftx=-1.0, _fy0=0, _fy1=ntop, _fmy=(_fy0+_fy1)/2;
     s+='<line x1="'+_ftx.toFixed(3)+'" y1="'+_fy0.toFixed(3)+'" x2="'+_ftx.toFixed(3)+'" y2="'+_fy1.toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
     s+='<line x1="'+(_ftx-0.14).toFixed(3)+'" y1="'+_fy0.toFixed(3)+'" x2="'+(_ftx+0.14).toFixed(3)+'" y2="'+_fy0.toFixed(3)+'" stroke="#555" stroke-width="0.025"/>';
@@ -1302,7 +1306,10 @@ function render(){
   { const pth=rampPath(gPlan), tl=gPlan.pieces.find(pc=>pc.top);
     if(p.bmX==null && pth){ const c=pathPos(pth,0); p.bmX=c.x/12; p.bmY=c.y/12; }
     if(p.notchX==null && tl){ p.notchX=((tl.x0+tl.x1)/2)/12; p.notchY=tl.y0/12+(p.notchDepth||6)/24; }
-    if(tl && p.notchX!=null){ p.notchX=Math.max(tl.x0/12,Math.min(tl.x1/12,p.notchX)); p.notchY=Math.max(tl.y0/12,Math.min(tl.y1/12,p.notchY)); }
+    if(tl && p.notchX!=null){ var _hw=(p.notchWidth||0)/24, _hd=(p.notchDepth||0)/24;
+      var _xlo=tl.x0/12+_hw, _xhi=tl.x1/12-_hw, _ylo=tl.y0/12+_hd, _yhi=tl.y1/12-_hd;
+      p.notchX=(_xlo>_xhi)?((tl.x0+tl.x1)/2/12):Math.max(_xlo,Math.min(_xhi,p.notchX));
+      p.notchY=(_ylo>_yhi)?((tl.y0+tl.y1)/2/12):Math.max(_ylo,Math.min(_yhi,p.notchY)); }
     if(p.bmX!=null){ let x0f=1e9,y0f=1e9,x1f=-1e9,y1f=-1e9; for(const pc of gPlan.pieces){ if(pc.x0<x0f)x0f=pc.x0; if(pc.y0<y0f)y0f=pc.y0; if(pc.x1>x1f)x1f=pc.x1; if(pc.y1>y1f)y1f=pc.y1; } p.bmX=Math.max(x0f/12-2,Math.min(x1f/12+2,p.bmX)); p.bmY=Math.max(y0f/12-2,Math.min(y1f/12+2,p.bmY)); }
     if(p.bmX!=null){ document.getElementById("bmX").value=p.bmX.toFixed(3); document.getElementById("bmY").value=p.bmY.toFixed(3); }
     if(p.notchX!=null){ document.getElementById("notchX").value=p.notchX.toFixed(3); document.getElementById("notchY").value=p.notchY.toFixed(3); } }
@@ -1348,7 +1355,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.88",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.90",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
