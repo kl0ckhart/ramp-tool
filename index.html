@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.91</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.92</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -132,7 +132,7 @@
       <div class="sechead">Ramp</div>
       <label class="field"><span class="lab">Layout</span>
         <select id="layout"><option value="compound">Compound (segment list)</option><option value="straight">Straight run</option><option value="switchback">Switchback (hairpin)</option></select></label>
-      <label class="field only-compound"><span class="lab">Segments</span><textarea id="segments" rows="9" placeholder="ramp 8 down&#10;landing 5x5&#10;turn right&#10;ramp 8 down&#10;ramp 8 straight&#10;ramp 8 down&#10;hairpin 4x8&#10;ramp 8 down&#10;ramp 8 taper"></textarea><span class="hint">one per line: ramp &lt;ft&gt; &lt;down|straight|up|upS|upD|taper&gt; [left|right|center] &middot; landing &lt;ft&gt;x&lt;ft&gt; [left|right|center] &middot; turn &lt;left|right&gt; &middot; hairpin &lt;ft&gt;x&lt;ft&gt;. Ramps default flush-left; add right or center to change. Add norail to a ramp or landing to skip its handrails.</span></label>
+      <label class="field only-compound"><span class="lab">Segments</span><textarea id="segments" rows="9" placeholder="ramp 8 down&#10;landing 5x5&#10;turn right&#10;ramp 8 down&#10;ramp 8 straight&#10;ramp 8 down&#10;hairpin 4x8&#10;ramp 8 down&#10;ramp 8 taper"></textarea><span class="hint">one per line: ramp &lt;ft&gt; &lt;down|straight|up|upS|upD|taper&gt; [left|right|center] &middot; landing &lt;ft&gt;x&lt;ft&gt; [left|right|center] &middot; turn &lt;left|right&gt; &middot; hairpin &lt;ft&gt;x&lt;ft&gt;. Ramps default flush-left; add right or center to change. A ramp right after a hairpin: left or right sets which side it folds to. Add norail to a ramp or landing to skip its handrails.</span></label>
       <label class="field only-straight"><span class="lab">Ramp alignment</span>
         <select id="align"><option value="top">Flush to top edge</option><option value="bottom" selected>Flush to bottom edge</option><option value="center">Centered</option></select>
         <span class="hint">which landing edge the ramps line up with by default</span></label>
@@ -256,7 +256,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.91</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.92</footer>
 
 <script>
 "use strict";
@@ -287,7 +287,7 @@ function parseSegments(txt){
   const out=[];
   for(const raw of String(txt).split(String.fromCharCode(10))){
     const line=raw.trim().toLowerCase(); if(!line) continue; let m;
-    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/\bupd\b/.test(r))cut="upd"; else if(/\bups\b/.test(r))cut="ups"; else if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; else if(/left/.test(r))al="left"; out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,norail:/no\s*rails?/.test(r)}); }
+    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/\bupd\b/.test(r))cut="upd"; else if(/\bups\b/.test(r))cut="ups"; else if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left",alSet=false; if(/cent(er|re)/.test(r)){al="center";alSet=true;} else if(/right/.test(r)){al="right";alSet=true;} else if(/left/.test(r)){al="left";alSet=true;} out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,alignSet:alSet,norail:/no\s*rails?/.test(r)}); }
     else if(m=line.match(/^landing\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:parseFloat(m[1]),across:parseFloat(m[2]),align:al,norail:/no\s*rails?/.test(r)}); }
     else if(m=line.match(/^turn\s+(left|right)/)) out.push({t:"turn",dir:m[1]});
     else if(m=line.match(/^hairpin\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/)) out.push({t:"hairpin",along:parseFloat(m[1]),across:parseFloat(m[2])});
@@ -303,18 +303,21 @@ function compoundGeometry(p){
   const rect=function(px,py,hx,hy,L,Wd){ return rects(px,py,hx,hy,L,Wd/2,Wd/2); };
   const edgeC=function(pc,hx,hy){ if(hx>0)return[pc.x1,(pc.y0+pc.y1)/2]; if(hx<0)return[pc.x0,(pc.y0+pc.y1)/2]; if(hy>0)return[(pc.x0+pc.x1)/2,pc.y1]; return[(pc.x0+pc.x1)/2,pc.y0]; };
   let rampN=0; for(const sg of segs) if(sg.t==="ramp") rampN++;
+  const _nextRampAlign=function(i){ for(var j=i+1;j<segs.length;j++){ if(segs[j].t==="ramp") return segs[j].alignSet?segs[j].align:null; } return null; };
   const pieces=[]; let hx=1,hy=0,px=0,py=0,rampNo=0,dev=0,noAlign=false,fdir=1,fx=0;
   const topD=(p.topD>0?p.topD:60), topW=(p.topW>0?p.topW:60);
   if(p.hasTopLanding!==false){ pieces.push({name:(p.attachExisting?"Existing structure":"Top landing"),x0:0,x1:topD,y0:0,y1:topW,ramp:false,top:true,dev0:0,dev1:topD,fx0:0,fx1:topD}); px=topD; py=topW/2; dev=topD; fx=topD; }
-  for(const sg of segs){
+  for(let _si=0;_si<segs.length;_si++){ const sg=segs[_si];
     if(sg.t==="ramp"){ rampNo++; const L=sg.len*12;
       { const prev=pieces[pieces.length-1]; if(prev && sg.align!=="center" && !noAlign){ const ppx=-hy,ppy=hx; const ps=[prev.x0*ppx+prev.y0*ppy,prev.x1*ppx+prev.y0*ppy,prev.x0*ppx+prev.y1*ppy,prev.x1*ppx+prev.y1*ppy]; const emin=Math.min.apply(null,ps),emax=Math.max.apply(null,ps),half=((emax-emin)-W)/2; const shift=(sg.align==="right")?half:-half; px+=shift*ppx; py+=shift*ppy; } noAlign=false; }
       const pc=rect(px,py,hx,hy,L,W); pc.ramp=true; pc.dir=(hx+hy>=0?1:-1); pc.ddx=hx; pc.ddy=hy; pc.run=L; pc.cut=sg.cut; pc.norail=!!sg.norail; pc.name="Ramp "+rampNo; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
     else if(sg.t==="landing"){ const L=sg.along*12, A=sg.across*12; { const prev=pieces[pieces.length-1]; if(prev && sg.align!=="center" && !noAlign){ const ppx=-hy,ppy=hx; const ps=[prev.x0*ppx+prev.y0*ppy,prev.x1*ppx+prev.y0*ppy,prev.x0*ppx+prev.y1*ppy,prev.x1*ppx+prev.y1*ppy]; const emin=Math.min.apply(null,ps),emax=Math.max.apply(null,ps),half=((emax-emin)-A)/2; const shift=(sg.align==="right")?half:-half; px+=shift*ppx; py+=shift*ppy; } noAlign=false; } const pc=rect(px,py,hx,hy,L,A); pc.name="Landing"; pc.norail=!!sg.norail; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
     else if(sg.t==="turn"){ const prev=pieces[pieces.length-1]||{x0:px,x1:px,y0:py,y1:py}; const nh=(sg.dir==="right")?[-hy,hx]:[hy,-hx]; hx=nh[0];hy=nh[1]; const ec=edgeC(prev,hx,hy); px=ec[0]; py=ec[1]; }
     else if(sg.t==="hairpin"){ const depth=sg.along*12, across=sg.across*12, pitch=across-W;
-      const pc=rects(px,py,hx,hy,depth,W/2,across-W/2); pc.name="Hairpin"; pc.dev0=dev; dev+=depth; pc.dev1=dev; pc.fx0=fx; fx+=fdir*depth; pc.fx1=fx; fdir=-fdir; pieces.push(pc);
-      px+=(-hy)*pitch; py+=hx*pitch; hx=-hx; hy=-hy; noAlign=true; }
+      const _fa=_nextRampAlign(_si), _foldLeft=(_fa==="left"), _sgn=_foldLeft?-1:1;
+      const _lo=_foldLeft?(across-W/2):(W/2), _hi=_foldLeft?(W/2):(across-W/2);
+      const pc=rects(px,py,hx,hy,depth,_lo,_hi); pc.name="Hairpin"; pc.dev0=dev; dev+=depth; pc.dev1=dev; pc.fx0=fx; fx+=fdir*depth; pc.fx1=fx; fdir=-fdir; pieces.push(pc);
+      px+=(-hy)*_sgn*pitch; py+=hx*_sgn*pitch; hx=-hx; hy=-hy; noAlign=true; }
   }
   return finalize(pieces, deck, W, rampN||1);
 }
@@ -1357,7 +1360,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.91",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.92",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
