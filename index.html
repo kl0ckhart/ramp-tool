@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.101</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.102</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -256,7 +256,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.101</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.102</footer>
 
 <script>
 "use strict";
@@ -526,8 +526,6 @@ function getSurvey(p,g,alreadyPlan){
       if(!isNaN(num) && /^-?\d/.test(sh.label)) dseed=num; else dseed=path.total*(k+1)/(n+1);
       if(dseed<0)dseed=0; if(dseed>path.total)dseed=path.total; xy=_seedBeside(gp,path,dseed); }
     var xF=Math.max(xlo,Math.min(xhi,xy[0])), yF=Math.max(ylo,Math.min(yhi,xy[1]));
-    if(!_ptClearM(gp,12,xF,yF,0.3)){ var _dt=projectDist(path,xF,yF); var _bs=_seedBeside(gp,path,_dt); xF=_bs[0]; yF=_bs[1];
-      if(!_ptClearM(gp,12,xF,yF,0.3)){ var _nc=_nearestClear(gp,xF,yF); xF=_nc[0]; yF=_nc[1]; } }
     var d=projectDist(path,xF,yF);
     shots.push({label:sh.label,x:xF,y:yF,d:d,z:parsed.bm-sh.reading,reading:sh.reading});
   }
@@ -1449,7 +1447,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.101",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.102",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
