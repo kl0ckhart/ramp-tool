@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.98</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.99</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -256,7 +256,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.98</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.99</footer>
 
 <script>
 "use strict";
@@ -524,9 +524,8 @@ function getSurvey(p,g,alreadyPlan){
   for(var k=0;k<n;k++){ var sh=parsed.shots[k]; var xy=pos[sh.label];
     if(!(xy&&xy.length===2)){ var dseed; var num=parseFloat(sh.label);
       if(!isNaN(num) && /^-?\d/.test(sh.label)) dseed=num; else dseed=path.total*(k+1)/(n+1);
-      if(dseed<0)dseed=0; if(dseed>path.total)dseed=path.total; var c=pathPos(path,dseed); xy=[c.x/12,c.y/12]; }
+      if(dseed<0)dseed=0; if(dseed>path.total)dseed=path.total; xy=_seedBeside(gp,path,dseed); }
     var xF=Math.max(xlo,Math.min(xhi,xy[0])), yF=Math.max(ylo,Math.min(yhi,xy[1]));
-    var _nn=_nudgeClear(gp,path,xF,yF); xF=_nn[0]; yF=_nn[1];
     var d=projectDist(path,xF,yF);
     shots.push({label:sh.label,x:xF,y:yF,d:d,z:parsed.bm-sh.reading,reading:sh.reading});
   }
@@ -542,11 +541,11 @@ function getSurvey(p,g,alreadyPlan){
 function parseShotPos(v){ try{ var m=JSON.parse(v||'{}'); return (m&&typeof m==='object')?m:{}; }catch(_){ return {}; } }
 function _ptClearP(g,F,x,y){ for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; if(x>pc.x0/F && x<pc.x1/F && y>pc.y0/F && y<pc.y1/F) return false; } return true; }
 function _segClear(g,F,ax,ay,bx,by){ for(var i=0;i<=16;i++){ var t=i/16,x=ax+(bx-ax)*t,y=ay+(by-ay)*t; if(!_ptClearP(g,F,x,y)) return false; } return true; }
-function _nudgeClear(gp,path,xF,yF){ if(_ptClearP(gp,12,xF,yF)) return [xF,yF];
-  var d=projectDist(path,xF,yF), c=pathPos(path,d), c2=pathPos(path,Math.min(path.total,d+0.3));
+function _seedBeside(gp,path,dseed){
+  var c=pathPos(path,dseed), c2=pathPos(path,Math.min(path.total,dseed+0.3));
   var tx=c2.x-c.x,ty=c2.y-c.y,tn=Math.hypot(tx,ty)||1; tx/=tn; ty/=tn; var pxu=-ty,pyu=tx, onx=c.x/12,ony=c.y/12;
   function scan(sx,sy){ var at=-1; for(var o=0.6;o<=9;o+=0.3){ if(_ptClearP(gp,12,onx+sx*o,ony+sy*o)){ at=o; break; } } if(at<0) return {at:9,run:0}; var run=0; for(var q=at;q<=at+3.5;q+=0.3){ if(_ptClearP(gp,12,onx+sx*q,ony+sy*q)) run+=0.3; else break; } return {at:at,run:run}; }
-  var P=scan(pxu,pyu), M=scan(-pxu,-pyu); var useP=(P.run>=M.run);
+  var P=scan(pxu,pyu), M=scan(-pxu,-pyu); if(P.run<=0 && M.run<=0) return [onx,ony]; var useP=(P.run>=M.run);
   var sx=useP?pxu:-pxu, sy=useP?pyu:-pyu, at=(useP?P.at:M.at);
   return [onx+sx*(at+0.4), ony+sy*(at+0.4)]; }
 function _shotLabelClear(g,F,lx,ly,extra){ var hw=1.15,hh=0.7,mg=0.1; for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; var a=pc.x0/F-mg,b=pc.x1/F+mg,c=pc.y0/F-mg,d=pc.y1/F+mg; if(lx+hw>a && lx-hw<b && ly+hh>c && ly-hh<d) return false; } if(extra){ for(var j=0;j<extra.length;j++){ var r=extra[j]; if(!r)continue; if(lx+hw>r[0]-mg && lx-hw<r[2]+mg && ly+hh>r[1]-mg && ly-hh<r[3]+mg) return false; } } return true; }
@@ -1226,11 +1225,10 @@ function buildSVG(p,g){
   if(p.survey && p.survey.trim()){ const surv=getSurvey(p,g,true); const path=surv.path;
     if(surv.ok && path){
       var _avoid=_placed.concat(obst); var _chBoxes=[];
-      for(const sh of surv.shots){ let cx=sh.x, cy=sh.y;
+      for(const sh of surv.shots){ const cx=sh.x, cy=sh.y;
         var _a0=pathPos(path,Math.max(0,sh.d-0.2)), _a1=pathPos(path,sh.d+0.2);
         var _tx=(_a1.x-_a0.x), _ty=(_a1.y-_a0.y), _tn=Math.hypot(_tx,_ty)||1; _tx/=_tn; _ty/=_tn;
         var _px=-_ty, _py=_tx;
-        for(var _sep=0;_sep<5;_sep++){ var _tc=false; for(var _q=0;_q<_chBoxes.length;_q++){ if(Math.abs(cx-_chBoxes[_q][0])<0.95 && Math.abs(cy-_chBoxes[_q][1])<0.95){_tc=true;break;} } if(!_tc && _ptClearP(g,F,cx,cy)) break; cx+=_px*0.95; cy+=_py*0.95; }
         s+='<g class="shotMarker" data-label="'+esc(sh.label)+'" data-x="'+cx.toFixed(3)+'" data-y="'+cy.toFixed(3)+'">';
         s+='<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="0.32" fill="#fff" fill-opacity="0.92" stroke="#c0392b" stroke-width="0.07"/>';
         s+='<line x1="'+(cx-0.42).toFixed(2)+'" y1="'+cy.toFixed(2)+'" x2="'+(cx+0.42).toFixed(2)+'" y2="'+cy.toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
@@ -1446,7 +1444,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.98",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.99",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
