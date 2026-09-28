@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.97</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.98</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -256,7 +256,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.97</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.98</footer>
 
 <script>
 "use strict";
@@ -526,6 +526,7 @@ function getSurvey(p,g,alreadyPlan){
       if(!isNaN(num) && /^-?\d/.test(sh.label)) dseed=num; else dseed=path.total*(k+1)/(n+1);
       if(dseed<0)dseed=0; if(dseed>path.total)dseed=path.total; var c=pathPos(path,dseed); xy=[c.x/12,c.y/12]; }
     var xF=Math.max(xlo,Math.min(xhi,xy[0])), yF=Math.max(ylo,Math.min(yhi,xy[1]));
+    var _nn=_nudgeClear(gp,path,xF,yF); xF=_nn[0]; yF=_nn[1];
     var d=projectDist(path,xF,yF);
     shots.push({label:sh.label,x:xF,y:yF,d:d,z:parsed.bm-sh.reading,reading:sh.reading});
   }
@@ -540,6 +541,14 @@ function getSurvey(p,g,alreadyPlan){
 }
 function parseShotPos(v){ try{ var m=JSON.parse(v||'{}'); return (m&&typeof m==='object')?m:{}; }catch(_){ return {}; } }
 function _ptClearP(g,F,x,y){ for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; if(x>pc.x0/F && x<pc.x1/F && y>pc.y0/F && y<pc.y1/F) return false; } return true; }
+function _segClear(g,F,ax,ay,bx,by){ for(var i=0;i<=16;i++){ var t=i/16,x=ax+(bx-ax)*t,y=ay+(by-ay)*t; if(!_ptClearP(g,F,x,y)) return false; } return true; }
+function _nudgeClear(gp,path,xF,yF){ if(_ptClearP(gp,12,xF,yF)) return [xF,yF];
+  var d=projectDist(path,xF,yF), c=pathPos(path,d), c2=pathPos(path,Math.min(path.total,d+0.3));
+  var tx=c2.x-c.x,ty=c2.y-c.y,tn=Math.hypot(tx,ty)||1; tx/=tn; ty/=tn; var pxu=-ty,pyu=tx, onx=c.x/12,ony=c.y/12;
+  function scan(sx,sy){ var at=-1; for(var o=0.6;o<=9;o+=0.3){ if(_ptClearP(gp,12,onx+sx*o,ony+sy*o)){ at=o; break; } } if(at<0) return {at:9,run:0}; var run=0; for(var q=at;q<=at+3.5;q+=0.3){ if(_ptClearP(gp,12,onx+sx*q,ony+sy*q)) run+=0.3; else break; } return {at:at,run:run}; }
+  var P=scan(pxu,pyu), M=scan(-pxu,-pyu); var useP=(P.run>=M.run);
+  var sx=useP?pxu:-pxu, sy=useP?pyu:-pyu, at=(useP?P.at:M.at);
+  return [onx+sx*(at+0.4), ony+sy*(at+0.4)]; }
 function _shotLabelClear(g,F,lx,ly,extra){ var hw=1.15,hh=0.7,mg=0.1; for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; var a=pc.x0/F-mg,b=pc.x1/F+mg,c=pc.y0/F-mg,d=pc.y1/F+mg; if(lx+hw>a && lx-hw<b && ly+hh>c && ly-hh<d) return false; } if(extra){ for(var j=0;j<extra.length;j++){ var r=extra[j]; if(!r)continue; if(lx+hw>r[0]-mg && lx-hw<r[2]+mg && ly+hh>r[1]-mg && ly-hh<r[3]+mg) return false; } } return true; }
 function setShotPos(label,x,y){ var el=document.getElementById('shotPos'); if(!el)return; var m={}; try{m=JSON.parse(el.value||'{}')||{};}catch(_){m={};} m[label]=[Math.round(x*1000)/1000,Math.round(y*1000)/1000]; el.value=JSON.stringify(m); }
 function reachToGrade(p, G){
@@ -1216,28 +1225,30 @@ function buildSVG(p,g){
 
   if(p.survey && p.survey.trim()){ const surv=getSurvey(p,g,true); const path=surv.path;
     if(surv.ok && path){
-      var _avoid=_placed.concat(obst);
-      for(const sh of surv.shots){ const cx=sh.x, cy=sh.y;
+      var _avoid=_placed.concat(obst); var _chBoxes=[];
+      for(const sh of surv.shots){ let cx=sh.x, cy=sh.y;
+        var _a0=pathPos(path,Math.max(0,sh.d-0.2)), _a1=pathPos(path,sh.d+0.2);
+        var _tx=(_a1.x-_a0.x), _ty=(_a1.y-_a0.y), _tn=Math.hypot(_tx,_ty)||1; _tx/=_tn; _ty/=_tn;
+        var _px=-_ty, _py=_tx;
+        for(var _sep=0;_sep<5;_sep++){ var _tc=false; for(var _q=0;_q<_chBoxes.length;_q++){ if(Math.abs(cx-_chBoxes[_q][0])<0.95 && Math.abs(cy-_chBoxes[_q][1])<0.95){_tc=true;break;} } if(!_tc && _ptClearP(g,F,cx,cy)) break; cx+=_px*0.95; cy+=_py*0.95; }
         s+='<g class="shotMarker" data-label="'+esc(sh.label)+'" data-x="'+cx.toFixed(3)+'" data-y="'+cy.toFixed(3)+'">';
         s+='<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="0.32" fill="#fff" fill-opacity="0.92" stroke="#c0392b" stroke-width="0.07"/>';
         s+='<line x1="'+(cx-0.42).toFixed(2)+'" y1="'+cy.toFixed(2)+'" x2="'+(cx+0.42).toFixed(2)+'" y2="'+cy.toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
         s+='<line x1="'+cx.toFixed(2)+'" y1="'+(cy-0.42).toFixed(2)+'" x2="'+cx.toFixed(2)+'" y2="'+(cy+0.42).toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
-        var _a0=pathPos(path,Math.max(0,sh.d-0.2)), _a1=pathPos(path,sh.d+0.2);
-        var _tx=(_a1.x-_a0.x), _ty=(_a1.y-_a0.y), _tn=Math.hypot(_tx,_ty)||1; _tx/=_tn; _ty/=_tn;
-        var _px=-_ty, _py=_tx, _off=(p.width?p.width/F/2:1.7)+0.9;
-        var _lx,_ly,_found=false, _dl=[_off,_off+0.9,_off+1.8,_off+2.7,_off+3.6];
-        for(var _di2=0; _di2<_dl.length && !_found; _di2++){ for(var _sg2=0; _sg2<2 && !_found; _sg2++){ var _sn=_sg2?-1:1;
-          var _Lx=cx+_px*_sn*_dl[_di2], _Ly=cy+_py*_sn*_dl[_di2];
-          if(_shotLabelClear(g,F,_Lx,_Ly,_avoid)){ _lx=_Lx; _ly=_Ly; _found=true; } } }
-        if(!_found){ _lx=cx+_px*(_off+3.6); _ly=cy+_py*(_off+3.6); }
+        var _dirs=[[_px,_py],[-_px,-_py],[_tx,_ty],[-_tx,-_ty],[_px+_tx,_py+_ty],[_px-_tx,_py-_ty],[-_px+_tx,-_py+_ty],[-_px-_tx,-_py-_ty]];
+        for(var _dj=0;_dj<_dirs.length;_dj++){ var _dn=Math.hypot(_dirs[_dj][0],_dirs[_dj][1])||1; _dirs[_dj][0]/=_dn; _dirs[_dj][1]/=_dn; }
+        var _lx,_ly,_found=false, _dl=[0.85,1.4,2.0,2.7,3.4,4.2,5.0,6.0];
+        for(var _di2=0; _di2<_dl.length && !_found; _di2++){ for(var _dk=0; _dk<_dirs.length && !_found; _dk++){
+          var _Lx=cx+_dirs[_dk][0]*_dl[_di2], _Ly=cy+_dirs[_dk][1]*_dl[_di2];
+          if(_shotLabelClear(g,F,_Lx,_Ly,_avoid) && _segClear(g,F,cx,cy,_Lx,_Ly)){ _lx=_Lx; _ly=_Ly; _found=true; } } }
+        if(!_found){ _lx=cx+_px*3.6; _ly=cy+_py*3.6; }
         _exp.x0=Math.min(_exp.x0,Math.min(cx,_lx)-1.3); _exp.x1=Math.max(_exp.x1,Math.max(cx,_lx)+1.3); _exp.y0=Math.min(_exp.y0,Math.min(cy,_ly)-0.9); _exp.y1=Math.max(_exp.y1,Math.max(cy,_ly)+0.9);
         var _ldx=_lx-cx,_ldy=_ly-cy,_ln=Math.hypot(_ldx,_ldy)||1; _ldx/=_ln; _ldy/=_ln;
-        var _lA=[_lx-_ldx*0.55,_ly-_ldy*0.55], _lB=[cx+_ldx*0.45,cy+_ldy*0.45], _lClip=_lA;
-        for(var _lc=1;_lc<=20;_lc++){ var _lt=_lc/20, _mx=_lA[0]+(_lB[0]-_lA[0])*_lt, _my=_lA[1]+(_lB[1]-_lA[1])*_lt; if(!_ptClearP(g,F,_mx,_my)) break; _lClip=[_mx,_my]; }
-        if(Math.hypot(_lClip[0]-_lA[0],_lClip[1]-_lA[1])>0.15) s+='<line x1="'+_lA[0].toFixed(2)+'" y1="'+_lA[1].toFixed(2)+'" x2="'+_lClip[0].toFixed(2)+'" y2="'+_lClip[1].toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
+        s+='<line x1="'+(cx+_ldx*0.4).toFixed(2)+'" y1="'+(cy+_ldy*0.4).toFixed(2)+'" x2="'+(_lx-_ldx*0.55).toFixed(2)+'" y2="'+(_ly-_ldy*0.55).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
         s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly-0.08).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(sh.label)+'</text>';
         s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.42).toFixed(2)+'" font-size="0.34" text-anchor="middle" fill="#c0392b">'+esc(ftCompact(sh.d*12))+'</text>';
         s+='</g>';
+        _chBoxes.push([cx,cy]); _avoid.push([cx-0.5,cy-0.5,cx+0.5,cy+0.5]); _avoid.push([_lx-1.15,_ly-0.7,_lx+1.15,_ly+0.7]);
       }
       { const bx=(p.bmX!=null?p.bmX:pathPos(path,0).x/F), by=(p.bmY!=null?p.bmY:pathPos(path,0).y/F);
         _exp.x0=Math.min(_exp.x0,bx-0.8); _exp.x1=Math.max(_exp.x1,bx+0.8); _exp.y0=Math.min(_exp.y0,by-0.8); _exp.y1=Math.max(_exp.y1,by+1.0);
@@ -1435,7 +1446,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.97",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.98",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
