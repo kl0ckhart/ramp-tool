@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.103</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.104</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -184,7 +184,7 @@
       <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (side view)</label>
       <div class="sechead">Terrain</div>
             <label class="field"><span class="lab">Ground survey (laser)</span><textarea id="survey" rows="6" placeholder="BM: 4' 2-3/8&#10;A: 3' 1/4&#10;B: 2' 5-1/2"></textarea><span class="hint">Label the benchmark <b>BM</b>, then each shot <b>A, B, C…</b> with its rod reading. Drag A, B, C on the plan to where each shot was taken — the distance is read from where you place it.</span></label>
-            <input type="hidden" id="bmX"><input type="hidden" id="bmY"><input type="hidden" id="notchX"><input type="hidden" id="notchY"><input type="hidden" id="shotPos">
+            <input type="hidden" id="bmX"><input type="hidden" id="bmY"><input type="hidden" id="notchX"><input type="hidden" id="notchY"><input type="hidden" id="shotPos"><input type="hidden" id="shotLabelPos">
       <details style="margin:2px 0 8px"><summary class="hint" style="cursor:pointer;font-weight:700">How to enter the survey</summary>
         <div class="hint" style="margin-top:6px;line-height:1.6">
           Shoot the <b>benchmark</b> at the deck base, then the rod reading at points going out along the ramp line. One line each &mdash; <b>distance: reading</b>:<br>
@@ -256,7 +256,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.103</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.104</footer>
 
 <script>
 "use strict";
@@ -542,6 +542,8 @@ function parseShotPos(v){ try{ var m=JSON.parse(v||'{}'); return (m&&typeof m===
 function _ptClearP(g,F,x,y){ for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; if(x>pc.x0/F && x<pc.x1/F && y>pc.y0/F && y<pc.y1/F) return false; } return true; }
 function _ptClearM(g,F,x,y,m){ for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; if(x>pc.x0/F-m && x<pc.x1/F+m && y>pc.y0/F+ -m && y<pc.y1/F+m) return false; } return true; }
 function _segClear(g,F,ax,ay,bx,by){ var L=Math.hypot(bx-ax,by-ay), n=Math.max(10,Math.ceil(L/0.18)); for(var i=0;i<=n;i++){ var t=i/n,x=ax+(bx-ax)*t,y=ay+(by-ay)*t; if(!_ptClearP(g,F,x,y)) return false; } return true; }
+function _ownPieces(g,F,x,y){ var o=[]; for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; if(x>pc.x0/F&&x<pc.x1/F&&y>pc.y0/F&&y<pc.y1/F) o.push(i); } return o; }
+function _segClearExc(g,F,ax,ay,bx,by,own){ var L=Math.hypot(bx-ax,by-ay), n=Math.max(10,Math.ceil(L/0.18)); for(var i=0;i<=n;i++){ var t=i/n,x=ax+(bx-ax)*t,y=ay+(by-ay)*t; for(var p=0;p<g.pieces.length;p++){ if(own.indexOf(p)>=0)continue; var pc=g.pieces[p]; if(x>pc.x0/F&&x<pc.x1/F&&y>pc.y0/F&&y<pc.y1/F) return false; } } return true; }
 function _nearestClear(gp,x,y){ if(_ptClearP(gp,12,x,y)) return [x,y];
   for(var r=0.3;r<=7;r+=0.3){ for(var a=0;a<360;a+=15){ var t=a*Math.PI/180, px=x+r*Math.cos(t), py=y+r*Math.sin(t); if(_ptClearP(gp,12,px,py)) return [px,py]; } } return [x,y]; }
 function _seedBeside(gp,path,dseed){
@@ -553,6 +555,8 @@ function _seedBeside(gp,path,dseed){
   return [onx+sx*(at+0.4), ony+sy*(at+0.4)]; }
 function _shotLabelClear(g,F,lx,ly,extra){ var hw=1.15,hh=0.7,mg=0.1; for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; var a=pc.x0/F-mg,b=pc.x1/F+mg,c=pc.y0/F-mg,d=pc.y1/F+mg; if(lx+hw>a && lx-hw<b && ly+hh>c && ly-hh<d) return false; } if(extra){ for(var j=0;j<extra.length;j++){ var r=extra[j]; if(!r)continue; if(lx+hw>r[0]-mg && lx-hw<r[2]+mg && ly+hh>r[1]-mg && ly-hh<r[3]+mg) return false; } } return true; }
 function setShotPos(label,x,y){ var el=document.getElementById('shotPos'); if(!el)return; var m={}; try{m=JSON.parse(el.value||'{}')||{};}catch(_){m={};} m[label]=[Math.round(x*1000)/1000,Math.round(y*1000)/1000]; el.value=JSON.stringify(m); }
+function parseLabelPos(v){ try{ var m=JSON.parse(v||'{}'); return (m&&typeof m==='object')?m:{}; }catch(_){ return {}; } }
+function setLabelPos(label,x,y){ var el=document.getElementById('shotLabelPos'); if(!el)return; var m={}; try{m=JSON.parse(el.value||'{}')||{};}catch(_){m={};} m[label]=[Math.round(x*1000)/1000,Math.round(y*1000)/1000]; el.value=JSON.stringify(m); }
 function reachToGrade(p, G){
   const deck=(p.deckHeight||0); if(deck<=0) return null;
   const sv=getSurvey(p,G); if(!sv.ok) return null;
@@ -921,6 +925,15 @@ function attachDrag(){
     function end(e){ if(e.pointerId!==pid)return; if(start&&_dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ setShotPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } start=null;pid=null;el.removeAttribute('transform'); render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
+  svg.querySelectorAll('.shotLabel').forEach(function(el){
+    el.style.cursor='move'; el.style.touchAction='none';
+    let start=null, orig=null, pid=null;
+    el.addEventListener('pointerdown', function(e){ if(_dragPtrs.size>1||e.isPrimary===false)return; e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
+      start=svgUserPt(svg,e); orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
+    el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){start=null;el.removeAttribute('transform');return;} const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
+    function end(e){ if(e.pointerId!==pid)return; if(start&&_dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ setLabelPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } start=null;pid=null;el.removeAttribute('transform'); render(); }
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  });
 }
 function buildSVG(p,g){
   const F=12;
@@ -1236,20 +1249,23 @@ function buildSVG(p,g){
         s+='<circle cx="'+cx.toFixed(2)+'" cy="'+cy.toFixed(2)+'" r="0.32" fill="#fff" fill-opacity="0.92" stroke="#c0392b" stroke-width="0.07"/>';
         s+='<line x1="'+(cx-0.42).toFixed(2)+'" y1="'+cy.toFixed(2)+'" x2="'+(cx+0.42).toFixed(2)+'" y2="'+cy.toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
         s+='<line x1="'+cx.toFixed(2)+'" y1="'+(cy-0.42).toFixed(2)+'" x2="'+cx.toFixed(2)+'" y2="'+(cy+0.42).toFixed(2)+'" stroke="#c0392b" stroke-width="0.05"/>';
-        var _R2=0.70710678;
+        s+='</g>';
+        var _R2=0.70710678; var _own=_ownPieces(g,F,cx,cy);
         var _diag=[[_R2,_R2],[_R2,-_R2],[-_R2,_R2],[-_R2,-_R2]];
         var _sweep=[]; for(var _ai=0;_ai<360;_ai+=10){ var _aa=_ai*Math.PI/180; _sweep.push([Math.cos(_aa),Math.sin(_aa)]); }
         var _dl=[]; for(var _dd=1.5;_dd<=18;_dd+=0.6) _dl.push(_dd);
         var _lx=cx,_ly=cy,_found=false;
+        var _lp=(p.shotLabelPos&&p.shotLabelPos[sh.label]); if(_lp&&_lp.length===2){ _lx=_lp[0]; _ly=_lp[1]; _found=true; }
         for(var _dk=0; _dk<_diag.length && !_found; _dk++){ for(var _di2=0; _di2<_dl.length && !_found; _di2++){
           var _Lx=cx+_diag[_dk][0]*_dl[_di2], _Ly=cy+_diag[_dk][1]*_dl[_di2];
-          if(_shotLabelClear(g,F,_Lx,_Ly,_avoid) && _segClear(g,F,cx,cy,_Lx,_Ly)){ _lx=_Lx; _ly=_Ly; _found=true; } } }
+          if(_shotLabelClear(g,F,_Lx,_Ly,_avoid) && _segClearExc(g,F,cx,cy,_Lx,_Ly,_own)){ _lx=_Lx; _ly=_Ly; _found=true; } } }
         for(var _di3=0; _di3<_dl.length && !_found; _di3++){ for(var _dk2=0; _dk2<_sweep.length && !_found; _dk2++){
           var _Lx2=cx+_sweep[_dk2][0]*_dl[_di3], _Ly2=cy+_sweep[_dk2][1]*_dl[_di3];
-          if(_shotLabelClear(g,F,_Lx2,_Ly2,_avoid) && _segClear(g,F,cx,cy,_Lx2,_Ly2)){ _lx=_Lx2; _ly=_Ly2; _found=true; } } }
+          if(_shotLabelClear(g,F,_Lx2,_Ly2,_avoid) && _segClearExc(g,F,cx,cy,_Lx2,_Ly2,_own)){ _lx=_Lx2; _ly=_Ly2; _found=true; } } }
         _exp.x0=Math.min(_exp.x0,Math.min(cx,_lx)-1.3); _exp.x1=Math.max(_exp.x1,Math.max(cx,_lx)+1.3); _exp.y0=Math.min(_exp.y0,Math.min(cy,_ly)-0.9); _exp.y1=Math.max(_exp.y1,Math.max(cy,_ly)+0.9);
         var _ldx=_lx-cx,_ldy=_ly-cy,_ln=Math.hypot(_ldx,_ldy)||1; _ldx/=_ln; _ldy/=_ln;
-        if(_found && _ln>0.6) s+='<line x1="'+(cx+_ldx*0.36).toFixed(2)+'" y1="'+(cy+_ldy*0.36).toFixed(2)+'" x2="'+(_lx-_ldx*0.5).toFixed(2)+'" y2="'+(_ly-_ldy*0.5).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
+        if(_ln>0.6) s+='<line x1="'+(cx+_ldx*0.36).toFixed(2)+'" y1="'+(cy+_ldy*0.36).toFixed(2)+'" x2="'+(_lx-_ldx*0.5).toFixed(2)+'" y2="'+(_ly-_ldy*0.5).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
+        s+='<g class="shotLabel" data-label="'+esc(sh.label)+'" data-x="'+_lx.toFixed(3)+'" data-y="'+_ly.toFixed(3)+'">';
         s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly-0.08).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(sh.label)+'</text>';
         s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.42).toFixed(2)+'" font-size="0.34" text-anchor="middle" fill="#c0392b">'+esc(ftCompact(sh.d*12))+'</text>';
         s+='</g>';
@@ -1270,7 +1286,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -1294,7 +1310,7 @@ function readParams(){
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),shotLabelPos:parseLabelPos(document.getElementById("shotLabelPos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
@@ -1451,7 +1467,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.103",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.104",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
