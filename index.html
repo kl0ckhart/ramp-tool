@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.107</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.113</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -257,7 +257,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.107</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.113</footer>
 
 <script>
 "use strict";
@@ -1220,9 +1220,6 @@ function buildSVG(p,g){
     for(var _cdi=0;_cdi<_custLines.length;_cdi++){ var _cl=_custLines[_cdi], _ty=(_byc+1.15+_cdi*_lhc).toFixed(2);
       if(_phoneLine && _cl===_phoneLine){ var _tel=_cl.replace(/[^0-9+]/g,'');
         s+='<a href="tel:'+esc(_tel)+'"><text x="'+(_bxc+0.35).toFixed(2)+'" y="'+_ty+'" font-size="'+_fsc+'" fill="#1a6fd0" text-decoration="underline" style="cursor:pointer">'+esc(_cl)+'</text></a>'; }
-      else if(_mapLines[_cl] && _mapQ){
-        var _mapUrl=(p.mapApp==="apple")?("https://maps.apple.com/?q="+encodeURIComponent(_mapQ)):("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(_mapQ));
-        s+='<a href="'+esc(_mapUrl)+'" target="_blank" rel="noopener"><text x="'+(_bxc+0.35).toFixed(2)+'" y="'+_ty+'" font-size="'+_fsc+'" fill="#1a6fd0" text-decoration="underline" style="cursor:pointer">'+esc(_cl)+'</text></a>'; }
       else s+='<text x="'+(_bxc+0.35).toFixed(2)+'" y="'+_ty+'" font-size="'+_fsc+'" fill="#3a3f47">'+esc(_cl)+'</text>';
     }
   }
@@ -1472,7 +1469,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.107",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.113",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
