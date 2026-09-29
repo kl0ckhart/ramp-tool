@@ -51,26 +51,17 @@
   .caption{margin-top:10px;font-size:13px;color:#414653} .caption .mono{color:var(--ink)}
   .scale-note{margin-top:4px;font-size:12px;color:var(--muted)}
   footer{padding:6px 20px 26px;color:var(--muted);font-size:12px}
-  .cust-title{border:1px solid #b3c3d3;background:#f3f7fb;border-radius:8px;padding:8px 12px;margin-bottom:12px;font:400 10pt/1.35 system-ui,-apple-system,sans-serif;color:#3a3f47}
-  .cust-title .ct-h{font-weight:700;color:#274156;font-size:10pt;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
-  .cust-title .ct-nm{font-weight:600}
-  .cust-title .ct-addr{margin-top:1px}
-  .cust-title a{color:#1a6fd0;text-decoration:underline}
-  .cust-title .ct-map{margin-top:3px}
-  .cust-title .ct-map a{display:inline-block;text-decoration:none;font-weight:600;color:#fff;background:#1a6fd0;border-radius:6px;padding:3px 10px}
-  .cust-title .ct-ph{margin-top:9px}
   @page{size:landscape;margin:12mm}
   @media print{body{background:#fff} header .ver,.inputs,.planhead button,.scale-note,footer{display:none !important}
     main{display:block;padding:0} .plan{border:0;padding:0;position:static;max-height:none;overflow:visible} .paper{border:0;padding:0;overflow:visible} .planhead h2{display:none} .brand{font-size:18px}
     #paper svg{max-width:100% !important;max-height:150mm !important;width:auto !important;height:auto !important}
     .plan,.paper,#reachBox{break-inside:avoid;page-break-inside:avoid}
     #profileWrap,#notchWrap{break-inside:avoid;page-break-inside:avoid}
-    #profileWrap h2,#notchWrap h2,#surveyWrap h2{break-after:avoid;page-break-after:avoid}
-    #custTitle{break-inside:avoid;break-after:avoid;page-break-inside:avoid;page-break-after:avoid}}
+    #profileWrap h2,#notchWrap h2,#surveyWrap h2{break-after:avoid;page-break-after:avoid}}
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.112</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.107</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -90,8 +81,7 @@
       <label class="field"><span class="lab">City</span><input id="custCity" type="text" placeholder="e.g. Springfield" autocomplete="off"></label>
       <label class="field"><span class="lab">State</span><input id="custState" type="text" placeholder="e.g. IL" autocomplete="off"></label>
       <label class="field"><span class="lab">Phone</span><input id="custPhone" type="text" placeholder="e.g. (555) 123-4567" autocomplete="off"></label>
-      <label class="field"><span class="lab">Maps app <span class="u">(Open in Maps button)</span></span><select id="mapApp"><option value="apple">Apple Maps</option><option value="google">Google Maps</option><option value="other">Other (custom link)</option></select></label>
-      <label class="field" id="mapCustomField" style="display:none"><span class="lab">Custom map link <span class="u">(use %s where the address goes)</span></span><input id="mapCustom" type="text" placeholder="e.g. https://waze.com/ul?q=%s" autocomplete="off"></label>
+      <label class="field"><span class="lab">Maps app <span class="u">(address link)</span></span><select id="mapApp"><option value="google">Google Maps</option><option value="apple">Apple Maps</option></select></label>
       <label class="field"><span class="lab">Project type</span><input id="projectType" type="text" value="Ramp Project"></label>
       <label class="checkrow"><input type="checkbox" id="showNorth"> Show north arrow</label>
       <label class="field only-north"><span class="lab">North bearing <span class="u">(°, 0 = up)</span></span><input id="northBearing" type="number" step="5" value="0"></label>
@@ -249,7 +239,6 @@
 
     <section class="plan">
       <div class="planhead"><h2>Plan</h2><button class="print" onclick="window.print()">Print / Save PDF</button></div>
-      <div id="custTitle" class="cust-title" style="display:none"></div>
       <div class="paper" id="paper"></div>
       <div class="caption" id="caption"></div>
       <div class="scale-note">1 square = 1 ft &middot; prints to scale (0.5 cm per foot)</div>
@@ -268,7 +257,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.112</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.107</footer>
 
 <script>
 "use strict";
@@ -1214,7 +1203,6 @@ function buildSVG(p,g){
       _custBW=_cmw*0.4*0.66+0.6;_custBH=_custLines.length*0.56+1.0;
     }
   }
-  _custLines=null;
   var _noN=2.8, notePos={}, _placed=[];
   var _exp={x0:vbX,y0:vbY,x1:vbX+vbW,y1:vbY+vbH};
   var _dx1=x1f,_dy0=y0f,_dy1=y1f; for(var _oi=0;_oi<obst.length;_oi++){var _ob=obst[_oi]; if(_ob[2]>_dx1)_dx1=_ob[2]; if(_ob[1]<_dy0)_dy0=_ob[1]; if(_ob[3]>_dy1)_dy1=_ob[3];}
@@ -1303,7 +1291,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","mapCustom","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -1322,7 +1310,7 @@ function readParams(){
   const num=id=>parseFloat(document.getElementById(id).value)||0;
   const bnum=id=>{const v=document.getElementById(id).value; return v===""?null:parseFloat(v);};
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
-  return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),mapApp:document.getElementById("mapApp").value,mapCustom:document.getElementById("mapCustom").value.trim(),projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
+  return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),mapApp:document.getElementById("mapApp").value,projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
@@ -1426,26 +1414,6 @@ function render(){
     const rr=document.getElementById("rampRun"); rr.value=Math.round(p.rampRun*100)/100; rr.disabled=true;
   } else { document.getElementById("rampRun").disabled=false; }
   document.getElementById("clientLabel").innerHTML=((p.custLast&&p.custLast.trim())?esc(p.custLast.trim()+(p.custVer?"_v"+p.custVer:"")):'<span class="ph">[client name]</span>')+' '+esc(p.projectType||"");
-  { var _mcf=document.getElementById("mapCustomField"); if(_mcf) _mcf.style.display=(p.mapApp==="other")?"":"none"; }
-  (function(){ var ct=document.getElementById("custTitle"); if(!ct)return;
-    var nm=(((p.custFirst||"")+" "+(p.custLast||"")).trim());
-    var addr=(p.custAddress||"").trim();
-    var cs=[(p.custCity||"").trim(),(p.custState||"").trim()].filter(function(x){return x;}).join(", ");
-    var phone=(p.custPhone||"").trim();
-    if(!(nm||addr||cs||phone)){ ct.style.display="none"; ct.innerHTML=""; return; }
-    var mapQ=[addr,cs].filter(function(x){return x;}).join(", ");
-    var addrDisp=[addr,cs].filter(function(x){return x;}).join(", ");
-    var h='<div class="ct-h">Customer</div>';
-    if(nm) h+='<div class="ct-nm">'+esc(nm)+'</div>';
-    if(addrDisp){ h+='<div class="ct-addr">'+esc(addrDisp)+'</div>';
-      if(mapQ){ var _eq=encodeURIComponent(mapQ), mapUrl;
-        if(p.mapApp==="apple") mapUrl="https://maps.apple.com/?q="+_eq;
-        else if(p.mapApp==="other"){ var _tpl=(p.mapCustom||"").trim(); if(_tpl){ mapUrl=(_tpl.indexOf("%s")>=0)?_tpl.replace(/%s/g,_eq):(_tpl+(_tpl.indexOf("?")>=0?"&":"?")+"q="+_eq); } else { mapUrl="https://maps.apple.com/?q="+_eq; } }
-        else mapUrl="https://www.google.com/maps/search/?api=1&query="+_eq;
-        h+='<div class="ct-map"><a href="'+esc(mapUrl)+'">Open in Maps &#8599;</a></div>'; } }
-    if(phone){ var tel=phone.replace(/[^0-9+]/g,''); h+='<div class="ct-ph"><a href="tel:'+esc(tel)+'">'+esc(phone)+'</a></div>'; }
-    ct.innerHTML=h; ct.style.display="";
-  })();
   document.title="Care Construction"+((p.custLast&&p.custLast.trim())?(" — "+p.custLast.trim()+(p.custVer?"_v"+p.custVer:"")+" "+(p.projectType||"")):"");
   if(p.layout==="switchback"&&p.legs.length===0){ p.legs=[1,1]; p._preview=true; }
   let g=p.layout==="compound"?compoundGeometry(p):(p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p));
@@ -1504,7 +1472,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.112",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.107",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
