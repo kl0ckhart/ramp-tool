@@ -1,4 +1,4 @@
-const CACHE = "cc-ramp-v1";
+const CACHE = "cc-ramp-v2";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 self.addEventListener("install", function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS); }).then(function(){ return self.skipWaiting(); }));
@@ -8,6 +8,10 @@ self.addEventListener("activate", function(e){
 });
 self.addEventListener("fetch", function(e){
   if(e.request.method !== "GET") return;
+  // Only handle requests to this app's own origin. Let the browser/OS handle
+  // everything else (map links, external sites) so those open normally.
+  var _u; try{ _u = new URL(e.request.url); }catch(_){ return; }
+  if(_u.origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request).then(function(resp){
       var copy = resp.clone();
