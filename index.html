@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.113</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.115</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -140,6 +140,8 @@
       <label class="field"><span class="lab">First ramp comes off the</span>
         <select id="startSide"><option value="right">Right of the top landing</option><option value="left">Left of the top landing</option><option value="bottom">Below the top landing</option><option value="top">Above the top landing</option></select>
         <span class="hint">flips the whole run to the other side — everything stays connected</span></label>
+      <label class="field"><span class="lab">Departure angle off the deck <span class="u">(deg)</span></span><input id="depAngle" type="number" step="1" min="0" max="60" value="0"><span class="hint">0 = straight off the deck. Any angle adds a flat triangular transition piece on the deck; the whole run then follows that angle.</span></label>
+      <label class="field" id="depSideField" style="display:none"><span class="lab">Angle direction</span><select id="depSide"><option value="right">To the right (looking out from the deck)</option><option value="left">To the left (looking out from the deck)</option></select></label>
       <label class="field only-uniform"><span class="lab">Design to a target slope</span>
         <select id="targetSlope"><option value="manual">Set run length manually</option><option value="12">1:12 (accessible)</option><option value="10">1:10</option><option value="8">1:8 (steepest safe)</option></select>
         <span class="hint">pick a slope and the run length is computed to match</span></label>
@@ -257,7 +259,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.113</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.115</footer>
 
 <script>
 "use strict";
@@ -940,6 +942,37 @@ function buildSVG(p,g){
   const F=12;
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
   for(const pc of g.pieces){mnX=Math.min(mnX,pc.x0);mxX=Math.max(mxX,pc.x1);mnY=Math.min(mnY,pc.y0);mxY=Math.max(mxY,pc.y1);}
+  // ----- angled departure off the top landing -----
+  var _depAng=(+p.depAngle||0), _depRot=false, _rotDeg=0, _pivXf=0, _pivYf=0, _wedgePts=null, _wedgeW=0;
+  if(_depAng>0.01){
+    var _TL=null,_R1=null;
+    for(const pc of g.pieces){ if(pc.top && !pc.ref){ _TL=pc; break; } }
+    for(const pc of g.pieces){ if(!pc.top && !pc.ref){ _R1=pc; break; } }
+    if(_TL && _R1){
+      var _tcx=(_TL.x0+_TL.x1)/2,_tcy=(_TL.y0+_TL.y1)/2,_rcx=(_R1.x0+_R1.x1)/2,_rcy=(_R1.y0+_R1.y1)/2;
+      var _ddx=_rcx-_tcx,_ddy=_rcy-_tcy, _ox,_oy,_Cx,_Cy,_halfI;
+      if(Math.abs(_ddx)>=Math.abs(_ddy)){ _ox=(_ddx>=0?1:-1); _oy=0; _Cx=(_ddx>=0?_TL.x1:_TL.x0); _Cy=_rcy; _halfI=(_R1.y1-_R1.y0)/2; }
+      else { _ox=0; _oy=(_ddy>=0?1:-1); _Cx=_rcx; _Cy=(_ddy>=0?_TL.y1:_TL.y0); _halfI=(_R1.x1-_R1.x0)/2; }
+      var _edx=-_oy,_edy=_ox, _turn=(p.depSide==="left")?-1:1;
+      _rotDeg=_turn*_depAng;
+      var _pivXi=_Cx-_turn*_edx*_halfI, _pivYi=_Cy-_turn*_edy*_halfI;
+      var _farXi=_Cx+_turn*_edx*_halfI, _farYi=_Cy+_turn*_edy*_halfI;
+      _pivXf=_pivXi/F; _pivYf=_pivYi/F;
+      var _ra=_rotDeg*Math.PI/180, _ca=Math.cos(_ra), _sa=Math.sin(_ra);
+      var _rotI=function(xi,yi){ var dx=xi-_pivXi, dy=yi-_pivYi; return [ _pivXi+dx*_ca-dy*_sa, _pivYi+dx*_sa+dy*_ca ]; };
+      var _rf=_rotI(_farXi,_farYi);
+      _wedgePts=[[_pivXi/F,_pivYi/F],[_farXi/F,_farYi/F],[_rf[0]/F,_rf[1]/F]];
+      _wedgeW=_halfI*2;
+      var _dmnX=Infinity,_dmxX=-Infinity,_dmnY=Infinity,_dmxY=-Infinity;
+      for(const pc of g.pieces){ if(pc.top||pc.ref) continue; _dmnX=Math.min(_dmnX,pc.x0);_dmxX=Math.max(_dmxX,pc.x1);_dmnY=Math.min(_dmnY,pc.y0);_dmxY=Math.max(_dmxY,pc.y1); }
+      if(isFinite(_dmnX)){
+        var _cns=[[_dmnX,_dmnY],[_dmxX,_dmnY],[_dmxX,_dmxY],[_dmnX,_dmxY]];
+        for(var _ci=0;_ci<4;_ci++){ var _pp=_rotI(_cns[_ci][0],_cns[_ci][1]); mnX=Math.min(mnX,_pp[0]);mxX=Math.max(mxX,_pp[0]);mnY=Math.min(mnY,_pp[1]);mxY=Math.max(mxY,_pp[1]); }
+        for(var _wi=0;_wi<3;_wi++){ mnX=Math.min(mnX,_wedgePts[_wi][0]*F);mxX=Math.max(mxX,_wedgePts[_wi][0]*F);mnY=Math.min(mnY,_wedgePts[_wi][1]*F);mxY=Math.max(mxY,_wedgePts[_wi][1]*F); }
+        _depRot=true;
+      }
+    }
+  }
   const x0f=mnX/F,y0f=mnY/F,x1f=mxX/F,y1f=mxY/F, mL=3.8,mR=6.0,mT=(p.notchEnable?6.0:4.8);
   let notesLines=null, notesBW=0, notesBH=0;
   if(p.notes && p.notes.trim()){
@@ -951,12 +984,19 @@ function buildSVG(p,g){
   const mB=Math.max(3.4, (g.maxGroupRise>30?5.0:3.8));
   const mTn=mT; const vbX=x0f-mL,vbY=y0f-mTn,vbW=(x1f-x0f)+mL+mR,vbH=(y1f-y0f)+mTn+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
   let s='<svg viewBox="@@VB@@" width="@@W@@cm" height="@@H@@cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
+  let dn="";
   let grid="";
   for(let gx=Math.floor(vbX);gx<=Math.ceil(vbX+vbW);gx++){const M=(gx%5===0);grid+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
   for(let gy=Math.floor(vbY);gy<=Math.ceil(vbY+vbH);gy++){const M=(gy%5===0);grid+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
   s+='<g>'+grid+'</g>';
+  s+='@@DN@@';
+  if(_depRot && _wedgePts){ var _wp=_wedgePts, _wcx=((_wp[0][0]+_wp[1][0]+_wp[2][0])/3), _wcy=((_wp[0][1]+_wp[1][1]+_wp[2][1])/3);
+    s+='<polygon points="'+_wp.map(function(q){return f3(q[0])+","+f3(q[1]);}).join(" ")+'" fill="#c9b59a" fill-opacity="0.9" stroke="#8a6d49" stroke-width="0.05"/>';
+    s+='<text x="'+f3(_wcx)+'" y="'+f3(_wcy-0.12)+'" font-size="0.26" text-anchor="middle" fill="#5a4632" font-weight="700">Angle piece</text>';
+    s+='<text x="'+f3(_wcx)+'" y="'+f3(_wcy+0.26)+'" font-size="0.26" text-anchor="middle" fill="#5a4632" font-weight="700">'+_depAng+'°</text>'; }
   let lastR=null, lastRampPiece=null; for(const q of g.pieces) if(q.ramp) lastRampPiece=q;
   for(const pc of g.pieces){
+    var ps="", _pdown=!(pc.top||pc.ref);
     const x=pc.x0/F,w=(pc.x1-pc.x0)/F,y=pc.y0/F,h=(pc.y1-pc.y0)/F,cx=x+w/2,cy=y+h/2;
     const alongY=pc.ramp?(Math.abs(pc.ddy||0)>Math.abs(pc.ddx||0)):(h>w);
     const fill=pc.ramp?"#d8b784":"#a8c8a0",stroke=pc.ramp?"#b08d52":"#79a771";
@@ -967,30 +1007,31 @@ function buildSVG(p,g){
       continue;
     }
     if(pc.ramp)lastR=pc;
-    s+='<rect x="'+f3(x)+'" y="'+f3(y)+'" width="'+f3(w)+'" height="'+f3(h)+'" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
+    ps+='<rect x="'+f3(x)+'" y="'+f3(y)+'" width="'+f3(w)+'" height="'+f3(h)+'" fill="'+fill+'" fill-opacity="0.85" stroke="'+stroke+'" stroke-width="0.05"/>';
     if(pc.ramp){const dir=pc.dir||1;
       if(alongY){ const tip=(dir>0?(pc.y1/F-0.12):(pc.y0/F+0.12)), tail=tip-dir*0.5, ax=x+0.4;
-        s+='<line x1="'+f3(ax)+'" y1="'+f3(tail)+'" x2="'+f3(ax)+'" y2="'+f3(tip)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
+        ps+='<line x1="'+f3(ax)+'" y1="'+f3(tail)+'" x2="'+f3(ax)+'" y2="'+f3(tip)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
            '<path d="M '+f3(ax)+' '+f3(tip)+' l -0.13 '+(-dir*0.22)+' l 0.26 0 z" fill="'+stroke+'"/>';
       } else { const tip=(dir>0?(pc.x1/F-0.12):(pc.x0/F+0.12)), tail=tip-dir*0.5, ay=y+0.4;
-        s+='<line x1="'+f3(tail)+'" y1="'+f3(ay)+'" x2="'+f3(tip)+'" y2="'+f3(ay)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
+        ps+='<line x1="'+f3(tail)+'" y1="'+f3(ay)+'" x2="'+f3(tip)+'" y2="'+f3(ay)+'" stroke="'+stroke+'" stroke-width="0.04"/>'+
            '<path d="M '+f3(tip)+' '+f3(ay)+' l '+(-dir*0.22)+' -0.13 l 0 0.26 z" fill="'+stroke+'"/>';
       }}
     const ftinTxt=ftCompact(pc.x1-pc.x0)+" \u00d7 "+ftCompact(pc.y1-pc.y0);
     const inTxt="("+inFrac(pc.x1-pc.x0)+"\" \u00d7 "+inFrac(pc.y1-pc.y0)+"\")";
     const yOff=pc.top?0.8:0;
     const longY=(pc.ramp && alongY), plblT=longY?(' transform="rotate(90 '+f3(cx)+' '+f3(cy)+')"'):'';
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy-0.5+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36"'+plblT+'>'+esc(pc.name)+'</text>';
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.12+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47"'+plblT+'>'+esc(ftinTxt)+'</text>';
-    s+='<text x="'+f3(cx)+'" y="'+f3(cy+0.6+yOff)+'" font-size="0.33" text-anchor="middle" fill="#6b7280"'+plblT+'>'+esc(inTxt)+'</text>';
+    ps+='<text x="'+f3(cx)+'" y="'+f3(cy-0.5+yOff)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36"'+plblT+'>'+esc(pc.name)+'</text>';
+    ps+='<text x="'+f3(cx)+'" y="'+f3(cy+0.12+yOff)+'" font-size="0.38" text-anchor="middle" fill="#3a3f47"'+plblT+'>'+esc(ftinTxt)+'</text>';
+    ps+='<text x="'+f3(cx)+'" y="'+f3(cy+0.6+yOff)+'" font-size="0.33" text-anchor="middle" fill="#6b7280"'+plblT+'>'+esc(inTxt)+'</text>';
     if(pc.ramp){const dir=pc.dir||1; const _cl=rampCutLabels(pc.cut), hiLbl=_cl[0], loLbl=_cl[1];
       if(longY){ const hiY=(dir>0?pc.y0:pc.y1)/F+dir*0.55, loY=(dir>0?pc.y1:pc.y0)/F-dir*0.55;
-        s+='<text x="'+f3(cx)+'" y="'+f3(hiY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+hiLbl+'</text>';
-        s+='<text x="'+f3(cx)+'" y="'+f3(loY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+loLbl+'</text>';
+        ps+='<text x="'+f3(cx)+'" y="'+f3(hiY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+hiLbl+'</text>';
+        ps+='<text x="'+f3(cx)+'" y="'+f3(loY)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36">'+loLbl+'</text>';
       } else { const hiX=(dir>0?pc.x0:pc.x1)/F+dir*0.55, loX=(dir>0?pc.x1:pc.x0)/F-dir*0.55;
-        s+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">'+hiLbl+'</text>';
-        s+='<text x="'+f3(loX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(loX)+' '+f3(cy)+')">'+loLbl+'</text>';
+        ps+='<text x="'+f3(hiX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(hiX)+' '+f3(cy)+')">'+hiLbl+'</text>';
+        ps+='<text x="'+f3(loX)+'" y="'+f3(cy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(loX)+' '+f3(cy)+')">'+loLbl+'</text>';
       }}
+    if(_pdown) dn+=ps; else s+=ps;
   }
   if(p.notchEnable && p.notchWidth>0 && p.notchDepth>0){ const tl2=g.pieces.find(pc=>pc.top);
     if(tl2){ const nw=p.notchWidth/F, ndh=p.notchDepth/F;
@@ -1010,13 +1051,13 @@ function buildSVG(p,g){
       if(Math.abs(L.x0-R.x1)<0.6) lx=L.x0+6; else if(Math.abs(L.x1-R.x0)<0.6) lx=L.x1-6;
       if(lx===null) continue;
       const fx=lx/F, fy=(Math.max(L.y0,R.y0)+Math.min(L.y1,R.y1))/2/F;
-      s+='<text x="'+f3(fx)+'" y="'+f3(fy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(fx)+' '+f3(fy)+')">Straight</text>';
+      dn+='<text x="'+f3(fx)+'" y="'+f3(fy)+'" font-size="0.32" text-anchor="middle" fill="#2b2f36" transform="rotate(90 '+f3(fx)+' '+f3(fy)+')">Straight</text>';
     }
   }
   if(lastR){const dir=lastR.dir||1, longY=Math.abs(lastR.ddy||0)>Math.abs(lastR.ddx||0); let gx,gy,ganch;
     if(longY){ gx=(lastR.x0+lastR.x1)/2/F; gy=(dir>0?lastR.y1:lastR.y0)/F+dir*0.5; ganch="middle"; }
     else { gx=(dir>0?lastR.x1/F:lastR.x0/F)+dir*0.35; gy=(lastR.y0+lastR.y1)/2/F; ganch=(dir>0?"start":"end"); }
-    s+='<text x="'+f3(gx)+'" y="'+f3(gy+0.15)+'" font-size="0.46" text-anchor="'+ganch+'" fill="#7a6a3a" font-weight="700">GROUND</text>';}
+    dn+='<text x="'+f3(gx)+'" y="'+f3(gy+0.15)+'" font-size="0.46" text-anchor="'+ganch+'" fill="#7a6a3a" font-weight="700">GROUND</text>';}
   const label="Slope 1:"+g.slopeRatio.toFixed(1)+(g.terrain?"  (survey)":"")+(sc.word?("   "+sc.word):""), hasFlag=sc.key!=="ok";
   const bw=label.length*0.34+0.7+(hasFlag?0.9:0), bx=vbX+0.3, by=y1f+0.6, bh=1.0;
   s+='<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+bh.toFixed(2)+'" rx="0.18" fill="#22242b"/>';
@@ -1050,23 +1091,25 @@ function buildSVG(p,g){
     }
     const adj=g.pieces.filter(pc=>!pc.ref).concat(deckPh?[deckPh]:[]);
     const exposed=(lo,hi,covers)=>{ let sg=[[lo,hi]]; for(const cv of covers){ const c0=cv[0],c1=cv[1],ns=[]; for(const q of sg){ const s0=q[0],s1=q[1]; if(c1<=s0||c0>=s1) ns.push([s0,s1]); else { if(c0>s0)ns.push([s0,c0]); if(c1<s1)ns.push([c1,s1]); } } sg=ns; } return sg.filter(q=>q[1]-q[0]>0.5); };
-    const drawRail=(x0,y0,x1,y1,endsOnly)=>{
+    const drawRail=(x0,y0,x1,y1,endsOnly,toDown)=>{
+      var rs="";
       const horiz=Math.abs(y1-y0)<Math.abs(x1-x0);
       if(horiz){ const xa=Math.min(x0,x1),xb=Math.max(x0,x1);
-        s+='<rect x="'+f3(xa/F)+'" y="'+f3((y0-HI)/F)+'" width="'+f3((xb-xa)/F)+'" height="'+f3(PW)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
+        rs+='<rect x="'+f3(xa/F)+'" y="'+f3((y0-HI)/F)+'" width="'+f3((xb-xa)/F)+'" height="'+f3(PW)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
       } else { const ya=Math.min(y0,y1),yb=Math.max(y0,y1);
-        s+='<rect x="'+f3((x0-HI)/F)+'" y="'+f3(ya/F)+'" width="'+f3(PW)+'" height="'+f3((yb-ya)/F)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
+        rs+='<rect x="'+f3((x0-HI)/F)+'" y="'+f3(ya/F)+'" width="'+f3(PW)+'" height="'+f3((yb-ya)/F)+'" fill="#cdbfa6" fill-opacity="0.7" stroke="#a99a7d" stroke-width="0.02"/>';
       }
       const len=Math.hypot(x1-x0,y1-y0), n=endsOnly?1:Math.max(1,Math.ceil(len/maxSp));
       for(let i=0;i<=n;i++){ const t=i/n, px=x0+(x1-x0)*t, py=y0+(y1-y0)*t;
-        s+='<rect x="'+f3((px-HI)/F)+'" y="'+f3((py-HI)/F)+'" width="'+f3(PW)+'" height="'+f3(PW)+'" fill="#efe7d6" stroke="#5a5142" stroke-width="0.05"/>'; }
+        rs+='<rect x="'+f3((px-HI)/F)+'" y="'+f3((py-HI)/F)+'" width="'+f3(PW)+'" height="'+f3(PW)+'" fill="#efe7d6" stroke="#5a5142" stroke-width="0.05"/>'; }
+      if(toDown) dn+=rs; else s+=rs;
     };
     for(const A of railable){
-      const gnd=(A===lastRamp), dir=A.dir||1;
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x0-A.x1)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir>0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x1,e[0],A.x1,e[1],A.ramp); }
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x1-A.x0)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir<0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x0,e[0],A.x0,e[1],A.ramp); }
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y1-A.y0)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y0,e[1],A.y0,A.ramp); }
-      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y0-A.y1)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y1,e[1],A.y1,A.ramp); }
+      const gnd=(A===lastRamp), dir=A.dir||1, _td=!A.top;
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x0-A.x1)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir>0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x1,e[0],A.x1,e[1],A.ramp,_td); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x1-A.x0)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir<0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x0,e[0],A.x0,e[1],A.ramp,_td); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y1-A.y0)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y0,e[1],A.y0,A.ramp,_td); }
+      { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y0-A.y1)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y1,e[1],A.y1,A.ramp,_td); }
     }
   }
   if(p.showSteps){
@@ -1076,10 +1119,10 @@ function buildSVG(p,g){
       const sx0=(dir>0?hiX:hiX-p.stepDepth), sx1=(dir>0?hiX+p.stepDepth:hiX);
       const cy=(R1.y0+R1.y1)/2, sy0=cy-p.stepWidth/2, sy1=cy+p.stepWidth/2;
       const X0=sx0/F,X1=sx1/F,Y0=sy0/F,Y1=sy1/F;
-      s+='<rect x="'+f3(X0)+'" y="'+f3(Y0)+'" width="'+f3(X1-X0)+'" height="'+f3(Y1-Y0)+'" fill="#aeb4bd" fill-opacity="0.20" stroke="#4a4f57" stroke-width="0.05" stroke-dasharray="0.3 0.18"/>';
-      for(let k=1;k<p.numSteps;k++){ const tx=(sx0+(sx1-sx0)*k/p.numSteps)/F; s+='<line x1="'+f3(tx)+'" y1="'+f3(Y0)+'" x2="'+f3(tx)+'" y2="'+f3(Y1)+'" stroke="#4a4f57" stroke-width="0.035" stroke-dasharray="0.2 0.12"/>'; }
+      dn+='<rect x="'+f3(X0)+'" y="'+f3(Y0)+'" width="'+f3(X1-X0)+'" height="'+f3(Y1-Y0)+'" fill="#aeb4bd" fill-opacity="0.20" stroke="#4a4f57" stroke-width="0.05" stroke-dasharray="0.3 0.18"/>';
+      for(let k=1;k<p.numSteps;k++){ const tx=(sx0+(sx1-sx0)*k/p.numSteps)/F; dn+='<line x1="'+f3(tx)+'" y1="'+f3(Y0)+'" x2="'+f3(tx)+'" y2="'+f3(Y1)+'" stroke="#4a4f57" stroke-width="0.035" stroke-dasharray="0.2 0.12"/>'; }
       const lcx=(X0+X1)/2, lcy=(Y0+Y1)/2;
-      s+='<text x="'+f3(lcx)+'" y="'+f3(lcy)+'" font-size="0.3" text-anchor="middle" fill="#c0392b" font-weight="700" transform="rotate(90 '+f3(lcx)+' '+f3(lcy)+')">Existing steps</text>';
+      dn+='<text x="'+f3(lcx)+'" y="'+f3(lcy)+'" font-size="0.3" text-anchor="middle" fill="#c0392b" font-weight="700" transform="rotate(90 '+f3(lcx)+' '+f3(lcy)+')">Existing steps</text>';
     }
   }
   if(p.showDoor && p.doorWidth>0){
@@ -1179,6 +1222,9 @@ function buildSVG(p,g){
     _plain("Landings", g.pieces.filter(function(pc){return pc.name==="Landing" && !pc.ref;}));
     _plain("Rests", g.pieces.filter(function(pc){return pc.name==="Rest";}));
     _plain("Hairpins", g.pieces.filter(function(pc){return pc.name==="Hairpin"||pc.name==="Turn landing";}));
+    if(_depRot && _wedgeW>0){ var _wbase=2*_wedgeW*Math.sin(_depAng*Math.PI/360);
+      _pcLines.push("Angle piece: 1  —  "+_depAng+"° off the deck");
+      _pcLines.push("   flat triangle — deck edge "+inFrac(_wedgeW)+"\" + ramp edge "+inFrac(_wedgeW)+"\" meet at "+_depAng+"°; open side "+inFrac(_wbase)+"\""); }
   }
   var _rows=[];
   if(notesLines){ _rows.push({tx:"Notes",hd:true}); for(var _ni=0;_ni<notesLines.length;_ni++)_rows.push({tx:notesLines[_ni]}); }
@@ -1282,13 +1328,15 @@ function buildSVG(p,g){
         s+='</g>'; }
     }
   }
+  { var _dnOut = (_depRot ? ('<g transform="rotate('+(+_rotDeg.toFixed(4))+' '+_pivXf.toFixed(3)+' '+_pivYf.toFixed(3)+')">'+dn+'</g>') : dn);
+    s=s.replace("@@DN@@", function(){return _dnOut;}); }
   { var _fvw=_exp.x1-_exp.x0, _fvh=_exp.y1-_exp.y0;
     s=s.replace("@@VB@@", _exp.x0.toFixed(2)+" "+_exp.y0.toFixed(2)+" "+_fvw.toFixed(2)+" "+_fvh.toFixed(2));
     s=s.replace("@@W@@",(_fvw*cm).toFixed(2)); s=s.replace("@@H@@",(_fvh*cm).toFixed(2)); }
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -1308,7 +1356,7 @@ function readParams(){
   const bnum=id=>{const v=document.getElementById(id).value; return v===""?null:parseFloat(v);};
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
   return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),mapApp:document.getElementById("mapApp").value,projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
-    deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,
+    deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,depAngle:(num("depAngle")||0),depSide:document.getElementById("depSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
@@ -1404,6 +1452,7 @@ function terrainAdjust(p, g){
 }
 function render(){
   const p=readParams();
+  { const _dsf=document.getElementById("depSideField"); if(_dsf) _dsf.style.display=((+p.depAngle||0)>0.01)?"":"none"; }
   {const go=document.getElementById("gapOut"); if(go) go.textContent=(p.layout==="switchback")?("= "+Math.round(p.gap)+String.fromCharCode(34)+" gap between the ramps"):"";}
   if(p.targetSlope!=="manual"){
     const totalRamps=(p.layout==="switchback")?(p.legs.reduce((a,b)=>a+b,0)||1):p.runs;
@@ -1469,7 +1518,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.113",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.115",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
