@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.115</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.116</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -259,7 +259,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.115</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.116</footer>
 
 <script>
 "use strict";
@@ -955,8 +955,8 @@ function buildSVG(p,g){
       else { _ox=0; _oy=(_ddy>=0?1:-1); _Cx=_rcx; _Cy=(_ddy>=0?_TL.y1:_TL.y0); _halfI=(_R1.x1-_R1.x0)/2; }
       var _edx=-_oy,_edy=_ox, _turn=(p.depSide==="left")?-1:1;
       _rotDeg=_turn*_depAng;
-      var _pivXi=_Cx-_turn*_edx*_halfI, _pivYi=_Cy-_turn*_edy*_halfI;
-      var _farXi=_Cx+_turn*_edx*_halfI, _farYi=_Cy+_turn*_edy*_halfI;
+      var _pivXi=_Cx+_turn*_edx*_halfI, _pivYi=_Cy+_turn*_edy*_halfI;
+      var _farXi=_Cx-_turn*_edx*_halfI, _farYi=_Cy-_turn*_edy*_halfI;
       _pivXf=_pivXi/F; _pivYf=_pivYi/F;
       var _ra=_rotDeg*Math.PI/180, _ca=Math.cos(_ra), _sa=Math.sin(_ra);
       var _rotI=function(xi,yi){ var dx=xi-_pivXi, dy=yi-_pivYi; return [ _pivXi+dx*_ca-dy*_sa, _pivYi+dx*_sa+dy*_ca ]; };
@@ -1518,7 +1518,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.115",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.116",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
