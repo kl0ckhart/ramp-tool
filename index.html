@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.125</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.126</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -259,7 +259,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.125</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.126</footer>
 
 <script>
 "use strict";
@@ -906,36 +906,56 @@ function attachDrag(){
     document.addEventListener('pointerup', _d, true); document.addEventListener('pointercancel', _d, true);
   }
   const svg=document.querySelector('#paper svg'); if(!svg) return;
+  // Screen-pixel -> drawing-unit scale from the rendered size (immune to Safari pinch-zoom / getScreenCTM quirks)
+  function scale(){ var vb=svg.viewBox.baseVal, r=svg.getBoundingClientRect(); return (vb&&r.width>0)?(vb.width/r.width):0; }
+  function makeDraggable(el, getOrig, commit){
+    el.style.cursor='move'; el.style.touchAction='none'; el.style.webkitUserSelect='none';
+    // Stop iOS Safari from taking over a touch that starts on a marker (that takeover is what fires pointercancel)
+    el.addEventListener('touchstart', function(e){ e.preventDefault(); }, {passive:false});
+    el.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+    var pid=null, sx=0, sy=0, lx=0, ly=0, k=0, orig=null, active=false;
+    el.addEventListener('pointerdown', function(e){
+      if(_dragPtrs.size>1 || e.isPrimary===false) return;
+      e.preventDefault(); e.stopPropagation();
+      k=scale(); if(!(k>0)) return;
+      pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
+      sx=lx=e.clientX; sy=ly=e.clientY; orig=getOrig(); active=true;
+    });
+    el.addEventListener('pointermove', function(e){
+      if(!active || e.pointerId!==pid) return;
+      if(_dragPtrs.size>1){ cancel(); return; }
+      e.preventDefault();
+      if(!(e.clientX||e.clientY)) return;      // ignore bogus 0,0 samples
+      lx=e.clientX; ly=e.clientY;
+      el.setAttribute('transform','translate('+((lx-sx)*k).toFixed(3)+' '+((ly-sy)*k).toFixed(3)+')');
+    });
+    function cancel(){ active=false; pid=null; el.removeAttribute('transform'); }
+    el.addEventListener('pointercancel', function(e){ if(e.pointerId===pid) cancel(); });   // never save on a cancel
+    el.addEventListener('pointerup', function(e){
+      if(!active || e.pointerId!==pid) return;
+      if(e.clientX||e.clientY){ lx=e.clientX; ly=e.clientY; }
+      var moved=Math.hypot(lx-sx, ly-sy);
+      cancel();
+      if(moved<5) return;                        // a tap never moves a marker
+      commit(orig.x+(lx-sx)*k, orig.y+(ly-sy)*k);
+      render();
+    });
+  }
   [['bmMarker','bmX','bmY'],['notchMarker','notchX','notchY']].forEach(function(cfg){
     const el=svg.querySelector('#'+cfg[0]); if(!el) return;
-    el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null, sx=null;
-    el.addEventListener('pointerdown', function(e){
-      if(_dragPtrs.size>1 || e.isPrimary===false){ return; }
-      e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0};
-    });
-    el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){ start=null; el.removeAttribute('transform'); return; } e.preventDefault(); const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start && _dragPtrs.size<=1 && _mv>=5){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } var _moved=(start&&_mv>=5); start=null; pid=null; sx=null; el.removeAttribute('transform'); if(_moved) render(); }
-    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    makeDraggable(el,
+      function(){ var ax=el.getAttribute('data-x'), ay=el.getAttribute('data-y'); return {x:(ax!=null?parseFloat(ax):(parseFloat(document.getElementById(cfg[1]).value)||0)), y:(ay!=null?parseFloat(ay):(parseFloat(document.getElementById(cfg[2]).value)||0))}; },
+      function(x,y){ document.getElementById(cfg[1]).value=x.toFixed(3); document.getElementById(cfg[2]).value=y.toFixed(3); });
   });
   svg.querySelectorAll('.shotMarker').forEach(function(el){
-    el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null, sx=null;
-    el.addEventListener('pointerdown', function(e){ if(_dragPtrs.size>1||e.isPrimary===false)return; e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
-    el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){start=null;el.removeAttribute('transform');return;} e.preventDefault(); const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start&&_dragPtrs.size<=1&&_mv>=5){ const pt=svgUserPt(svg,e); if(pt){ setShotPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } var _moved=(start&&_mv>=5); start=null;pid=null;sx=null;el.removeAttribute('transform'); if(_moved) render(); }
-    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    makeDraggable(el,
+      function(){ return {x:parseFloat(el.getAttribute('data-x'))||0, y:parseFloat(el.getAttribute('data-y'))||0}; },
+      function(x,y){ setShotPos(el.getAttribute('data-label'), x, y); });
   });
   svg.querySelectorAll('.shotLabel').forEach(function(el){
-    el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null, sx=null;
-    el.addEventListener('pointerdown', function(e){ if(_dragPtrs.size>1||e.isPrimary===false)return; e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
-    el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){start=null;el.removeAttribute('transform');return;} e.preventDefault(); const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start&&_dragPtrs.size<=1&&_mv>=5){ const pt=svgUserPt(svg,e); if(pt){ setLabelPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } var _moved=(start&&_mv>=5); start=null;pid=null;sx=null;el.removeAttribute('transform'); if(_moved) render(); }
-    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    makeDraggable(el,
+      function(){ return {x:parseFloat(el.getAttribute('data-x'))||0, y:parseFloat(el.getAttribute('data-y'))||0}; },
+      function(x,y){ setLabelPos(el.getAttribute('data-label'), x, y); });
   });
 }
 function buildSVG(p,g){
@@ -1036,7 +1056,7 @@ function buildSVG(p,g){
   if(p.notchEnable && p.notchWidth>0 && p.notchDepth>0){ const tl2=g.pieces.find(pc=>pc.top);
     if(tl2){ const nw=p.notchWidth/F, ndh=p.notchDepth/F;
       const ncx=(p.notchX!=null?p.notchX:((tl2.x0+tl2.x1)/2/F)), ncy=(p.notchY!=null?p.notchY:(tl2.y0/F+ndh/2));
-      s+='<g id="notchMarker">';
+      s+='<g id="notchMarker" data-x="'+(+ncx).toFixed(3)+'" data-y="'+(+ncy).toFixed(3)+'">';
       s+='<rect x="'+(ncx-nw/2).toFixed(3)+'" y="'+(ncy-ndh/2).toFixed(3)+'" width="'+nw.toFixed(3)+'" height="'+ndh.toFixed(3)+'" fill="#a8c8a0" fill-opacity="0.9" stroke="#5f8f57" stroke-width="0.06" stroke-dasharray="0.24 0.14"/>';
       s+='<text x="'+ncx.toFixed(3)+'" y="'+(ncy+0.11).toFixed(3)+'" font-size="0.3" text-anchor="middle" fill="#4e7a46" font-weight="700">notch</text>';
       s+='</g>';
@@ -1322,7 +1342,7 @@ function buildSVG(p,g){
       }
       { var _bx0=(p.bmX!=null?p.bmX:pathPos(path,0).x/F), _by0=(p.bmY!=null?p.bmY:pathPos(path,0).y/F);
         var _bmx=Math.max(vbX+0.5,Math.min(vbX+vbW-0.5,_bx0)), _bmy=Math.max(vbY+0.6,Math.min(vbY+vbH-0.6,_by0));
-        s+='<g id="bmMarker">';
+        s+='<g id="bmMarker" data-x="'+_bmx.toFixed(3)+'" data-y="'+_bmy.toFixed(3)+'">';
         s+='<circle cx="'+_bmx.toFixed(2)+'" cy="'+_bmy.toFixed(2)+'" r="1.3" fill="#000" fill-opacity="0.001" pointer-events="all"/>';
         s+='<circle cx="'+_bmx.toFixed(2)+'" cy="'+_bmy.toFixed(2)+'" r="0.42" fill="#fff" fill-opacity="0.5" stroke="#7a1f14" stroke-width="0.09"/>';
         s+='<circle cx="'+_bmx.toFixed(2)+'" cy="'+_bmy.toFixed(2)+'" r="0.1" fill="#7a1f14"/>';
@@ -1520,7 +1540,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.125",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.126",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
