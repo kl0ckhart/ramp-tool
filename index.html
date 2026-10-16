@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.122</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.123</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -259,7 +259,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.122</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.123</footer>
 
 <script>
 "use strict";
@@ -528,7 +528,7 @@ function getSurvey(p,g,alreadyPlan){
     if(!(xy&&xy.length===2)){ var dseed; var num=parseFloat(sh.label);
       if(!isNaN(num) && /^-?\d/.test(sh.label)) dseed=num; else dseed=path.total*(k+1)/(n+1);
       if(dseed<0)dseed=0; if(dseed>path.total)dseed=path.total; xy=_seedBeside(gp,path,dseed); }
-    var xF=Math.max(xlo,Math.min(xhi,xy[0])), yF=Math.max(ylo,Math.min(yhi,xy[1]));
+    var xF=xy[0], yF=xy[1];
     var d=projectDist(path,xF,yF);
     shots.push({label:sh.label,x:xF,y:yF,d:d,z:parsed.bm-sh.reading,reading:sh.reading});
   }
@@ -909,32 +909,32 @@ function attachDrag(){
   [['bmMarker','bmX','bmY'],['notchMarker','notchX','notchY']].forEach(function(cfg){
     const el=svg.querySelector('#'+cfg[0]); if(!el) return;
     el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null;
+    let start=null, orig=null, pid=null, sx=null;
     el.addEventListener('pointerdown', function(e){
       if(_dragPtrs.size>1 || e.isPrimary===false){ return; }
       e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0};
+      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0};
     });
     el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){ start=null; el.removeAttribute('transform'); return; } const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; if(start && _dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } start=null; pid=null; el.removeAttribute('transform'); render(); }
+    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start && _dragPtrs.size<=1 && _mv>=5){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } var _moved=(start&&_mv>=5); start=null; pid=null; sx=null; el.removeAttribute('transform'); if(_moved) render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
   svg.querySelectorAll('.shotMarker').forEach(function(el){
     el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null;
+    let start=null, orig=null, pid=null, sx=null;
     el.addEventListener('pointerdown', function(e){ if(_dragPtrs.size>1||e.isPrimary===false)return; e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
+      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
     el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){start=null;el.removeAttribute('transform');return;} const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; if(start&&_dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ setShotPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } start=null;pid=null;el.removeAttribute('transform'); render(); }
+    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start&&_dragPtrs.size<=1&&_mv>=5){ const pt=svgUserPt(svg,e); if(pt){ setShotPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } var _moved=(start&&_mv>=5); start=null;pid=null;sx=null;el.removeAttribute('transform'); if(_moved) render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
   svg.querySelectorAll('.shotLabel').forEach(function(el){
     el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null;
+    let start=null, orig=null, pid=null, sx=null;
     el.addEventListener('pointerdown', function(e){ if(_dragPtrs.size>1||e.isPrimary===false)return; e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
+      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
     el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){start=null;el.removeAttribute('transform');return;} const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; if(start&&_dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ setLabelPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } start=null;pid=null;el.removeAttribute('transform'); render(); }
+    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start&&_dragPtrs.size<=1&&_mv>=5){ const pt=svgUserPt(svg,e); if(pt){ setLabelPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } var _moved=(start&&_mv>=5); start=null;pid=null;sx=null;el.removeAttribute('transform'); if(_moved) render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
 }
@@ -1301,7 +1301,7 @@ function buildSVG(p,g){
         var _R2=0.70710678; var _own=_ownPieces(g,F,cx,cy);
         var _diag=[[_R2,_R2],[_R2,-_R2],[-_R2,_R2],[-_R2,-_R2]];
         var _sweep=[]; for(var _ai=0;_ai<360;_ai+=10){ var _aa=_ai*Math.PI/180; _sweep.push([Math.cos(_aa),Math.sin(_aa)]); }
-        var _dl=[]; for(var _dd=1.5;_dd<=18;_dd+=0.6) _dl.push(_dd);
+        var _dl=[]; for(var _dd=1.5;_dd<=7;_dd+=0.6) _dl.push(_dd);
         var _lx=cx,_ly=cy,_found=false;
         var _lp=(p.shotLabelPos&&p.shotLabelPos[sh.label]); if(_lp&&_lp.length===2){ _lx=_lp[0]; _ly=_lp[1]; _found=true; }
         for(var _dk=0; _dk<_diag.length && !_found; _dk++){ for(var _di2=0; _di2<_dl.length && !_found; _di2++){
@@ -1518,7 +1518,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.122",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.123",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
