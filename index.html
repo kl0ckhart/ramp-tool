@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.120</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.121</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -262,7 +262,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.120</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.121</footer>
 
 <script>
 "use strict";
@@ -1319,7 +1319,7 @@ function buildSVG(p,g){
         if(_ln>0.6) s+='<line x1="'+(cx+_ldx*0.36).toFixed(2)+'" y1="'+(cy+_ldy*0.36).toFixed(2)+'" x2="'+(_lx-_ldx*0.5).toFixed(2)+'" y2="'+(_ly-_ldy*0.5).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
         s+='<g class="shotLabel" data-label="'+esc(sh.label)+'" data-x="'+_lx.toFixed(3)+'" data-y="'+_ly.toFixed(3)+'">';
         s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly-0.08).toFixed(2)+'" font-size="0.6" text-anchor="middle" fill="#c0392b" font-weight="700">'+esc(sh.label)+'</text>';
-        s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.42).toFixed(2)+'" font-size="0.34" text-anchor="middle" fill="#c0392b">'+esc(ftCompact(sh.d*12))+'</text>';
+        s+='<text x="'+_lx.toFixed(2)+'" y="'+(_ly+0.42).toFixed(2)+'" font-size="0.34" text-anchor="middle" fill="#c0392b">'+esc(ftCompact(sh.reading))+'</text>';
         s+='</g>';
         _chBoxes.push([cx,cy]); _avoid.push([cx-0.5,cy-0.5,cx+0.5,cy+0.5]); _avoid.push([_lx-1.15,_ly-0.7,_lx+1.15,_ly+0.7]);
       }
@@ -1523,7 +1523,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.120",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.121",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
