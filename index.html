@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.117</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.119</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -149,10 +149,13 @@
       <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="number" step="1" value="40"></label>
       <label class="field only-straight"><span class="lab">Number of ramp runs</span><input id="runs" type="number" step="1" min="1" value="">
         <span class="hint">how many ramp sections, each using the run length above. e.g. 3</span></label>
-      <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move specific ramps to a different edge</label>
-      <label class="field only-overrides"><span class="lab">Move specific ramps</span>
+      <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move or nudge specific ramps</label>
+      <label class="field only-overrides"><span class="lab">Move specific ramps to an edge</span>
         <input id="rampOverrides" type="text" placeholder="e.g. 2:bottom, 4:top">
-        <span class="hint">nudge one ramp to an edge. format run#:edge &mdash; e.g. 2:bottom, 4:top (edges: top / bottom / center)</span></label>
+        <span class="hint">snap one ramp to an edge. format run#:edge &mdash; e.g. 2:bottom, 4:top (edges: top / bottom / center)</span></label>
+      <label class="field only-overrides"><span class="lab">Nudge a ramp along the landing <span class="u">(in)</span></span>
+        <input id="rampOffsets" type="text" placeholder="e.g. 1:12, 2:-6">
+        <span class="hint">slide a ramp a set distance along the top-landing edge, on top of its alignment. format run#:inches &mdash; + is toward the top edge, &minus; toward the bottom. e.g. 1:12 moves ramp 1 up a foot</span></label>
       <label class="field only-switchback"><span class="lab">Runs per leg</span><input id="legs" type="text" value="">
         <span class="hint">ramps in each straight leg; a 180° hairpin is added automatically between legs. e.g. <b>3, 3</b> = 3 ramps, hairpin, 3 ramps. <b>2, 2</b> = a single hairpin with 2 ramps each side. One number = no hairpin.</span></label>
       <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="number" step="1" min="96" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span><span class="hint" id="gapOut" style="color:#2f6fb0;font-weight:700"></span>
@@ -259,7 +262,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.117</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.119</footer>
 
 <script>
 "use strict";
@@ -341,7 +344,8 @@ function straightGeometry(p){
   let rIdx=0;
   for(let i=1;i<=p.runs;i++){
     const w=rWid(i), run=rRun(i), side=p.rampOverrides[i]||g0, ry=yspan(w,side);
-    pieces.push({name:"Ramp "+i,x0:x,x1:x+run,y0:ry[0],y1:ry[1],ramp:true,dir:1}); x+=run;
+    const off=(p.rampOffsets&&p.rampOffsets[i])||0;
+    pieces.push({name:"Ramp "+i,x0:x,x1:x+run,y0:ry[0]-off,y1:ry[1]-off,ramp:true,dir:1}); x+=run;
     if(i<p.runs && p.restAfter.includes(i)){ const rw=reW(rIdx), rd=reD(rIdx), gy=yspan(rw,g0); pieces.push({name:"Rest",x0:x,x1:x+rd,y0:gy[0],y1:gy[1],ramp:false}); x+=rd; rIdx++; }
   }
   return finalize(pieces,p.deckHeight,p.rampRun,p.runs);
@@ -909,32 +913,32 @@ function attachDrag(){
   [['bmMarker','bmX','bmY'],['notchMarker','notchX','notchY']].forEach(function(cfg){
     const el=svg.querySelector('#'+cfg[0]); if(!el) return;
     el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null;
+    let start=null, orig=null, pid=null, sx=null;
     el.addEventListener('pointerdown', function(e){
       if(_dragPtrs.size>1 || e.isPrimary===false){ return; }
       e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0};
+      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(document.getElementById(cfg[1]).value)||0, y:parseFloat(document.getElementById(cfg[2]).value)||0};
     });
     el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){ start=null; el.removeAttribute('transform'); return; } const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; if(start && _dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } start=null; pid=null; el.removeAttribute('transform'); render(); }
+    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start && _dragPtrs.size<=1 && _mv>=5){ const pt=svgUserPt(svg,e); if(pt){ document.getElementById(cfg[1]).value=(orig.x+(pt.x-start.x)).toFixed(3); document.getElementById(cfg[2]).value=(orig.y+(pt.y-start.y)).toFixed(3); } } var _moved=(start&&_mv>=5); start=null; pid=null; sx=null; el.removeAttribute('transform'); if(_moved) render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
   svg.querySelectorAll('.shotMarker').forEach(function(el){
     el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null;
+    let start=null, orig=null, pid=null, sx=null;
     el.addEventListener('pointerdown', function(e){ if(_dragPtrs.size>1||e.isPrimary===false)return; e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
+      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
     el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){start=null;el.removeAttribute('transform');return;} const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; if(start&&_dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ setShotPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } start=null;pid=null;el.removeAttribute('transform'); render(); }
+    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start&&_dragPtrs.size<=1&&_mv>=5){ const pt=svgUserPt(svg,e); if(pt){ setShotPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } var _moved=(start&&_mv>=5); start=null;pid=null;sx=null;el.removeAttribute('transform'); if(_moved) render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
   svg.querySelectorAll('.shotLabel').forEach(function(el){
     el.style.cursor='move'; el.style.touchAction='none';
-    let start=null, orig=null, pid=null;
+    let start=null, orig=null, pid=null, sx=null;
     el.addEventListener('pointerdown', function(e){ if(_dragPtrs.size>1||e.isPrimary===false)return; e.preventDefault(); e.stopPropagation(); pid=e.pointerId; try{el.setPointerCapture(pid);}catch(_){}
-      start=svgUserPt(svg,e); orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
+      start=svgUserPt(svg,e); sx={x:e.clientX,y:e.clientY}; orig={x:parseFloat(el.getAttribute('data-x'))||0,y:parseFloat(el.getAttribute('data-y'))||0}; });
     el.addEventListener('pointermove', function(e){ if(!start||e.pointerId!==pid)return; if(_dragPtrs.size>1){start=null;el.removeAttribute('transform');return;} const pt=svgUserPt(svg,e); if(!pt)return; el.setAttribute('transform','translate('+(pt.x-start.x).toFixed(3)+' '+(pt.y-start.y).toFixed(3)+')'); });
-    function end(e){ if(e.pointerId!==pid)return; if(start&&_dragPtrs.size<=1){ const pt=svgUserPt(svg,e); if(pt){ setLabelPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } start=null;pid=null;el.removeAttribute('transform'); render(); }
+    function end(e){ if(e.pointerId!==pid)return; var _mv=sx?Math.hypot(e.clientX-sx.x,e.clientY-sx.y):99; if(start&&_dragPtrs.size<=1&&_mv>=5){ const pt=svgUserPt(svg,e); if(pt){ setLabelPos(el.getAttribute('data-label'), orig.x+(pt.x-start.x), orig.y+(pt.y-start.y)); } } var _moved=(start&&_mv>=5); start=null;pid=null;sx=null;el.removeAttribute('transform'); if(_moved) render(); }
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   });
 }
@@ -1301,7 +1305,7 @@ function buildSVG(p,g){
         var _R2=0.70710678; var _own=_ownPieces(g,F,cx,cy);
         var _diag=[[_R2,_R2],[_R2,-_R2],[-_R2,_R2],[-_R2,-_R2]];
         var _sweep=[]; for(var _ai=0;_ai<360;_ai+=10){ var _aa=_ai*Math.PI/180; _sweep.push([Math.cos(_aa),Math.sin(_aa)]); }
-        var _dl=[]; for(var _dd=1.5;_dd<=18;_dd+=0.6) _dl.push(_dd);
+        var _dl=[]; for(var _dd=1.5;_dd<=7;_dd+=0.6) _dl.push(_dd);
         var _lx=cx,_ly=cy,_found=false;
         var _lp=(p.shotLabelPos&&p.shotLabelPos[sh.label]); if(_lp&&_lp.length===2){ _lx=_lp[0]; _ly=_lp[1]; _found=true; }
         for(var _dk=0; _dk<_diag.length && !_found; _dk++){ for(var _di2=0; _di2<_dl.length && !_found; _di2++){
@@ -1330,19 +1334,21 @@ function buildSVG(p,g){
   }
   { var _dnOut = (_depRot ? ('<g transform="rotate('+(+_rotDeg.toFixed(4))+' '+_pivXf.toFixed(3)+' '+_pivYf.toFixed(3)+')">'+dn+'</g>') : dn);
     s=s.replace("@@DN@@", function(){return _dnOut;}); }
+  { var _vbPad=18; _exp.x0=Math.max(_exp.x0,vbX-_vbPad); _exp.y0=Math.max(_exp.y0,vbY-_vbPad); _exp.x1=Math.min(_exp.x1,vbX+vbW+_vbPad); _exp.y1=Math.min(_exp.y1,vbY+vbH+_vbPad); }
   { var _fvw=_exp.x1-_exp.x0, _fvh=_exp.y1-_exp.y0;
     s=s.replace("@@VB@@", _exp.x0.toFixed(2)+" "+_exp.y0.toFixed(2)+" "+_fvw.toFixed(2)+" "+_fvh.toFixed(2));
     s=s.replace("@@W@@",(_fvw*cm).toFixed(2)); s=s.replace("@@H@@",(_fvh*cm).toFixed(2)); }
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","rampOffsets","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
 function parseFloatList(str){return String(str).split(",").map(x=>{const v=parseFloat(x.trim());return isFinite(v)?v:0;});}
 function parseNotes(str){return String(str).split("\n").map(line=>{const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*:\s*(.+)$/);return m?{x:parseFloat(m[1]),y:parseFloat(m[2]),text:m[3].trim()}:null;}).filter(n=>n);}
 function parseOverrides(str){const m={};String(str).split(",").forEach(tok=>{const parts=tok.split(":");if(parts.length===2){const n=parseInt(parts[0].trim(),10);let s=parts[1].trim().toLowerCase();s=(s[0]==="t")?"t":(s[0]==="b")?"b":(s[0]==="c")?"c":null;if(Number.isFinite(n)&&n>0&&s)m[n]=s;}});return m;}
+function parseOffsets(str){const m={};String(str).split(",").forEach(tok=>{const parts=tok.split(":");if(parts.length===2){const n=parseInt(parts[0].trim(),10);const v=parseFloat(parts[1].trim());if(Number.isFinite(n)&&n>0&&isFinite(v))m[n]=v;}});return m;}
 function parseObstacles(txt){
   const out=[];
   for(const line of String(txt).split(String.fromCharCode(10))){
@@ -1357,7 +1363,7 @@ function readParams(){
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
   return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),mapApp:document.getElementById("mapApp").value,projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,depAngle:(num("depAngle")||0),depSide:document.getElementById("depSide").value,
-    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
+    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),rampOffsets:(getVal("useOverrides")?parseOffsets(document.getElementById("rampOffsets").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
     taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),shotLabelPos:parseLabelPos(document.getElementById("shotLabelPos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
@@ -1518,7 +1524,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.117",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.119",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
