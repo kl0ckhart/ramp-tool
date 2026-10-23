@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.127</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.128</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -93,7 +93,7 @@
         <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
         <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
       </div>
-      <label class="field only-toplanding"><span class="lab">Add landings to the top landing</span><textarea id="topExt" rows="3" placeholder="left 5x5"></textarea><span class="hint" id="topExtHint">one per line: side (as seen on the plan: left, right, top, bottom) then size in feet, along the top landing&rsquo;s edge &times; how far it sticks out, e.g. <b>left 5x5</b> or <b>bottom 5x4&rsquo;6&quot;</b>. Add <b>left</b>/<b>right</b>/<b>top</b>/<b>bottom</b>/<b>center</b> at the end to slide it along the edge. Repeat a side to chain more landings outward.</span></label>
+      <label class="field only-toplanding"><span class="lab">Add landings to the top landing</span><textarea id="topExt" rows="3" placeholder="left 5x5"></textarea><span class="hint" id="topExtHint">one per line: side (as seen on the plan: left, right, top, bottom) then size in feet, along the top landing&rsquo;s edge &times; how far it sticks out, e.g. <b>left 5x5</b> or <b>bottom 5x4&rsquo;6&quot;</b>. Add <b>left</b>/<b>right</b>/<b>top</b>/<b>bottom</b>/<b>center</b> at the end to slide it along the edge. Repeat a side to chain more landings outward. An add-on on the ramp side carries the ramp; add <b>ramp</b> to any other line to have the first ramp come off that add-on instead.</span></label>
       <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
@@ -260,7 +260,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.127</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.128</footer>
 
 <script>
 "use strict";
@@ -468,7 +468,7 @@ function groundZAt(P,x){
   const a=P[P.length-2],b=P[P.length-1],m=(b.z-a.z)/((b.d-a.d)||1); return b.z+m*(x-b.d);
 }
 function rampPath(g){
-  const pcs=g.pieces.filter(pc=>!pc.ref && !pc.ext);
+  const pcs=g.pieces.filter(pc=>!pc.ref && !(pc.ext && !pc.route));
   if(!pcs.length) return null;
   const shared=function(A,B){ const eps=1.0;
     if(Math.abs(A.x1-B.x0)<eps){ const y0=Math.max(A.y0,B.y0),y1=Math.min(A.y1,B.y1); return {x:A.x1,y:(y0+y1)/2}; }
@@ -758,7 +758,7 @@ function buildSideView(p,G){
   let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.run||(pc.x1-pc.x0));
   if(totalRun<=0) return '<div style="color:#8a8a8a;padding:14px;font-size:13px">Add a ramp to see the side view.</div>';
   const rows=[]; let z=deck;
-  for(const pc of G.pieces){ if(pc.ref) continue;
+  for(const pc of G.pieces){ if(pc.ref || (pc.ext && !pc.route)) continue;
     if(pc.top){ rows.push({pc:pc,zh:deck,zl:deck}); continue; }
     if(pc.ramp){ const run=(pc.run||(pc.x1-pc.x0)), ri=(totalRun>0?(run/totalRun)*deck:0); rows.push({pc:pc,zh:z,zl:z-ri}); z-=ri; }
     else { rows.push({pc:pc,zh:z,zl:z}); } }
@@ -807,7 +807,7 @@ function buildProfile(p,G){
   let totalRun=0; for(const pc of G.pieces) if(pc.ramp) totalRun+=(pc.run||(pc.x1-pc.x0));
   // walk in travel order; use developed distance (dev) when present (compound) so turned legs unroll
   const segs=[]; let z=deck;
-  for(const pc of G.pieces){ if(pc.ref) continue;
+  for(const pc of G.pieces){ if(pc.ref || (pc.ext && !pc.route)) continue;
     const ax0=(pc.fx0!=null?pc.fx0:(pc.dev0!=null?pc.dev0:pc.x0)), ax1=(pc.fx1!=null?pc.fx1:(pc.dev1!=null?pc.dev1:pc.x1));
     if(pc.ramp){ const run=(pc.run||(pc.x1-pc.x0)), ri=(totalRun>0?(run/totalRun)*deck:deck/totalRamps); let zx0,zx1;
       if(pc.dev0!=null){ zx0=z; zx1=z-ri; } else { const dir=pc.dir||1; if(dir>0){zx0=z;zx1=z-ri;}else{zx1=z;zx0=z-ri;} }
@@ -967,7 +967,7 @@ function buildSVG(p,g){
   var _depAng=(+p.depAngle||0), _depRot=false, _rotDeg=0, _pivXf=0, _pivYf=0, _wedgePts=null, _wedgeW=0;
   if(_depAng>0.01){
     var _TL=null,_R1=null;
-    for(const pc of g.pieces){ if(pc.top && !pc.ref){ _TL=pc; break; } }
+    for(const pc of g.pieces){ if(pc.rampFrom){ _TL=pc; break; } } if(!_TL){ for(const pc of g.pieces){ if(pc.top && !pc.ref){ _TL=pc; break; } } }
     for(const pc of g.pieces){ if(!pc.top && !pc.ref && !pc.ext){ _R1=pc; break; } }
     if(_TL && _R1){
       var _tcx=(_TL.x0+_TL.x1)/2,_tcy=(_TL.y0+_TL.y1)/2,_rcx=(_R1.x0+_R1.x1)/2,_rcy=(_R1.y0+_R1.y1)/2;
@@ -1410,38 +1410,64 @@ function mirrorX(g){
 }
 function cloneG(g){ const o={}; for(const k in g) o[k]=g[k]; o.pieces=g.pieces.map(function(pc){const q={};for(const k in pc)q[k]=pc[k];return q;}); return o; }
 function _extDim(t){ t=String(t||'').trim(); if(!t) return NaN; if(/['"\u2019\u201d\u2032\u2033]/.test(t)){ var v=parseReading(t); return v==null?NaN:v; } var f=parseFloat(t); return isFinite(f)?f*12:NaN; }
-function addTopExtensions(p, g){
+function applyTopExtensions(p, g){
   var hint=document.getElementById("topExtHint"), msgs=[];
-  var tl=g.pieces.find(function(pc){return pc.top;});
-  var txt=(p.topExt||"").trim();
-  if(!tl || !txt || p.hasTopLanding===false){ if(hint) hint.dataset.msg=""; setExtHint(hint,[]); return; }
-  var blocked={}; blocked[p.deckRefSide]="the reference side"; if(!blocked[p.startSide]) blocked[p.startSide]="the side the ramp leaves from";
-  var used={left:0,right:0,top:0,bottom:0}, n=0;
+  var TL=g.pieces[0], txt=(p.topExt||"").trim();
+  if(!TL || !TL.top || !txt || p.hasTopLanding===false){ setExtHint(hint,[]); return; }
+  // plan side (as seen on the drawing) -> local direction (local +x is where the ramp leaves)
+  var P2L={ right:{right:'+x',left:'-x',bottom:'+y',top:'-y'}, left:{left:'+x',right:'-x',bottom:'+y',top:'-y'},
+            bottom:{bottom:'+x',top:'-x',left:'+y',right:'-y'}, top:{top:'+x',bottom:'-x',right:'+y',left:'-y'} }[p.startSide]||{right:'+x',left:'-x',bottom:'+y',top:'-y'};
+  var refDir=P2L[p.deckRefSide];
+  var used={'+x':0,'-x':0,'+y':0,'-y':0}, chain={'+x':[],'-x':[],'+y':[],'-y':[]}, adds=[], plat=null;
   String(txt).split(/\n/).forEach(function(line0, li){
     var line=line0.trim(); if(!line) return;
-    var m=line.match(/^(left|right|top|bottom|above|below)\s+(.+?)\s*x\s*(.+?)(?:\s+(left|right|top|bottom|center|centre))?\s*$/i);
-    if(!m){ msgs.push("Line "+(li+1)+" not understood: \u201c"+line+"\u201d"); return; }
+    var m=line.match(/^(left|right|top|bottom|above|below)\s+(.+?)\s*x\s*(.+?)((?:\s+(?:left|right|top|bottom|above|below|center|centre|ramp))*)\s*$/i);
+    if(!m){ msgs.push("Line "+(li+1)+" not understood: “"+line+"”"); return; }
     var side=m[1].toLowerCase(); if(side==="above")side="top"; if(side==="below")side="bottom";
-    if(blocked[side]){ msgs.push("Line "+(li+1)+": can\u2019t add on "+side+" \u2014 that\u2019s "+blocked[side]+"."); return; }
+    var dir=P2L[side];
+    if(dir===refDir){ msgs.push("Line "+(li+1)+": can’t add on "+side+" — that’s the reference side."); return; }
     var along=_extDim(m[2]), out=_extDim(m[3]);
-    if(!(along>0&&out>0)){ msgs.push("Line "+(li+1)+": couldn\u2019t read the size."); return; }
-    var al=(m[4]||"").toLowerCase(); if(al==="centre")al="center";
-    var horiz=(side==="top"||side==="bottom");
-    if(!al){ var r=p.deckRefSide; al = horiz ? ((r==="left"||r==="right")?r:"center") : ((r==="top"||r==="bottom")?r:"center"); }
-    if(horiz && (al==="top"||al==="bottom")) al="center"; if(!horiz && (al==="left"||al==="right")) al="center";
-    var e0=horiz?tl.x0:tl.y0, e1=horiz?tl.x1:tl.y1, a0;
-    if(al==="left"||al==="top") a0=e0; else if(al==="right"||al==="bottom") a0=e1-along; else a0=(e0+e1)/2-along/2;
-    var off=used[side], pc;
-    if(side==="top")    pc={x0:a0,x1:a0+along,y0:tl.y0-off-out,y1:tl.y0-off};
-    if(side==="bottom") pc={x0:a0,x1:a0+along,y0:tl.y1+off,y1:tl.y1+off+out};
-    if(side==="left")   pc={x0:tl.x0-off-out,x1:tl.x0-off,y0:a0,y1:a0+along};
-    if(side==="right")  pc={x0:tl.x1+off,x1:tl.x1+off+out,y0:a0,y1:a0+along};
-    var hit=null; for(var i=0;i<g.pieces.length;i++){ var q=g.pieces[i]; if(q.ref||q.top||q.ext) continue; if(pc.x0<q.x1-0.5&&pc.x1>q.x0+0.5&&pc.y0<q.y1-0.5&&pc.y1>q.y0+0.5){ hit=q; break; } }
-    if(hit){ msgs.push("Line "+(li+1)+": "+side+" add-on would overlap "+hit.name+" \u2014 skipped."); return; }
-    used[side]=off+out; n++;
-    pc.name="Landing add-on"; pc.ramp=false; pc.ext=true;
-    g.pieces.push(pc);
+    if(!(along>0&&out>0)){ msgs.push("Line "+(li+1)+": couldn’t read the size."); return; }
+    var toks=(m[4]||"").toLowerCase().trim().split(/\s+/).filter(Boolean), isRamp=toks.indexOf("ramp")>=0, al=null;
+    toks.forEach(function(t){ if(t==="ramp")return; if(t==="centre")t="center"; if(t==="above")t="top"; if(t==="below")t="bottom"; al=(t==="center")?"center":P2L[t]; });
+    var alongY=(dir==='+x'||dir==='-x');
+    if(al==null){ al = (alongY ? (refDir==='+y'||refDir==='-y') : (refDir==='+x'||refDir==='-x')) ? refDir : "center"; }
+    var e0=alongY?TL.y0:TL.x0, e1=alongY?TL.y1:TL.x1, a0;
+    if(alongY){ a0 = al==='-y'?e0 : al==='+y'?e1-along : (e0+e1)/2-along/2; }
+    else      { a0 = al==='-x'?e0 : al==='+x'?e1-along : (e0+e1)/2-along/2; }
+    var off=used[dir], pc;
+    if(dir==='+x') pc={x0:TL.x1+off,x1:TL.x1+off+out,y0:a0,y1:a0+along};
+    if(dir==='-x') pc={x0:TL.x0-off-out,x1:TL.x0-off,y0:a0,y1:a0+along};
+    if(dir==='+y') pc={x0:a0,x1:a0+along,y0:TL.y1+off,y1:TL.y1+off+out};
+    if(dir==='-y') pc={x0:a0,x1:a0+along,y0:TL.y0-off-out,y1:TL.y0-off};
+    used[dir]=off+out; pc.name="Landing add-on"; pc.ramp=false; pc.ext=true; pc._dir=dir; pc._line=li+1;
+    chain[dir].push(pc); adds.push(pc);
+    if(isRamp){ if(dir==='-x'){ msgs.push("Line "+(li+1)+": the ramp can’t leave from that add-on — it sits behind the top landing."); } else plat=pc; }
   });
+  if(!plat && chain['+x'].length) plat=chain['+x'][chain['+x'].length-1];   // an add-on on the ramp side always carries the ramp
+  var route=[];
+  if(plat){
+    var arr=chain[plat._dir]; route=arr.slice(0, arr.indexOf(plat)+1);
+    var down=g.pieces.filter(function(q,i){ return i>0 && !q.ref && !q.ext; });
+    var R1=down[0];
+    if(R1){
+      var dx=plat.x1-TL.x1, dy;
+      if(Math.abs(R1.y0-TL.y0)<0.6) dy=plat.y0-TL.y0; else if(Math.abs(R1.y1-TL.y1)<0.6) dy=plat.y1-TL.y1; else dy=(plat.y0+plat.y1)/2-(TL.y0+TL.y1)/2;
+      down.forEach(function(q){ q.x0+=dx; q.x1+=dx; q.y0+=dy; q.y1+=dy; });
+    }
+    route.forEach(function(q){ q.route=true; }); plat.rampFrom=true;
+  }
+  // drop any non-route add-on that would sit on the ramp run
+  var keep=adds.filter(function(pc){
+    if(pc.route) return true;
+    for(var i=0;i<g.pieces.length;i++){ var q=g.pieces[i]; if(q.ref||q.top||q.ext) continue;
+      if(pc.x0<q.x1-0.5&&pc.x1>q.x0+0.5&&pc.y0<q.y1-0.5&&pc.y1>q.y0+0.5){ msgs.push("Line "+pc._line+": that add-on would overlap "+q.name+" — skipped."); return false; } }
+    return true; });
+  // route pieces go right after the top landing (walking order); the rest at the end
+  g.pieces.splice.apply(g.pieces,[1,0].concat(route));
+  keep.forEach(function(pc){ if(!pc.route) g.pieces.push(pc); });
+  var mnX=1e9,mxX=-1e9,mnY=1e9,mxY=-1e9; g.pieces.forEach(function(q){ if(q.ref) return; mnX=Math.min(mnX,q.x0);mxX=Math.max(mxX,q.x1);mnY=Math.min(mnY,q.y0);mxY=Math.max(mxY,q.y1); });
+  g.footW=mxX-mnX; g.footH=mxY-mnY;
   setExtHint(hint,msgs);
 }
 function setExtHint(hint,msgs){ if(!hint) return; var w=hint.querySelector(".extwarn"); if(!w){ w=document.createElement("div"); w.className="extwarn"; w.style.cssText="color:#c0392b;font-weight:600;margin-top:4px"; hint.appendChild(w); } w.textContent=msgs.join("  \u00b7  "); }
@@ -1523,6 +1549,7 @@ function render(){
   document.title="Care Construction"+((p.custLast&&p.custLast.trim())?(" — "+p.custLast.trim()+(p.custVer?"_v"+p.custVer:"")+" "+(p.projectType||"")):"");
   if(p.layout==="switchback"&&p.legs.length===0){ p.legs=[1,1]; p._preview=true; }
   let g=p.layout==="compound"?compoundGeometry(p):(p.layout==="switchback"?switchbackGeometry(p):straightGeometry(p));
+  applyTopExtensions(p, g);
   terrainAdjust(p, g);
   if(p.attachExisting && g.pieces[0]) g.pieces[0].name="Existing structure";
   const gPlan=sideTransform(cloneG(g), p.startSide);
@@ -1536,9 +1563,6 @@ function render(){
     if(p.bmX!=null){ let x0f=1e9,y0f=1e9,x1f=-1e9,y1f=-1e9; for(const pc of gPlan.pieces){ if(pc.x0<x0f)x0f=pc.x0; if(pc.y0<y0f)y0f=pc.y0; if(pc.x1>x1f)x1f=pc.x1; if(pc.y1>y1f)y1f=pc.y1; } p.bmX=Math.max(x0f/12-2,Math.min(x1f/12+2,p.bmX)); p.bmY=Math.max(y0f/12-2,Math.min(y1f/12+2,p.bmY)); }
     if(p.bmX!=null){ document.getElementById("bmX").value=p.bmX.toFixed(3); document.getElementById("bmY").value=p.bmY.toFixed(3); }
     if(p.notchX!=null){ document.getElementById("notchX").value=p.notchX.toFixed(3); document.getElementById("notchY").value=p.notchY.toFixed(3); } }
-  addTopExtensions(p, gPlan);
-  if(gPlan.pieces.some(function(pc){return pc.ext;})){ var _fx0=1e9,_fx1=-1e9,_fy0=1e9,_fy1=-1e9; gPlan.pieces.forEach(function(pc){ if(pc.ref) return; _fx0=Math.min(_fx0,pc.x0);_fx1=Math.max(_fx1,pc.x1);_fy0=Math.min(_fy0,pc.y0);_fy1=Math.max(_fy1,pc.y1); });
-    var _sw=(p.startSide==="top"||p.startSide==="bottom"); var _fw=_sw?(_fy1-_fy0):(_fx1-_fx0), _fh=_sw?(_fx1-_fx0):(_fy1-_fy0); g.footW=gPlan.footW=_fw; g.footH=gPlan.footH=_fh; }
   if(p.showDeckRef && !p.attachExisting){
     const tl=gPlan.pieces[0], L=(p.existingLen>0?p.existingLen:12)*12, D=(p.existingDepth>0?p.existingDepth:2)*12, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
     if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
@@ -1581,7 +1605,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.127",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.128",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
