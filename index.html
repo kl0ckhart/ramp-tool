@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.126</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.127</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -93,6 +93,7 @@
         <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
         <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
       </div>
+      <label class="field only-toplanding"><span class="lab">Add landings to the top landing</span><textarea id="topExt" rows="3" placeholder="left 5x5"></textarea><span class="hint" id="topExtHint">one per line: side (as seen on the plan: left, right, top, bottom) then size in feet, along the top landing&rsquo;s edge &times; how far it sticks out, e.g. <b>left 5x5</b> or <b>bottom 5x4&rsquo;6&quot;</b>. Add <b>left</b>/<b>right</b>/<b>top</b>/<b>bottom</b>/<b>center</b> at the end to slide it along the edge. Repeat a side to chain more landings outward.</span></label>
       <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
@@ -259,7 +260,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.126</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.127</footer>
 
 <script>
 "use strict";
@@ -467,7 +468,7 @@ function groundZAt(P,x){
   const a=P[P.length-2],b=P[P.length-1],m=(b.z-a.z)/((b.d-a.d)||1); return b.z+m*(x-b.d);
 }
 function rampPath(g){
-  const pcs=g.pieces.filter(pc=>!pc.ref);
+  const pcs=g.pieces.filter(pc=>!pc.ref && !pc.ext);
   if(!pcs.length) return null;
   const shared=function(A,B){ const eps=1.0;
     if(Math.abs(A.x1-B.x0)<eps){ const y0=Math.max(A.y0,B.y0),y1=Math.min(A.y1,B.y1); return {x:A.x1,y:(y0+y1)/2}; }
@@ -967,7 +968,7 @@ function buildSVG(p,g){
   if(_depAng>0.01){
     var _TL=null,_R1=null;
     for(const pc of g.pieces){ if(pc.top && !pc.ref){ _TL=pc; break; } }
-    for(const pc of g.pieces){ if(!pc.top && !pc.ref){ _R1=pc; break; } }
+    for(const pc of g.pieces){ if(!pc.top && !pc.ref && !pc.ext){ _R1=pc; break; } }
     if(_TL && _R1){
       var _tcx=(_TL.x0+_TL.x1)/2,_tcy=(_TL.y0+_TL.y1)/2,_rcx=(_R1.x0+_R1.x1)/2,_rcy=(_R1.y0+_R1.y1)/2;
       var _ddx=_rcx-_tcx,_ddy=_rcy-_tcy, _ox,_oy,_Cx,_Cy,_halfI;
@@ -984,7 +985,7 @@ function buildSVG(p,g){
       _wedgePts=[[_pivXi/F,_pivYi/F],[_farXi/F,_farYi/F],[_rf[0]/F,_rf[1]/F]];
       _wedgeW=_halfI*2;
       var _dmnX=Infinity,_dmxX=-Infinity,_dmnY=Infinity,_dmxY=-Infinity;
-      for(const pc of g.pieces){ if(pc.top||pc.ref) continue; _dmnX=Math.min(_dmnX,pc.x0);_dmxX=Math.max(_dmxX,pc.x1);_dmnY=Math.min(_dmnY,pc.y0);_dmxY=Math.max(_dmxY,pc.y1); }
+      for(const pc of g.pieces){ if(pc.top||pc.ref||pc.ext) continue; _dmnX=Math.min(_dmnX,pc.x0);_dmxX=Math.max(_dmxX,pc.x1);_dmnY=Math.min(_dmnY,pc.y0);_dmxY=Math.max(_dmxY,pc.y1); }
       if(isFinite(_dmnX)){
         var _cns=[[_dmnX,_dmnY],[_dmxX,_dmnY],[_dmxX,_dmxY],[_dmnX,_dmxY]];
         for(var _ci=0;_ci<4;_ci++){ var _pp=_rotI(_cns[_ci][0],_cns[_ci][1]); mnX=Math.min(mnX,_pp[0]);mxX=Math.max(mxX,_pp[0]);mnY=Math.min(mnY,_pp[1]);mxY=Math.max(mxY,_pp[1]); }
@@ -1016,7 +1017,7 @@ function buildSVG(p,g){
     s+='<text x="'+f3(_wcx)+'" y="'+f3(_wcy+0.26)+'" font-size="0.26" text-anchor="middle" fill="#5a4632" font-weight="700">'+_depAng+'°</text>'; }
   let lastR=null, lastRampPiece=null; for(const q of g.pieces) if(q.ramp) lastRampPiece=q;
   for(const pc of g.pieces){
-    var ps="", _pdown=!(pc.top||pc.ref);
+    var ps="", _pdown=!(pc.top||pc.ref||pc.ext);
     const x=pc.x0/F,w=(pc.x1-pc.x0)/F,y=pc.y0/F,h=(pc.y1-pc.y0)/F,cx=x+w/2,cy=y+h/2;
     const alongY=pc.ramp?(Math.abs(pc.ddy||0)>Math.abs(pc.ddx||0)):(h>w);
     const fill=pc.ramp?"#d8b784":"#a8c8a0",stroke=pc.ramp?"#b08d52":"#79a771";
@@ -1064,7 +1065,7 @@ function buildSVG(p,g){
   }
   const ramps=g.pieces.filter(pc=>pc.ramp);
   for(const L of g.pieces){
-    if(L.ramp||L.ref||L.top) continue;
+    if(L.ramp||L.ref||L.top||L.ext) continue;
     for(const R of ramps){
       const yov=Math.min(L.y1,R.y1)-Math.max(L.y0,R.y0); if(yov<=2) continue;
       let lx=null;
@@ -1100,7 +1101,7 @@ function buildSVG(p,g){
   s+='<text x="'+(vbX+0.4).toFixed(2)+'" y="'+(vbY+vbH-0.5).toFixed(2)+'" font-size="0.4" text-anchor="start" fill="#6b7280">Deck height '+esc(dimText(p.deckHeight))+'  \u00b7  ramp width '+esc(dimText(p.width))+'  \u00b7  footprint '+esc(ftCompact(g.footW))+' \u00d7 '+esc(ftCompact(g.footH))+(p.showSteps?'  \u00b7  notch frame for existing steps':'')+'</text>';
   if(p.showHandrails){
     const PW=3.5/F, HI=1.75, maxSp=(p.postSpacingMax>0?p.postSpacingMax:72);
-    const railable=g.pieces.filter(pc=>!pc.ref && !pc.norail && (!pc.top || p.railTopLanding));
+    const railable=g.pieces.filter(pc=>!pc.ref && !pc.norail && (!(pc.top||pc.ext) || p.railTopLanding));
     let lastRamp=null; for(const pc of g.pieces) if(pc.ramp) lastRamp=pc;
     const tl=g.pieces[0]; let deckPh=null;
     if(tl){ const cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2, D=(p.existingDepth>0?p.existingDepth:2)*12, L=(p.existingLen>0?p.existingLen:12)*12;
@@ -1125,7 +1126,7 @@ function buildSVG(p,g){
       if(toDown) dn+=rs; else s+=rs;
     };
     for(const A of railable){
-      const gnd=(A===lastRamp), dir=A.dir||1, _td=!A.top;
+      const gnd=(A===lastRamp), dir=A.dir||1, _td=!(A.top||A.ext);
       { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x0-A.x1)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir>0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x1,e[0],A.x1,e[1],A.ramp,_td); }
       { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.x1-A.x0)<0.6){ const o0=Math.max(A.y0,B.y0),o1=Math.min(A.y1,B.y1); if(o1>o0)cov.push([o0,o1]); } } if(gnd&&dir<0)cov.push([A.y0,A.y1]); for(const e of exposed(A.y0,A.y1,cov)) drawRail(A.x0,e[0],A.x0,e[1],A.ramp,_td); }
       { let cov=[]; for(const B of adj){ if(B===A)continue; if(Math.abs(B.y1-A.y0)<0.6){ const o0=Math.max(A.x0,B.x0),o1=Math.min(A.x1,B.x1); if(o1>o0)cov.push([o0,o1]); } } for(const e of exposed(A.x0,A.x1,cov)) drawRail(e[0],A.y0,e[1],A.y0,A.ramp,_td); }
@@ -1219,6 +1220,7 @@ function buildSVG(p,g){
       if(_s)_pcLines.push(name+": "+it.length+"  \u2014  "+_pfmt(_d[0]));
       else{_pcLines.push(name+": "+it.length);for(var _k=0;_k<_d.length;_k++)_pcLines.push("   "+(_k+1)+": "+_pfmt(_d[_k]));} };
     _plain("Top landings", g.pieces.filter(function(pc){return pc.top && !pc.ref;}));
+    _plain("Top landing add-ons", g.pieces.filter(function(pc){return pc.ext;}));
     var _rp=g.pieces.filter(function(pc){return pc.ramp && !pc.ref;});
     if(_rp.length){
       var _dimOf=function(pc){var w=Math.min(pc.x1-pc.x0,pc.y1-pc.y0);return [pc.run||Math.max(pc.x1-pc.x0,pc.y1-pc.y0),w];};
@@ -1358,7 +1360,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","topExt","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -1381,7 +1383,7 @@ function readParams(){
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,depAngle:(num("depAngle")||0),depSide:document.getElementById("depSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
-    topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
+    topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),topExt:document.getElementById("topExt").value,restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
     taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),shotLabelPos:parseLabelPos(document.getElementById("shotLabelPos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
@@ -1407,6 +1409,42 @@ function mirrorX(g){
   return g;
 }
 function cloneG(g){ const o={}; for(const k in g) o[k]=g[k]; o.pieces=g.pieces.map(function(pc){const q={};for(const k in pc)q[k]=pc[k];return q;}); return o; }
+function _extDim(t){ t=String(t||'').trim(); if(!t) return NaN; if(/['"\u2019\u201d\u2032\u2033]/.test(t)){ var v=parseReading(t); return v==null?NaN:v; } var f=parseFloat(t); return isFinite(f)?f*12:NaN; }
+function addTopExtensions(p, g){
+  var hint=document.getElementById("topExtHint"), msgs=[];
+  var tl=g.pieces.find(function(pc){return pc.top;});
+  var txt=(p.topExt||"").trim();
+  if(!tl || !txt || p.hasTopLanding===false){ if(hint) hint.dataset.msg=""; setExtHint(hint,[]); return; }
+  var blocked={}; blocked[p.deckRefSide]="the reference side"; if(!blocked[p.startSide]) blocked[p.startSide]="the side the ramp leaves from";
+  var used={left:0,right:0,top:0,bottom:0}, n=0;
+  String(txt).split(/\n/).forEach(function(line0, li){
+    var line=line0.trim(); if(!line) return;
+    var m=line.match(/^(left|right|top|bottom|above|below)\s+(.+?)\s*x\s*(.+?)(?:\s+(left|right|top|bottom|center|centre))?\s*$/i);
+    if(!m){ msgs.push("Line "+(li+1)+" not understood: \u201c"+line+"\u201d"); return; }
+    var side=m[1].toLowerCase(); if(side==="above")side="top"; if(side==="below")side="bottom";
+    if(blocked[side]){ msgs.push("Line "+(li+1)+": can\u2019t add on "+side+" \u2014 that\u2019s "+blocked[side]+"."); return; }
+    var along=_extDim(m[2]), out=_extDim(m[3]);
+    if(!(along>0&&out>0)){ msgs.push("Line "+(li+1)+": couldn\u2019t read the size."); return; }
+    var al=(m[4]||"").toLowerCase(); if(al==="centre")al="center";
+    var horiz=(side==="top"||side==="bottom");
+    if(!al){ var r=p.deckRefSide; al = horiz ? ((r==="left"||r==="right")?r:"center") : ((r==="top"||r==="bottom")?r:"center"); }
+    if(horiz && (al==="top"||al==="bottom")) al="center"; if(!horiz && (al==="left"||al==="right")) al="center";
+    var e0=horiz?tl.x0:tl.y0, e1=horiz?tl.x1:tl.y1, a0;
+    if(al==="left"||al==="top") a0=e0; else if(al==="right"||al==="bottom") a0=e1-along; else a0=(e0+e1)/2-along/2;
+    var off=used[side], pc;
+    if(side==="top")    pc={x0:a0,x1:a0+along,y0:tl.y0-off-out,y1:tl.y0-off};
+    if(side==="bottom") pc={x0:a0,x1:a0+along,y0:tl.y1+off,y1:tl.y1+off+out};
+    if(side==="left")   pc={x0:tl.x0-off-out,x1:tl.x0-off,y0:a0,y1:a0+along};
+    if(side==="right")  pc={x0:tl.x1+off,x1:tl.x1+off+out,y0:a0,y1:a0+along};
+    var hit=null; for(var i=0;i<g.pieces.length;i++){ var q=g.pieces[i]; if(q.ref||q.top||q.ext) continue; if(pc.x0<q.x1-0.5&&pc.x1>q.x0+0.5&&pc.y0<q.y1-0.5&&pc.y1>q.y0+0.5){ hit=q; break; } }
+    if(hit){ msgs.push("Line "+(li+1)+": "+side+" add-on would overlap "+hit.name+" \u2014 skipped."); return; }
+    used[side]=off+out; n++;
+    pc.name="Landing add-on"; pc.ramp=false; pc.ext=true;
+    g.pieces.push(pc);
+  });
+  setExtHint(hint,msgs);
+}
+function setExtHint(hint,msgs){ if(!hint) return; var w=hint.querySelector(".extwarn"); if(!w){ w=document.createElement("div"); w.className="extwarn"; w.style.cssText="color:#c0392b;font-weight:600;margin-top:4px"; hint.appendChild(w); } w.textContent=msgs.join("  \u00b7  "); }
 function sideTransform(g,side){
   if(side==="left"){ for(const pc of g.pieces){const a=pc.x0;pc.x0=-pc.x1;pc.x1=-a; if(pc.ddx!=null)pc.ddx=-pc.ddx;} }
   else if(side==="bottom"){ for(const pc of g.pieces){const x0=pc.x0,y0=pc.y0,x1=pc.x1,y1=pc.y1;pc.x0=-y1;pc.x1=-y0;pc.y0=x0;pc.y1=x1; if(pc.ddx!=null){const dx=pc.ddx,dy=pc.ddy;pc.ddx=-dy;pc.ddy=dx;}} }
@@ -1498,6 +1536,9 @@ function render(){
     if(p.bmX!=null){ let x0f=1e9,y0f=1e9,x1f=-1e9,y1f=-1e9; for(const pc of gPlan.pieces){ if(pc.x0<x0f)x0f=pc.x0; if(pc.y0<y0f)y0f=pc.y0; if(pc.x1>x1f)x1f=pc.x1; if(pc.y1>y1f)y1f=pc.y1; } p.bmX=Math.max(x0f/12-2,Math.min(x1f/12+2,p.bmX)); p.bmY=Math.max(y0f/12-2,Math.min(y1f/12+2,p.bmY)); }
     if(p.bmX!=null){ document.getElementById("bmX").value=p.bmX.toFixed(3); document.getElementById("bmY").value=p.bmY.toFixed(3); }
     if(p.notchX!=null){ document.getElementById("notchX").value=p.notchX.toFixed(3); document.getElementById("notchY").value=p.notchY.toFixed(3); } }
+  addTopExtensions(p, gPlan);
+  if(gPlan.pieces.some(function(pc){return pc.ext;})){ var _fx0=1e9,_fx1=-1e9,_fy0=1e9,_fy1=-1e9; gPlan.pieces.forEach(function(pc){ if(pc.ref) return; _fx0=Math.min(_fx0,pc.x0);_fx1=Math.max(_fx1,pc.x1);_fy0=Math.min(_fy0,pc.y0);_fy1=Math.max(_fy1,pc.y1); });
+    var _sw=(p.startSide==="top"||p.startSide==="bottom"); var _fw=_sw?(_fy1-_fy0):(_fx1-_fx0), _fh=_sw?(_fx1-_fx0):(_fy1-_fy0); g.footW=gPlan.footW=_fw; g.footH=gPlan.footH=_fh; }
   if(p.showDeckRef && !p.attachExisting){
     const tl=gPlan.pieces[0], L=(p.existingLen>0?p.existingLen:12)*12, D=(p.existingDepth>0?p.existingDepth:2)*12, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
     if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
@@ -1540,7 +1581,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.126",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.127",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
