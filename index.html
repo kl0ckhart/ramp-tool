@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.128</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.131</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -150,10 +150,13 @@
       <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="number" step="1" value="40"></label>
       <label class="field only-straight"><span class="lab">Number of ramp runs</span><input id="runs" type="number" step="1" min="1" value="">
         <span class="hint">how many ramp sections, each using the run length above. e.g. 3</span></label>
-      <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move specific ramps to a different edge</label>
+      <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move or nudge specific ramps</label>
       <label class="field only-overrides"><span class="lab">Move specific ramps</span>
         <input id="rampOverrides" type="text" placeholder="e.g. 2:bottom, 4:top">
-        <span class="hint">nudge one ramp to an edge. format run#:edge &mdash; e.g. 2:bottom, 4:top (edges: top / bottom / center)</span></label>
+        <span class="hint">snap one ramp to an edge. format run#:edge &mdash; e.g. 2:bottom, 4:top (edges: top / bottom / center)</span></label>
+      <label class="field only-overrides"><span class="lab">Nudge a ramp along the landing</span>
+        <input id="rampOffsets" type="text" placeholder="e.g. 1:12, 2:-6-1/2">
+        <span class="hint">slide a ramp a set distance along the edge it comes off, on top of its alignment. format run#:distance (inches unless you add &rsquo;) &mdash; <b>+</b> moves it toward the top edge, <b>&minus;</b> toward the bottom. e.g. <b>1:12</b> moves ramp 1 up a foot, <b>1:-8-1/2</b> moves it down 8&frac12;&Prime;</span></label>
       <label class="field only-switchback"><span class="lab">Runs per leg</span><input id="legs" type="text" value="">
         <span class="hint">ramps in each straight leg; a 180° hairpin is added automatically between legs. e.g. <b>3, 3</b> = 3 ramps, hairpin, 3 ramps. <b>2, 2</b> = a single hairpin with 2 ramps each side. One number = no hairpin.</span></label>
       <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="number" step="1" min="96" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span><span class="hint" id="gapOut" style="color:#2f6fb0;font-weight:700"></span>
@@ -188,7 +191,7 @@
       <label class="checkrow"><input type="checkbox" id="showProfile" checked> Show profile (side view)</label>
       <div class="sechead">Terrain</div>
             <label class="field"><span class="lab">Ground survey (laser)</span><textarea id="survey" rows="6" placeholder="BM: 4' 2-3/8&#10;A: 3' 1/4&#10;B: 2' 5-1/2"></textarea><span class="hint">Label the benchmark <b>BM</b>, then each shot <b>A, B, C…</b> with its rod reading. Drag A, B, C on the plan to where each shot was taken — the distance is read from where you place it.</span></label>
-            <input type="hidden" id="bmX"><input type="hidden" id="bmY"><input type="hidden" id="notchX"><input type="hidden" id="notchY"><input type="hidden" id="shotPos"><input type="hidden" id="shotLabelPos">
+            <input type="hidden" id="bmX"><input type="hidden" id="bmY"><input type="hidden" id="notchX"><input type="hidden" id="notchY"><input type="hidden" id="shotPos"><input type="hidden" id="planNotePos"><input type="hidden" id="shotLabelPos">
       <details style="margin:2px 0 8px"><summary class="hint" style="cursor:pointer;font-weight:700">How to enter the survey</summary>
         <div class="hint" style="margin-top:6px;line-height:1.6">
           Shoot the <b>benchmark</b> at the deck base, then the rod reading at points going out along the ramp line. One line each &mdash; <b>distance: reading</b>:<br>
@@ -205,6 +208,9 @@
       <label class="field"><span class="lab">Notes on the drawing</span>
         <textarea id="notes" rows="4" placeholder="Free text &mdash; appears in a Notes box on the drawing.&#10;e.g. Verify deck height on site.&#10;Existing tree at NE corner."></textarea>
         <span class="hint">Shown in a Notes box in the top-left of the drawing.</span></label>
+      <label class="field"><span class="lab">Labels you can drag on the plan</span>
+        <textarea id="planNotes" rows="3" placeholder="One label per line&#10;e.g. Gravel pad&#10;Downspout &mdash; reroute"></textarea>
+        <span class="hint">each line becomes its own label on the plan &mdash; drag it wherever you want it. It stays put when you print or save.</span></label>
       <label class="field"><span class="lab">Obstacles</span><textarea id="obstacles" rows="3" placeholder="One per line:   x, y: label&#10;e.g.   6, 2: 4x4 post&#10;with direction:   6, 2, above-right: 4x4 post"></textarea><span class="hint">feet from the ramp start (0, 0 = top landing corner). Optional callout direction after the coordinates: above, below, left, right, above-left, above-right, below-left, below-right &mdash; e.g. 6, 2, above-right: 4x4 post.</span></label>
 
       <div class="sechead">FreeCAD export</div>
@@ -260,7 +266,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.128</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.131</footer>
 
 <script>
 "use strict";
@@ -341,8 +347,8 @@ function straightGeometry(p){
   if(hasTL){ const ty=yspan(p.topW,g0); pieces.push({name:"Top landing",x0:0,x1:p.topD,y0:ty[0],y1:ty[1],ramp:false,top:true}); x=p.topD; }
   let rIdx=0;
   for(let i=1;i<=p.runs;i++){
-    const w=rWid(i), run=rRun(i), side=p.rampOverrides[i]||g0, ry=yspan(w,side);
-    pieces.push({name:"Ramp "+i,x0:x,x1:x+run,y0:ry[0],y1:ry[1],ramp:true,dir:1}); x+=run;
+    const w=rWid(i), run=rRun(i), side=p.rampOverrides[i]||g0, ry=yspan(w,side), off=(p.rampOffsets&&p.rampOffsets[i])||0;
+    pieces.push({name:"Ramp "+i,x0:x,x1:x+run,y0:ry[0]-off,y1:ry[1]-off,ramp:true,dir:1,_nudge:off}); x+=run;
     if(i<p.runs && p.restAfter.includes(i)){ const rw=reW(rIdx), rd=reD(rIdx), gy=yspan(rw,g0); pieces.push({name:"Rest",x0:x,x1:x+rd,y0:gy[0],y1:gy[1],ramp:false}); x+=rd; rIdx++; }
   }
   return finalize(pieces,p.deckHeight,p.rampRun,p.runs);
@@ -560,6 +566,7 @@ function _seedBeside(gp,path,dseed){
 function _shotLabelClear(g,F,lx,ly,extra){ var hw=1.15,hh=0.7,mg=0.1; for(var i=0;i<g.pieces.length;i++){ var pc=g.pieces[i]; var a=pc.x0/F-mg,b=pc.x1/F+mg,c=pc.y0/F-mg,d=pc.y1/F+mg; if(lx+hw>a && lx-hw<b && ly+hh>c && ly-hh<d) return false; } if(extra){ for(var j=0;j<extra.length;j++){ var r=extra[j]; if(!r)continue; if(lx+hw>r[0]-mg && lx-hw<r[2]+mg && ly+hh>r[1]-mg && ly-hh<r[3]+mg) return false; } } return true; }
 function setShotPos(label,x,y){ var el=document.getElementById('shotPos'); if(!el)return; var m={}; try{m=JSON.parse(el.value||'{}')||{};}catch(_){m={};} m[label]=[Math.round(x*1000)/1000,Math.round(y*1000)/1000]; el.value=JSON.stringify(m); }
 function parseLabelPos(v){ try{ var m=JSON.parse(v||'{}'); return (m&&typeof m==='object')?m:{}; }catch(_){ return {}; } }
+function setNotePos(key,x,y){ var el=document.getElementById("planNotePos"); if(!el)return; var m={}; try{m=JSON.parse(el.value||"{}")||{};}catch(_){m={};} m[key]=[Math.round(x*1000)/1000,Math.round(y*1000)/1000]; el.value=JSON.stringify(m); }
 function setLabelPos(label,x,y){ var el=document.getElementById('shotLabelPos'); if(!el)return; var m={}; try{m=JSON.parse(el.value||'{}')||{};}catch(_){m={};} m[label]=[Math.round(x*1000)/1000,Math.round(y*1000)/1000]; el.value=JSON.stringify(m); }
 function reachToGrade(p, G){
   const deck=(p.deckHeight||0); if(deck<=0) return null;
@@ -952,6 +959,11 @@ function attachDrag(){
     makeDraggable(el,
       function(){ return {x:parseFloat(el.getAttribute('data-x'))||0, y:parseFloat(el.getAttribute('data-y'))||0}; },
       function(x,y){ setShotPos(el.getAttribute('data-label'), x, y); });
+  });
+  svg.querySelectorAll('.planNote').forEach(function(el){
+    makeDraggable(el,
+      function(){ return {x:parseFloat(el.getAttribute('data-x'))||0, y:parseFloat(el.getAttribute('data-y'))||0}; },
+      function(x,y){ setNotePos(el.getAttribute('data-key'), x, y); });
   });
   svg.querySelectorAll('.shotLabel').forEach(function(el){
     makeDraggable(el,
@@ -1352,6 +1364,22 @@ function buildSVG(p,g){
         s+='</g>'; }
     }
   }
+  { var _pn=String(p.planNotes||"").split(/\n/), _pp=p.planNotePos||{}, _row=0, _pnBoxes=[];
+    for(var _ni=0;_ni<_pn.length;_ni++){ var _t=_pn[_ni].trim(); if(!_t) continue;
+      var _key="n"+_ni, _w=Math.max(1.2,_t.length*0.4*0.6+0.6), _h=0.75, _st=_pp[_key];
+      var _nx, _ny;
+      if(_st&&_st.length===2){ _nx=_st[0]; _ny=_st[1]; }
+      else { var _blk=[].concat(obst||[], _placed||[], (typeof _avoid!=="undefined"&&_avoid)?_avoid:[], _pnBoxes), _ok=false;
+        for(var _yy=vbY+_h/2+0.3; _yy<=vbY+vbH-_h/2-0.2 && !_ok; _yy+=0.5){ for(var _xx=vbX+vbW-_w/2-0.3; _xx>=vbX+_w/2+0.3 && !_ok; _xx-=0.5){
+          var _c=true; for(var _bi=0;_bi<_blk.length;_bi++){ var _b=_blk[_bi]; if(!_b) continue; if(_xx+_w/2+0.15>_b[0]&&_xx-_w/2-0.15<_b[2]&&_yy+_h/2+0.15>_b[1]&&_yy-_h/2-0.15<_b[3]){ _c=false; break; } }
+          if(_c){ _nx=_xx; _ny=_yy; _ok=true; } } }
+        if(!_ok){ _nx=x1f-_w/2-0.2; _ny=y1f+1.3+_row*1.0; } }
+      _nx=Math.max(vbX+_w/2+0.1,Math.min(vbX+vbW-_w/2-0.1,_nx)); _ny=Math.max(vbY+_h/2+0.1,Math.min(vbY+vbH-_h/2-0.1,_ny));
+      s+='<g class="planNote" data-key="'+_key+'" data-x="'+_nx.toFixed(3)+'" data-y="'+_ny.toFixed(3)+'">';
+      s+='<rect x="'+(_nx-_w/2).toFixed(2)+'" y="'+(_ny-_h/2).toFixed(2)+'" width="'+_w.toFixed(2)+'" height="'+_h.toFixed(2)+'" rx="0.12" fill="#fffdf6" fill-opacity="0.95" stroke="#8a6d49" stroke-width="0.04"/>';
+      s+='<text x="'+_nx.toFixed(2)+'" y="'+(_ny+0.14).toFixed(2)+'" font-size="0.4" text-anchor="middle" fill="#2b2f36">'+esc(_t)+'</text>';
+      s+='</g>'; _row++; _pnBoxes.push([_nx-_w/2,_ny-_h/2,_nx+_w/2,_ny+_h/2]);
+    } }
   { var _dnOut = (_depRot ? ('<g transform="rotate('+(+_rotDeg.toFixed(4))+' '+_pivXf.toFixed(3)+' '+_pivYf.toFixed(3)+')">'+dn+'</g>') : dn);
     s=s.replace("@@DN@@", function(){return _dnOut;}); }
   { var _fvw=_exp.x1-_exp.x0, _fvh=_exp.y1-_exp.y0;
@@ -1360,12 +1388,13 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","topExt","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","rampOffsets","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","topExt","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos","planNotes","planNotePos"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
 function parseFloatList(str){return String(str).split(",").map(x=>{const v=parseFloat(x.trim());return isFinite(v)?v:0;});}
 function parseNotes(str){return String(str).split("\n").map(line=>{const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*:\s*(.+)$/);return m?{x:parseFloat(m[1]),y:parseFloat(m[2]),text:m[3].trim()}:null;}).filter(n=>n);}
+function parseOffsets(str){const m={};String(str||"").split(",").forEach(tok=>{const i=tok.indexOf(":");if(i<0)return;const n=parseInt(tok.slice(0,i).trim(),10);let v=tok.slice(i+1).trim();let sg=1;if(/^[-\u2212]/.test(v)){sg=-1;v=v.slice(1);}else if(v[0]==="+"){v=v.slice(1);}const r=parseReading(v);if(Number.isFinite(n)&&n>0&&r!=null&&isFinite(r))m[n]=sg*r;});return m;}
 function parseOverrides(str){const m={};String(str).split(",").forEach(tok=>{const parts=tok.split(":");if(parts.length===2){const n=parseInt(parts[0].trim(),10);let s=parts[1].trim().toLowerCase();s=(s[0]==="t")?"t":(s[0]==="b")?"b":(s[0]==="c")?"c":null;if(Number.isFinite(n)&&n>0&&s)m[n]=s;}});return m;}
 function parseObstacles(txt){
   const out=[];
@@ -1381,10 +1410,10 @@ function readParams(){
   const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
   return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),mapApp:document.getElementById("mapApp").value,projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,depAngle:(num("depAngle")||0),depSide:document.getElementById("depSide").value,
-    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
+    runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),rampOffsets:(getVal("useOverrides")?parseOffsets(document.getElementById("rampOffsets").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),topExt:document.getElementById("topExt").value,restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),shotLabelPos:parseLabelPos(document.getElementById("shotLabelPos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),shotLabelPos:parseLabelPos(document.getElementById("shotLabelPos").value),planNotes:document.getElementById("planNotes").value,planNotePos:parseLabelPos(document.getElementById("planNotePos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
@@ -1452,7 +1481,8 @@ function applyTopExtensions(p, g){
     var R1=down[0];
     if(R1){
       var dx=plat.x1-TL.x1, dy;
-      if(Math.abs(R1.y0-TL.y0)<0.6) dy=plat.y0-TL.y0; else if(Math.abs(R1.y1-TL.y1)<0.6) dy=plat.y1-TL.y1; else dy=(plat.y0+plat.y1)/2-(TL.y0+TL.y1)/2;
+      var _ry0=R1.y0+(R1._nudge||0), _ry1=R1.y1+(R1._nudge||0);   // judge alignment before any nudge
+      if(Math.abs(_ry0-TL.y0)<0.6) dy=plat.y0-TL.y0; else if(Math.abs(_ry1-TL.y1)<0.6) dy=plat.y1-TL.y1; else dy=(plat.y0+plat.y1)/2-(TL.y0+TL.y1)/2;
       down.forEach(function(q){ q.x0+=dx; q.x1+=dx; q.y0+=dy; q.y1+=dy; });
     }
     route.forEach(function(q){ q.route=true; }); plat.rampFrom=true;
@@ -1605,7 +1635,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.128",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.131",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
