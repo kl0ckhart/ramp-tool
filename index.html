@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.133</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.134</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -87,19 +87,19 @@
       <label class="field only-north"><span class="lab">North bearing <span class="u">(°, 0 = up)</span></span><input id="northBearing" type="number" step="5" value="0"></label>
 
       <div class="sechead">Top deck</div>
-      <label class="field"><span class="lab">Deck height <span class="u">(in)</span></span><input id="deckHeight" type="number" step="0.25" value=""></label>
+      <label class="field"><span class="lab">Deck height <span class="u">(in)</span></span><input id="deckHeight" type="text" autocomplete="off" value="" placeholder="e.g. 36-1/2"><span class="hint">Every measurement box takes fractions: <b>36-1/2</b>, <b>36 1/2</b>, or <b>3&rsquo; 1/2&quot;</b>. Boxes marked (in) are inches unless you add &rsquo;; boxes marked (ft) and the segment list are feet unless you add &quot;.</span></label>
       <label class="checkrow"><input type="checkbox" id="hasTopLanding" checked> Include a top landing</label>
       <div class="row2 only-toplanding">
-        <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="number" step="1" value="60"></label>
-        <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="number" step="1" value="60"></label>
+        <label class="field"><span class="lab">Top landing width <span class="u">(in)</span></span><input id="topW" type="text" autocomplete="off" value="60"></label>
+        <label class="field"><span class="lab">Top landing depth <span class="u">(in)</span></span><input id="topD" type="text" autocomplete="off" value="60"></label>
       </div>
       <label class="field only-toplanding"><span class="lab">Add landings to the top landing</span><textarea id="topExt" rows="3" placeholder="left 5x5"></textarea><span class="hint" id="topExtHint">one per line: side (as seen on the plan: left, right, top, bottom) then size in feet, along the top landing&rsquo;s edge &times; how far it sticks out, e.g. <b>left 5x5</b> or <b>bottom 5x4&rsquo;6&quot;</b>. Add <b>left</b>/<b>right</b>/<b>top</b>/<b>bottom</b>/<b>center</b> at the end to slide it along the edge. Repeat a side to chain more landings outward. An add-on on the ramp side carries the ramp; add <b>ramp</b> to any other line to have the first ramp come off that add-on instead.</span></label>
       <label class="checkrow"><input type="checkbox" id="showDeckRef" checked> Show existing structure reference</label>
       <label class="field only-deckref"><span class="lab">Deck reference side</span>
         <select id="deckRefSide"><option value="left">Left of top landing</option><option value="right">Right of top landing</option><option value="top" selected>Above top landing</option><option value="bottom">Below top landing</option></select></label>
       <div class="row2 only-deckref">
-        <label class="field"><span class="lab">Structure length <span class="u">(ft)</span></span><input id="existingLen" type="number" step="0.5" value="12"></label>
-        <label class="field"><span class="lab">Structure depth <span class="u">(ft)</span></span><input id="existingDepth" type="number" step="0.5" value="2"></label>
+        <label class="field"><span class="lab">Structure length <span class="u">(ft)</span></span><input id="existingLen" type="text" autocomplete="off" value="12"></label>
+        <label class="field"><span class="lab">Structure depth <span class="u">(ft)</span></span><input id="existingDepth" type="text" autocomplete="off" value="2"></label>
       </div>
       <div class="row2 only-deckref">
         <label class="field"><span class="lab">Measure from</span><select id="refFrom"><option value="start">Left end</option><option value="end">Right end</option></select></label>
@@ -110,27 +110,27 @@
       <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
       <div class="only-door notchgroup">
         <label class="checkrow"><input type="checkbox" id="doorInside"> Door swings in (toward the structure)</label>
-        <label class="field"><span class="lab">Door width <span class="u">(in)</span></span><input id="doorWidth" type="number" step="1" value="36"></label>
+        <label class="field"><span class="lab">Door width <span class="u">(in)</span></span><input id="doorWidth" type="text" autocomplete="off" value="36"></label>
         <label class="field"><span class="lab">Hinge side</span><select id="doorHinge"><option value="left">Left hinge (facing door)</option><option value="right">Right hinge (facing door)</option></select></label>
-        <label class="field"><span class="lab">Door offset <span class="u">(in)</span></span><input id="doorOffset" type="number" step="1" value="0"><span class="hint">slide the door along the deck edge (+ / −)</span></label>
+        <label class="field"><span class="lab">Door offset <span class="u">(in)</span></span><input id="doorOffset" type="text" autocomplete="off" value="0"><span class="hint">slide the door along the deck edge (+ / −)</span></label>
       </div>
 
       <label class="checkrow"><input type="checkbox" id="showSteps"> Show existing steps under the ramp</label>
       <div class="only-steps notchgroup">
         <label class="field"><span class="lab">Number of steps</span><input id="numSteps" type="number" step="1" min="1" value="3"></label>
         <div class="row2">
-          <label class="field"><span class="lab">Total step depth <span class="u">(in)</span></span><input id="stepDepth" type="number" step="0.5" value="19.5"></label>
-          <label class="field"><span class="lab">Step width <span class="u">(in)</span></span><input id="stepWidth" type="number" step="1" value="40"></label>
+          <label class="field"><span class="lab">Total step depth <span class="u">(in)</span></span><input id="stepDepth" type="text" autocomplete="off" value="19.5"></label>
+          <label class="field"><span class="lab">Step width <span class="u">(in)</span></span><input id="stepWidth" type="text" autocomplete="off" value="40"></label>
         </div>
       </div>
 
 
       <label class="checkrow"><input type="checkbox" id="notchEnable"> Notch the deck for an existing step</label>
       <div class="only-notch notchgroup">
-        <label class="field"><span class="lab">Notch width <span class="u">(in)</span></span><input id="notchWidth" type="number" step="1" value="48"></label>
+        <label class="field"><span class="lab">Notch width <span class="u">(in)</span></span><input id="notchWidth" type="text" autocomplete="off" value="48"></label>
         <div class="row2">
-          <label class="field"><span class="lab">Notch depth <span class="u">(in)</span></span><input id="notchDepth" type="number" step="1" value="12"></label>
-          <label class="field"><span class="lab">Offset <span class="u">(in)</span></span><input id="notchOffset" type="number" step="1" value="0"></label>
+          <label class="field"><span class="lab">Notch depth <span class="u">(in)</span></span><input id="notchDepth" type="text" autocomplete="off" value="12"></label>
+          <label class="field"><span class="lab">Offset <span class="u">(in)</span></span><input id="notchOffset" type="text" autocomplete="off" value="0"></label>
         </div>
       </div>
 
@@ -151,8 +151,8 @@
       <label class="field only-uniform"><span class="lab">Design to a target slope</span>
         <select id="targetSlope"><option value="manual">Set run length manually</option><option value="12">1:12 (accessible)</option><option value="10">1:10</option><option value="8">1:8 (steepest safe)</option></select>
         <span class="hint">pick a slope and the run length is computed to match</span></label>
-      <label class="field only-uniform"><span class="lab">Length of each run <span class="u">(in)</span></span><input id="rampRun" type="number" step="1" value="96"></label>
-      <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="number" step="1" value="40"></label>
+      <label class="field only-uniform"><span class="lab">Length of each run <span class="u">(in)</span></span><input id="rampRun" type="text" autocomplete="off" value="96"></label>
+      <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="text" autocomplete="off" value="40"></label>
       <label class="field only-straight"><span class="lab">Number of ramp runs</span><input id="runs" type="number" step="1" min="1" value="">
         <span class="hint">how many ramp sections, each using the run length above. e.g. 3</span></label>
       <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move or nudge specific ramps</label>
@@ -164,12 +164,12 @@
         <span class="hint">slide a ramp a set distance along the edge it comes off, on top of its alignment. format run#:distance (inches unless you add &rsquo;) &mdash; <b>+</b> moves it toward the top edge, <b>&minus;</b> toward the bottom. e.g. <b>1:12</b> moves ramp 1 up a foot, <b>1:-8-1/2</b> moves it down 8&frac12;&Prime;</span></label>
       <label class="field only-switchback"><span class="lab">Runs per leg</span><input id="legs" type="text" value="">
         <span class="hint">ramps in each straight leg; a 180° hairpin is added automatically between legs. e.g. <b>3, 3</b> = 3 ramps, hairpin, 3 ramps. <b>2, 2</b> = a single hairpin with 2 ramps each side. One number = no hairpin.</span></label>
-      <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="number" step="1" min="96" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span><span class="hint" id="gapOut" style="color:#2f6fb0;font-weight:700"></span>
+      <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="text" autocomplete="off" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span><span class="hint" id="gapOut" style="color:#2f6fb0;font-weight:700"></span>
         <span class="hint">sets the hairpin's across dimension (two ramps + this gap)</span></label>
-      <label class="field only-switchback"><span class="lab">Hairpin turn landing depth <span class="u">(in)</span></span><input id="turnDepth" type="number" step="1" value="48"></label>
+      <label class="field only-switchback"><span class="lab">Hairpin turn landing depth <span class="u">(in)</span></span><input id="turnDepth" type="text" autocomplete="off" value="48"></label>
       <div class="row2">
-        <label class="field"><span class="lab">Rest landing width <span class="u">(in)</span></span><input id="restW" type="number" step="1" value="40"></label>
-        <label class="field"><span class="lab">Rest landing depth <span class="u">(in)</span></span><input id="restD" type="number" step="1" value="60"></label>
+        <label class="field"><span class="lab">Rest landing width <span class="u">(in)</span></span><input id="restW" type="text" autocomplete="off" value="40"></label>
+        <label class="field"><span class="lab">Rest landing depth <span class="u">(in)</span></span><input id="restD" type="text" autocomplete="off" value="60"></label>
       </div>
       <label class="field"><span class="lab">Rest landings after runs</span><input id="restAfter" type="text" value="">
         <span class="hint">overall ramp number to add a flat rest after (counts across all legs). e.g. <b>1, 5</b> = rest after ramp 1 and ramp 5. Blank = none.</span></label>
@@ -185,8 +185,8 @@
       <label class="checkrow"><input type="checkbox" id="showHandrails"> Show handrails</label>
       <div class="only-handrails notchgroup">
         <div class="row2">
-          <label class="field"><span class="lab">Handrail post height <span class="u">(in, above deck)</span></span><input id="handrailHeight" type="number" step="1" value="35"></label>
-          <label class="field"><span class="lab">Max post spacing <span class="u">(in)</span></span><input id="postSpacingMax" type="number" step="1" value="72"></label>
+          <label class="field"><span class="lab">Handrail post height <span class="u">(in, above deck)</span></span><input id="handrailHeight" type="text" autocomplete="off" value="35"></label>
+          <label class="field"><span class="lab">Max post spacing <span class="u">(in)</span></span><input id="postSpacingMax" type="text" autocomplete="off" value="72"></label>
         </div>
         <label class="checkrow"><input type="checkbox" id="railTopLanding" checked> Handrails on the top landing</label>
       </div>
@@ -206,7 +206,7 @@
           A <b>smaller reading means higher ground</b>, so rises and falls both work with no plus or minus &mdash; mixed up-and-down is fine. Distances are feet from the deck; readings take feet-inches (4' 2-3/8") or plain inches (50 3/8). Survey out to about where the ramp foot will land.<br><br>Your <b>benchmark can be anywhere</b> &mdash; it just sets the reference. Shoot the <b>deck base at 0</b> (<b>0: reading</b>) so the ramp is anchored there. If the BM happens to sit at the deck base, a single <b>BM:</b> line covers both.
         </div>
       </details>
-      <label class="field only-straight"><span class="lab">Ground fall over the run <span class="u">(in)</span></span><input id="groundDrop" type="number" step="0.25" value="0">
+      <label class="field only-straight"><span class="lab">Ground fall over the run <span class="u">(in)</span></span><input id="groundDrop" type="text" autocomplete="off" value="0">
         <span class="hint">how much the ground drops from the top (deck) end to the bottom (foot) of the run. + = downhill toward the foot, 0 = flat. Shown as a sloped ground line in the side profile (straight runs for now).</span></label>
 
       <div class="sechead">Notes</div>
@@ -271,7 +271,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.133</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.134</footer>
 
 <script>
 "use strict";
@@ -301,11 +301,11 @@ function finalize(pieces,deckHeight,RUN,n){
 function parseSegments(txt){
   const out=[];
   for(const raw of String(txt).split(String.fromCharCode(10))){
-    const line=raw.trim().toLowerCase(); if(!line) continue; let m;
-    if(m=line.match(/^ramp\s+(\d+\.?\d*)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/\bupd\b/.test(r))cut="upd"; else if(/\bups\b/.test(r))cut="ups"; else if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left",alSet=false; if(/cent(er|re)/.test(r)){al="center";alSet=true;} else if(/right/.test(r)){al="right";alSet=true;} else if(/left/.test(r)){al="left";alSet=true;} out.push({t:"ramp",len:parseFloat(m[1]),cut:cut,align:al,alignSet:alSet,norail:/no\s*rails?/.test(r)}); }
-    else if(m=line.match(/^landing\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:parseFloat(m[1]),across:parseFloat(m[2]),align:al,norail:/no\s*rails?/.test(r)}); }
+    const line=_uniFrac(raw).trim().toLowerCase(); if(!line) continue; let m; const _sf=t=>{ const v=dimIn(t,true); return isFinite(v)?v/12:NaN; };
+    if(m=line.match(/^ramp\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/\bupd\b/.test(r))cut="upd"; else if(/\bups\b/.test(r))cut="ups"; else if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left",alSet=false; if(/cent(er|re)/.test(r)){al="center";alSet=true;} else if(/right/.test(r)){al="right";alSet=true;} else if(/left/.test(r)){al="left";alSet=true;} out.push({t:"ramp",len:_sf(m[1]),cut:cut,align:al,alignSet:alSet,norail:/no\s*rails?/.test(r)}); }
+    else if(m=line.match(/^landing\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)\s*[x×]\s*(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:_sf(m[1]),across:_sf(m[2]),align:al,norail:/no\s*rails?/.test(r)}); }
     else if(m=line.match(/^turn\s+(left|right)/)) out.push({t:"turn",dir:m[1]});
-    else if(m=line.match(/^hairpin\s+(\d+\.?\d*)\s*x\s*(\d+\.?\d*)/)) out.push({t:"hairpin",along:parseFloat(m[1]),across:parseFloat(m[2])});
+    else if(m=line.match(/^hairpin\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)\s*[x×]\s*(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)/)) out.push({t:"hairpin",along:_sf(m[1]),across:_sf(m[2])});
   }
   return out;
 }
@@ -387,6 +387,11 @@ function switchbackGeometry(p){
   return finalize(pieces,p.deckHeight,p.rampRun,n);
 }
 
+function _uniFrac(t){ return String(t).replace(/\u00bd/g," 1/2").replace(/\u00bc/g," 1/4").replace(/\u00be/g," 3/4").replace(/\u215b/g," 1/8").replace(/\u215c/g," 3/8").replace(/\u215d/g," 5/8").replace(/\u215e/g," 7/8").replace(/\u2044/g,"/").replace(/\u2212/g,"-"); }
+/* Any measurement typed by the user -> inches. feet=true: a bare number means feet. Signed; fractions; ' and " ok. */
+function dimIn(t,feet){ t=_uniFrac(t==null?"":t).trim(); if(!t) return NaN; let sg=1; if(/^[-]/.test(t)){ sg=-1; t=t.slice(1).trim(); } else if(t[0]==="+"){ t=t.slice(1).trim(); } if(!/\d/.test(t)) return NaN;
+  let v; if(feet && !/['"\u2019\u201d\u2032\u2033]|ft\b|feet\b|in\b/i.test(t)){ v=parseReading(t); v=(v==null)?NaN:v*12; } else { v=parseReading(t.replace(/\s*(in|inch|inches)\b/i,'"')); if(v==null) v=NaN; }
+  return sg*v; }
 function parseReading(str){
   if(str==null) return null;
   let s=String(str).trim(); if(!s) return null;
@@ -1403,26 +1408,27 @@ const ids=["custFirst","custLast","custVer","custAddress","custCity","custState"
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
-function parseFloatList(str){return String(str).split(",").map(x=>{const v=parseFloat(x.trim());return isFinite(v)?v:0;});}
+function parseFloatList(str){return String(str).split(",").map(x=>{const v=dimIn(x);return isFinite(v)?v:0;});}
 function parseNotes(str){return String(str).split("\n").map(line=>{const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*:\s*(.+)$/);return m?{x:parseFloat(m[1]),y:parseFloat(m[2]),text:m[3].trim()}:null;}).filter(n=>n);}
 function parseOffsets(str){const m={};String(str||"").split(",").forEach(tok=>{const i=tok.indexOf(":");if(i<0)return;const n=parseInt(tok.slice(0,i).trim(),10);let v=tok.slice(i+1).trim();let sg=1;if(/^[-\u2212]/.test(v)){sg=-1;v=v.slice(1);}else if(v[0]==="+"){v=v.slice(1);}const r=parseReading(v);if(Number.isFinite(n)&&n>0&&r!=null&&isFinite(r))m[n]=sg*r;});return m;}
 function parseOverrides(str){const m={};String(str).split(",").forEach(tok=>{const parts=tok.split(":");if(parts.length===2){const n=parseInt(parts[0].trim(),10);let s=parts[1].trim().toLowerCase();s=(s[0]==="t")?"t":(s[0]==="b")?"b":(s[0]==="c")?"c":null;if(Number.isFinite(n)&&n>0&&s)m[n]=s;}});return m;}
 function parseObstacles(txt){
   const out=[];
   for(const line of String(txt).split(String.fromCharCode(10))){
-    const m=line.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*(?:,\s*([^:]+?)\s*)?:\s*(.+)$/);
-    if(!m) continue;
+    const m=_uniFrac(line).match(/^\s*([-+]?\s*\d[^,:]*?)\s*,\s*([-+]?\s*\d[^,:]*?)\s*(?:,\s*([^:]+?)\s*)?:\s*(.+)$/);
+    if(!m) continue; const _ox=dimIn(m[1],true)/12, _oy=dimIn(m[2],true)/12; if(!isFinite(_ox)||!isFinite(_oy)) continue;
     let rest=(m[3]||""), w=0, h=0;
     const sz=rest.match(/(\d[\d'"\u2019\u201d\/.\- ]*?)\s*[x\u00d7]\s*(\d[\d'"\u2019\u201d\/.\-]*)/i);
     if(sz){ const a=_extDim(sz[1]), b=_extDim(sz[2]); if(a>0&&b>0){ w=a/12; h=b/12; rest=rest.replace(sz[0]," "); } }
-    out.push({x:parseFloat(m[1]),y:parseFloat(m[2]),dir:rest.replace(/,/g," ").trim(),label:m[4].trim(),w:w,h:h});
+    out.push({x:_ox,y:_oy,dir:rest.replace(/,/g," ").trim(),label:m[4].trim(),w:w,h:h});
   }
   return out;
 }
 function readParams(){
-  const num=id=>parseFloat(document.getElementById(id).value)||0;
+  const _DIMS={deckHeight:0,topW:0,topD:0,existingLen:1,existingDepth:1,doorWidth:0,doorOffset:0,stepDepth:0,stepWidth:0,notchWidth:0,notchDepth:0,notchOffset:0,rampRun:0,width:0,hairpinLen:0,turnDepth:0,restW:0,restD:0,handrailHeight:0,postSpacingMax:0,groundDrop:0};
+  const num=id=>{ const v=document.getElementById(id).value; if(id in _DIMS){ const d=dimIn(v,_DIMS[id]===1); return isFinite(d)?(_DIMS[id]===1?d/12:d):0; } return parseFloat(v)||0; };
   const bnum=id=>{const v=document.getElementById(id).value; return v===""?null:parseFloat(v);};
-  const blank=id=>!(parseFloat(document.getElementById(id).value)>0);
+  const blank=id=>!(num(id)>0);
   return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),mapApp:document.getElementById("mapApp").value,projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
     deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,depAngle:(num("depAngle")||0),depSide:document.getElementById("depSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),rampOffsets:(getVal("useOverrides")?parseOffsets(document.getElementById("rampOffsets").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
@@ -1589,7 +1595,7 @@ function render(){
   if(p.targetSlope!=="manual"){
     const totalRamps=(p.layout==="switchback")?(p.legs.reduce((a,b)=>a+b,0)||1):p.runs;
     p.rampRun=parseFloat(p.targetSlope)*(p.deckHeight/totalRamps);
-    const rr=document.getElementById("rampRun"); rr.value=Math.round(p.rampRun*100)/100; rr.disabled=true;
+    const rr=document.getElementById("rampRun"); rr.value=inFrac(p.rampRun); rr.disabled=true;
   } else { document.getElementById("rampRun").disabled=false; }
   document.getElementById("clientLabel").innerHTML=((p.custLast&&p.custLast.trim())?esc(p.custLast.trim()+(p.custVer?"_v"+p.custVer:"")):'<span class="ph">[client name]</span>')+' '+esc(p.projectType||"");
   document.title="Care Construction"+((p.custLast&&p.custLast.trim())?(" — "+p.custLast.trim()+(p.custVer?"_v"+p.custVer:"")+" "+(p.projectType||"")):"");
@@ -1658,7 +1664,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.133",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.134",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
