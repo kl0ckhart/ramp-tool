@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.131</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.132</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -101,6 +101,11 @@
         <label class="field"><span class="lab">Structure length <span class="u">(ft)</span></span><input id="existingLen" type="number" step="0.5" value="12"></label>
         <label class="field"><span class="lab">Structure depth <span class="u">(ft)</span></span><input id="existingDepth" type="number" step="0.5" value="2"></label>
       </div>
+      <div class="row2 only-deckref">
+        <label class="field"><span class="lab">Measure from</span><select id="refFrom"><option value="start">Left end</option><option value="end">Right end</option></select></label>
+        <label class="field"><span class="lab">Distance to top landing</span><input id="refDist" type="text" placeholder="blank = centered"></label>
+      </div>
+      <span class="hint only-deckref" id="refHint">From that end of the structure to the nearest edge of the top landing. Inches unless you add &rsquo; &mdash; e.g. <b>76-1/2</b> or <b>6&rsquo;4-1/2&quot;</b>. Leave blank to center it.<span id="refWarn" style="display:block;color:#c0392b;font-weight:600"></span></span>
       <label class="checkrow only-deckref"><input type="checkbox" id="attachExisting"> Ramp attaches to the existing structure (use it as the top)</label>
       <label class="checkrow"><input type="checkbox" id="showDoor"> Show door swing (at the deck)</label>
       <div class="only-door notchgroup">
@@ -266,7 +271,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.131</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.132</footer>
 
 <script>
 "use strict";
@@ -1388,7 +1393,7 @@ function buildSVG(p,g){
   s+='</svg>'; return s;
 }
 
-const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","rampOffsets","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","topExt","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos","planNotes","planNotePos"];
+const ids=["custFirst","custLast","custVer","custAddress","custCity","custState","custPhone","mapApp","projectType","depAngle","depSide","notes","obstacles","segments","hasTopLanding","layout","deckHeight","rampRun","targetSlope","width","startSide","runs","align","useOverrides","rampOverrides","rampOffsets","sameSize","rampRuns","rampWidths","restWidths","restDepths","turnDepths","legs","hairpinLen","turnDepth","topW","topD","topExt","restW","restD","restAfter","taper","showDeckRef","deckRefSide","existingLen","existingDepth","refFrom","refDist","attachExisting","showNorth","northBearing","showCorners","notchEnable","notchWidth","notchDepth","notchOffset","showSteps","numSteps","stepDepth","stepWidth","showHandrails","handrailHeight","postSpacingMax","railTopLanding","topOnExistingDeck","showProfile","showDoor","doorWidth","doorHinge","doorOffset","doorInside","groundDrop","survey","bmX","bmY","notchX","notchY","shotPos","shotLabelPos","planNotes","planNotePos"];
 function getVal(id){const el=document.getElementById(id);return el.type==="checkbox"?el.checked:el.value;}
 function setVal(id,v){const el=document.getElementById(id);if(el.type==="checkbox")el.checked=!!v;else el.value=v;}
 function parseList(str){return String(str).split(",").map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n)&&n>0);}
@@ -1413,7 +1418,7 @@ function readParams(){
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),rampOffsets:(getVal("useOverrides")?parseOffsets(document.getElementById("rampOffsets").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),topExt:document.getElementById("topExt").value,restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
-    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),shotLabelPos:parseLabelPos(document.getElementById("shotLabelPos").value),planNotes:document.getElementById("planNotes").value,planNotePos:parseLabelPos(document.getElementById("planNotePos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
+    taper:getVal("taper"),showDeckRef:getVal("showDeckRef"),deckRefSide:document.getElementById("deckRefSide").value,existingLen:num("existingLen"),refFrom:document.getElementById("refFrom").value,refDist:document.getElementById("refDist").value,existingDepth:num("existingDepth"),attachExisting:getVal("attachExisting"),showNorth:getVal("showNorth"),northBearing:num("northBearing"),showCorners:getVal("showCorners"),notchEnable:getVal("notchEnable"),notchWidth:num("notchWidth"),notchDepth:num("notchDepth"),notchOffset:num("notchOffset"),showSteps:getVal("showSteps"),numSteps:Math.max(1,Math.round(num("numSteps"))),stepDepth:num("stepDepth"),stepWidth:num("stepWidth"),showHandrails:getVal("showHandrails"),handrailHeight:num("handrailHeight"),postSpacingMax:num("postSpacingMax"),railTopLanding:getVal("railTopLanding"),topOnExistingDeck:getVal("topOnExistingDeck"),showProfile:getVal("showProfile"),groundDrop:num("groundDrop"),survey:document.getElementById("survey").value,bmX:bnum("bmX"),bmY:bnum("bmY"),notchX:bnum("notchX"),notchY:bnum("notchY"),shotPos:parseShotPos(document.getElementById("shotPos").value),shotLabelPos:parseLabelPos(document.getElementById("shotLabelPos").value),planNotes:document.getElementById("planNotes").value,planNotePos:parseLabelPos(document.getElementById("planNotePos").value),showDoor:getVal("showDoor"),doorWidth:num("doorWidth"),doorHinge:document.getElementById("doorHinge").value,doorOffset:num("doorOffset"),doorInside:getVal("doorInside"),_preview:(blank("deckHeight")||blank("rampRun")||blank("width")||blank("topW")||blank("topD"))};
 }
 function show(sel,on){document.querySelectorAll(sel).forEach(e=>e.style.display=on?"":"none");}
 function updateVisibility(){
@@ -1568,6 +1573,7 @@ function terrainAdjust(p, g){
 }
 function render(){
   const p=readParams();
+  { const _rf=document.getElementById("refFrom"); if(_rf){ const h=(p.deckRefSide==="top"||p.deckRefSide==="bottom"); _rf.options[0].text=h?"Left end":"Top end"; _rf.options[1].text=h?"Right end":"Bottom end"; } }
   { const _dsf=document.getElementById("depSideField"); if(_dsf) _dsf.style.display=((+p.depAngle||0)>0.01)?"":"none"; }
   {const go=document.getElementById("gapOut"); if(go) go.textContent=(p.layout==="switchback")?("= "+Math.round(p.gap)+String.fromCharCode(34)+" gap between the ramps"):"";}
   if(p.targetSlope!=="manual"){
@@ -1595,10 +1601,17 @@ function render(){
     if(p.notchX!=null){ document.getElementById("notchX").value=p.notchX.toFixed(3); document.getElementById("notchY").value=p.notchY.toFixed(3); } }
   if(p.showDeckRef && !p.attachExisting){
     const tl=gPlan.pieces[0], L=(p.existingLen>0?p.existingLen:12)*12, D=(p.existingDepth>0?p.existingDepth:2)*12, cx=(tl.x0+tl.x1)/2, cy=(tl.y0+tl.y1)/2; let d;
-    if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:cy-L/2,y1:cy+L/2};
-    else if(p.deckRefSide==="top") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y0-D,y1:tl.y0};
-    else if(p.deckRefSide==="bottom") d={x0:cx-L/2,x1:cx+L/2,y0:tl.y1,y1:tl.y1+D};
-    else d={x0:tl.x0-D,x1:tl.x0,y0:cy-L/2,y1:cy+L/2};
+    const horiz=(p.deckRefSide==="top"||p.deckRefSide==="bottom"), dsTxt=String(p.refDist||"").trim(), dd=dsTxt?parseReading(dsTxt):null, useD=(dd!=null&&isFinite(dd));
+    let a0 = horiz ? cx-L/2 : cy-L/2;
+    if(useD){ a0 = horiz ? (p.refFrom==="end" ? tl.x1+dd-L : tl.x0-dd) : (p.refFrom==="end" ? tl.y1+dd-L : tl.y0-dd); }
+    if(p.deckRefSide==="right") d={x0:tl.x1,x1:tl.x1+D,y0:a0,y1:a0+L};
+    else if(p.deckRefSide==="top") d={x0:a0,x1:a0+L,y0:tl.y0-D,y1:tl.y0};
+    else if(p.deckRefSide==="bottom") d={x0:a0,x1:a0+L,y0:tl.y1,y1:tl.y1+D};
+    else d={x0:tl.x0-D,x1:tl.x0,y0:a0,y1:a0+L};
+    { const w=document.getElementById("refWarn"), span=horiz?(tl.x1-tl.x0):(tl.y1-tl.y0); let msg="";
+      if(dsTxt && !useD) msg="Couldn\u2019t read that distance.";
+      else if(useD && (dd<0 || dd+span>L+0.5)) msg="The top landing runs past the end of the structure ("+inFrac(dd+span)+"\u2033 needed, structure is "+inFrac(L)+"\u2033).";
+      if(w) w.textContent=msg; }
     gPlan.pieces.push({name:"Existing structure",x0:d.x0,x1:d.x1,y0:d.y0,y1:d.y1,ramp:false,ref:true});
   }
   const sc=slopeClass(g.slopeRatio);
@@ -1635,7 +1648,7 @@ ids.forEach(id=>{const el=document.getElementById(id);
   el.addEventListener(ev, visToggle?updateVisibility:render);});
 
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.131",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.132",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
