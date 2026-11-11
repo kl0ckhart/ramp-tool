@@ -32,7 +32,7 @@
   .field .lab{display:block;font-size:13px;color:#414653;margin-bottom:4px} .field .u{color:var(--muted);font-weight:400}
   .field input,.field select,.field textarea{width:100%;padding:10px 11px;font-size:16px;color:var(--ink);background:#fdfdfc;border:1px solid #d8d4ca;border-radius:8px;font-family:inherit;}
   .field textarea{resize:vertical;min-height:64px;line-height:1.35}
-  #segUI .field,#svUI .field{margin-bottom:6px} #segUI .row2 .field .lab,#segUI .field .lab,#svUI .row2 .field .lab,#svUI .field .lab{min-height:0;margin-bottom:2px;line-height:1.2} #segUI .field input,#segUI .field select,#svUI .field input,#svUI .field select{padding:8px 10px} #segUI .checkrow,#svUI .checkrow{margin-bottom:2px}
+  #segUI .field,#svUI .field,#obUI .field{margin-bottom:6px} #segUI .row2 .field .lab,#segUI .field .lab,#svUI .row2 .field .lab,#svUI .field .lab,#obUI .row2 .field .lab,#obUI .field .lab{min-height:0;margin-bottom:2px;line-height:1.2} #segUI .field input,#segUI .field select,#svUI .field input,#svUI .field select,#obUI .field input,#obUI .field select{padding:8px 10px} #segUI .checkrow,#svUI .checkrow{margin-bottom:2px}
   .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--blue2);outline-offset:1px;border-color:var(--blue2)}
   .hint{font-size:11.5px;color:var(--muted);margin-top:3px}
   .checkrow{display:flex;align-items:center;gap:9px;font-size:14px;color:#414653;margin-bottom:13px;cursor:pointer}
@@ -62,7 +62,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.149</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.153</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -178,7 +178,7 @@
         <select id="targetSlope"><option value="manual">Set run length manually</option><option value="12">1:12 (accessible)</option><option value="10">1:10</option><option value="8">1:8 (steepest safe)</option></select>
         <span class="hint">pick a slope and the run length is computed to match</span></label>
       <label class="field only-uniform"><span class="lab">Length of each run <span class="u">(in)</span></span><input id="rampRun" type="text" autocomplete="off" value="96"></label>
-      <label class="field"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="text" autocomplete="off" value="40"></label>
+      <label class="field not-compound"><span class="lab">Ramp width <span class="u">(in)</span></span><input id="width" type="text" autocomplete="off" value="40"></label>
       <label class="field only-straight"><span class="lab">Number of ramp runs</span><input id="runs" type="number" step="1" min="1" value="">
         <span class="hint">how many ramp sections, each using the run length above. e.g. 3</span></label>
       <label class="checkrow only-straight"><input type="checkbox" id="useOverrides"> Move or nudge specific ramps</label>
@@ -193,6 +193,7 @@
       <label class="field only-switchback"><span class="lab">Hairpin length <span class="u">(in, across)</span></span><input id="hairpinLen" type="text" autocomplete="off" value="96"><span class="hint">across both legs; 8&prime; minimum keeps &ge; 16&Prime; between the ramps</span><span class="hint" id="gapOut" style="color:#2f6fb0;font-weight:700"></span>
         <span class="hint">sets the hairpin's across dimension (two ramps + this gap)</span></label>
       <label class="field only-switchback"><span class="lab">Hairpin turn landing depth <span class="u">(in)</span></span><input id="turnDepth" type="text" autocomplete="off" value="48"></label>
+      <div class="not-compound">
       <div class="row2">
         <label class="field"><span class="lab">Rest landing width <span class="u">(in)</span></span><input id="restW" type="text" autocomplete="off" value="40"></label>
         <label class="field"><span class="lab">Rest landing depth <span class="u">(in)</span></span><input id="restD" type="text" autocomplete="off" value="60"></label>
@@ -206,6 +207,7 @@
         <label class="field"><span class="lab">Rest widths <span class="u">(in, per rest)</span></span><input id="restWidths" type="text" placeholder="e.g. 40, 60"></label>
         <label class="field"><span class="lab">Rest depths <span class="u">(in, per rest)</span></span><input id="restDepths" type="text" placeholder="e.g. 60, 60"></label>
         <label class="field ps-switchback"><span class="lab">Hairpin depths <span class="u">(in, per hairpin)</span></span><input id="turnDepths" type="text" placeholder="e.g. 48, 60"><span class="hint">one per hairpin, in order; blank = default. The across dimension follows the two legs + gap.</span></label>
+      </div>
       </div>
       <label class="checkrow not-compound"><input type="checkbox" id="taper" checked> Taper the last ramp to grade (taper 0)</label>
       <label class="checkrow"><input type="checkbox" id="showHandrails"> Show handrails</label>
@@ -227,7 +229,9 @@
       <label class="field"><span class="lab">Labels you can drag on the plan</span>
         <textarea id="planNotes" rows="3" placeholder="One label per line&#10;e.g. Gravel pad&#10;Downspout &mdash; reroute"></textarea>
         <span class="hint">each line becomes its own label on the plan &mdash; drag it wherever you want it. It stays put when you print or save.</span></label>
-      <label class="field"><span class="lab">Obstacles</span><textarea id="obstacles" rows="3" placeholder="One per line:   x, y: label&#10;e.g.   6, 2: 4x4 post&#10;with a size:   6, 2, 3x2: AC pad&#10;with direction:   6, 2, 3x2, above-right: AC pad"></textarea><span class="hint">feet from the ramp start (0, 0 = top landing corner). Optional callout direction after the coordinates: above, below, left, right, above-left, above-right, below-left, below-right &mdash; e.g. 6, 2, above-right: 4x4 post. To draw it to size, add width x depth in feet (inches with &quot;) after the coordinates &mdash; e.g. <b>6, 2, 3x2: AC pad</b> or <b>6, 2, 30&quot;x30&quot;, left: AC pad</b>. With a size, x, y is the obstacle&rsquo;s center.</span></label>
+      <div class="field"><span class="lab">Obstacles</span><div id="obUI"></div>
+        <span class="hint">Add each obstacle, then drag it into place on the plan.</span></div>
+      <textarea id="obstacles" style="display:none"></textarea>
 
       <div class="sechead">FreeCAD export</div>
       <p class="hint" style="margin:0 0 8px">Paste these into your FreeCAD macro's parameter block. Updates live as you edit.</p>
@@ -282,7 +286,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.149</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.153</footer>
 
 <script>
 "use strict";
@@ -312,15 +316,24 @@ function finalize(pieces,deckHeight,RUN,n){
 function parseSegments(txt){
   const out=[];
   for(const raw of String(txt).split(String.fromCharCode(10))){
-    const line=_uniFrac(raw).trim().toLowerCase(); if(!line) continue; let m; const _sf=t=>{ const v=dimIn(t,true); return isFinite(v)?v/12:NaN; };
-    if(m=line.match(/^ramp\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/\bupd\b/.test(r))cut="upd"; else if(/\bups\b/.test(r))cut="ups"; else if(/\bsdown\b/.test(r))cut="sdown"; else if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left",alSet=false; if(/cent(er|re)/.test(r)){al="center";alSet=true;} else if(/right/.test(r)){al="right";alSet=true;} else if(/left/.test(r)){al="left";alSet=true;} out.push({t:"ramp",len:_sf(m[1]),cut:cut,align:al,alignSet:alSet,norail:/no\s*rails?/.test(r)}); }
-    else if(m=line.match(/^landing\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)\s*[x×]\s*(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:_sf(m[1]),across:_sf(m[2]),align:al,norail:/no\s*rails?/.test(r)}); }
+    let line=_uniFrac(raw).trim().toLowerCase(); if(!line) continue; let m; let _nud=0;
+    { const nm=line.match(/\s+nudge(l|r)\s+(\S+)/); if(nm){ const v=dimIn(nm[2]); if(isFinite(v)&&v>0) _nud=(nm[1]==="l"?-v:v); line=line.replace(nm[0],""); } }
+    const _sf=t=>{ const v=dimIn(t,true); return isFinite(v)?v/12:NaN; };
+    if(m=line.match(/^ramp\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)(.*)/)){ const r=(m[2]||""); let cut="down"; if(/\bupd\b/.test(r))cut="upd"; else if(/\bups\b/.test(r))cut="ups"; else if(/\bsdown\b/.test(r))cut="sdown"; else if(/straight/.test(r))cut="straight"; else if(/taper/.test(r))cut="taper"; else if(/\bup\b/.test(r))cut="up"; let al="left",alSet=false; if(/cent(er|re)/.test(r)){al="center";alSet=true;} else if(/right/.test(r)){al="right";alSet=true;} else if(/left/.test(r)){al="left";alSet=true;} out.push({t:"ramp",len:_sf(m[1]),cut:cut,align:al,alignSet:alSet,norail:/no\s*rails?/.test(r),nudge:_nud}); }
+    else if(m=line.match(/^landing\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)\s*[x×]\s*(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)(.*)/)){ const r=(m[3]||""); let al="left"; if(/cent(er|re)/.test(r))al="center"; else if(/right/.test(r))al="right"; out.push({t:"landing",along:_sf(m[1]),across:_sf(m[2]),align:al,norail:/no\s*rails?/.test(r),nudge:_nud}); }
     else if(m=line.match(/^turn\s+(left|right)/)) out.push({t:"turn",dir:m[1]});
     else if(m=line.match(/^hairpin\s+(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)\s*[x×]\s*(\d[\d.\/'"’”′″\-]*(?:\s+\d+\/\d+["”″]?)?)/)) out.push({t:"hairpin",along:_sf(m[1]),across:_sf(m[2])});
   }
   return out;
 }
+var _segWarn=[];
+function _segContact(i,prev,pc,hx,hy,Wd,nud){ if(!prev) return; var ppx=-hy,ppy=hx;
+  function span(q){ var a=[q.x0*ppx+q.y0*ppy,q.x1*ppx+q.y0*ppy,q.x0*ppx+q.y1*ppy,q.x1*ppx+q.y1*ppy]; return [Math.min.apply(null,a),Math.max.apply(null,a)]; }
+  var A=span(prev),B=span(pc), ov=Math.min(A[1],B[1])-Math.max(A[0],B[0]), need=Math.min(A[1]-A[0],B[1]-B[0]);
+  if(ov<=0.01) _segWarn[i]={bad:true,msg:"This piece no longer touches the one before it \u2014 reduce the nudge."};
+  else if(nud && ov<need-0.01) _segWarn[i]={bad:false,msg:"Hangs "+inFrac(need-ov)+"\" past the end of the edge it comes off."}; }
 function compoundGeometry(p){
+  _segWarn=[];
   const segs=parseSegments(p.segments||""), W=p.width||40, deck=p.deckHeight;
   const rects=function(px,py,hx,hy,L,lo,hi){ const ppx=-hy,ppy=hx;
     const cs=[[px-ppx*lo,py-ppy*lo],[px+hx*L-ppx*lo,py+hy*L-ppy*lo],[px+hx*L+ppx*hi,py+hy*L+ppy*hi],[px+ppx*hi,py+ppy*hi]];
@@ -336,8 +349,9 @@ function compoundGeometry(p){
   for(let _si=0;_si<segs.length;_si++){ const sg=segs[_si];
     if(sg.t==="ramp"){ rampNo++; const L=sg.len*12;
       { const prev=pieces[pieces.length-1]; if(prev && sg.align!=="center" && !noAlign){ const ppx=-hy,ppy=hx; const ps=[prev.x0*ppx+prev.y0*ppy,prev.x1*ppx+prev.y0*ppy,prev.x0*ppx+prev.y1*ppy,prev.x1*ppx+prev.y1*ppy]; const emin=Math.min.apply(null,ps),emax=Math.max.apply(null,ps),half=((emax-emin)-W)/2; const shift=(sg.align==="right")?half:-half; px+=shift*ppx; py+=shift*ppy; } noAlign=false; }
-      const pc=rect(px,py,hx,hy,L,W); pc.ramp=true; pc.dir=(hx+hy>=0?1:-1); pc.ddx=hx; pc.ddy=hy; pc.run=L; pc.cut=sg.cut; pc.norail=!!sg.norail; pc.name="Ramp "+rampNo; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
-    else if(sg.t==="landing"){ const L=sg.along*12, A=sg.across*12; { const prev=pieces[pieces.length-1]; if(prev && sg.align!=="center" && !noAlign){ const ppx=-hy,ppy=hx; const ps=[prev.x0*ppx+prev.y0*ppy,prev.x1*ppx+prev.y0*ppy,prev.x0*ppx+prev.y1*ppy,prev.x1*ppx+prev.y1*ppy]; const emin=Math.min.apply(null,ps),emax=Math.max.apply(null,ps),half=((emax-emin)-A)/2; const shift=(sg.align==="right")?half:-half; px+=shift*ppx; py+=shift*ppy; } noAlign=false; } const pc=rect(px,py,hx,hy,L,A); pc.name="Landing"; pc.norail=!!sg.norail; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
+      if(sg.nudge){ px+=sg.nudge*(-hy); py+=sg.nudge*hx; }
+      const pc=rect(px,py,hx,hy,L,W); _segContact(_si,pieces[pieces.length-1],pc,hx,hy,W,sg.nudge); pc.ramp=true; pc.dir=(hx+hy>=0?1:-1); pc.ddx=hx; pc.ddy=hy; pc.run=L; pc.cut=sg.cut; pc.norail=!!sg.norail; pc.name="Ramp "+rampNo; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
+    else if(sg.t==="landing"){ const L=sg.along*12, A=sg.across*12; { const prev=pieces[pieces.length-1]; if(prev && sg.align!=="center" && !noAlign){ const ppx=-hy,ppy=hx; const ps=[prev.x0*ppx+prev.y0*ppy,prev.x1*ppx+prev.y0*ppy,prev.x0*ppx+prev.y1*ppy,prev.x1*ppx+prev.y1*ppy]; const emin=Math.min.apply(null,ps),emax=Math.max.apply(null,ps),half=((emax-emin)-A)/2; const shift=(sg.align==="right")?half:-half; px+=shift*ppx; py+=shift*ppy; } noAlign=false; } if(sg.nudge){ px+=sg.nudge*(-hy); py+=sg.nudge*hx; } const pc=rect(px,py,hx,hy,L,A); _segContact(_si,pieces[pieces.length-1],pc,hx,hy,A,sg.nudge); pc.name="Landing"; pc.norail=!!sg.norail; pc.dev0=dev; dev+=L; pc.dev1=dev; pc.fx0=fx; fx+=fdir*L; pc.fx1=fx; pieces.push(pc); px+=hx*L; py+=hy*L; }
     else if(sg.t==="turn"){ const prev=pieces[pieces.length-1]||{x0:px,x1:px,y0:py,y1:py}; const nh=(sg.dir==="right")?[-hy,hx]:[hy,-hx]; hx=nh[0];hy=nh[1]; const ec=edgeC(prev,hx,hy); px=ec[0]; py=ec[1]; }
     else if(sg.t==="hairpin"){ const depth=sg.along*12, across=sg.across*12, pitch=across-W;
       const _fa=_nextRampAlign(_si), _foldLeft=(_fa==="left"), _sgn=_foldLeft?-1:1;
@@ -982,6 +996,11 @@ function attachDrag(){
       function(){ return {x:parseFloat(el.getAttribute('data-x'))||0, y:parseFloat(el.getAttribute('data-y'))||0}; },
       function(x,y){ setShotPos(el.getAttribute('data-label'), x, y); });
   });
+  svg.querySelectorAll('.obMarker').forEach(function(el){
+    makeDraggable(el,
+      function(){ return {x:parseFloat(el.getAttribute('data-x'))||0, y:parseFloat(el.getAttribute('data-y'))||0}; },
+      function(x,y){ setObPos(+el.getAttribute('data-idx'), x, y); });
+  });
   svg.querySelectorAll('.planNote').forEach(function(el){
     makeDraggable(el,
       function(){ return {x:parseFloat(el.getAttribute('data-x'))||0, y:parseFloat(el.getAttribute('data-y'))||0}; },
@@ -1043,7 +1062,8 @@ function buildSVG(p,g){
   let grid="";
   for(let gx=Math.floor(vbX);gx<=Math.ceil(vbX+vbW);gx++){const M=(gx%5===0);grid+='<line x1="'+gx+'" y1="'+vbY.toFixed(2)+'" x2="'+gx+'" y2="'+(vbY+vbH).toFixed(2)+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
   for(let gy=Math.floor(vbY);gy<=Math.ceil(vbY+vbH);gy++){const M=(gy%5===0);grid+='<line x1="'+vbX.toFixed(2)+'" y1="'+gy+'" x2="'+(vbX+vbW).toFixed(2)+'" y2="'+gy+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
-  s+='<g>'+grid+'</g>';
+  s+='<g>@@GRID@@</g>'; var _gridFor=function(X,Y,W,H){ var gr=""; for(let gx=Math.floor(X);gx<=Math.ceil(X+W);gx++){const M=(gx%5===0);gr+='<line x1="'+gx+'" y1="'+Y.toFixed(2)+'" x2="'+gx+'" y2="'+(Y+H).toFixed(2)+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';}
+    for(let gy=Math.floor(Y);gy<=Math.ceil(Y+H);gy++){const M=(gy%5===0);gr+='<line x1="'+X.toFixed(2)+'" y1="'+gy+'" x2="'+(X+W).toFixed(2)+'" y2="'+gy+'" stroke="'+(M?'#a7c1e2':'#d3e0f0')+'" stroke-width="'+(M?0.035:0.018)+'"/>';} return gr; };
   s+='@@DN@@';
   if(_depRot && _wedgePts){ var _wp=_wedgePts, _wcx=((_wp[0][0]+_wp[1][0]+_wp[2][0])/3), _wcy=((_wp[0][1]+_wp[1][1]+_wp[2][1])/3);
     s+='<polygon points="'+_wp.map(function(q){return f3(q[0])+","+f3(q[1]);}).join(" ")+'" fill="#c9b59a" fill-opacity="0.9" stroke="#8a6d49" stroke-width="0.05"/>';
@@ -1221,34 +1241,47 @@ function buildSVG(p,g){
       }
     }
   }
+  var _obExt=[];
   if(p.obstacles && p.obstacles.length){
     let ox=Infinity, oy=Infinity;
     for(const pc of g.pieces){ if(pc.ref) continue; if(pc.x0<ox)ox=pc.x0; if(pc.y0<oy)oy=pc.y0; }
     const oxf=0, oyf=0, midYo=(y0f+y1f)/2;
     const dmap={above:[0,-1],aboveleft:[-1,-1],aboveright:[1,-1],left:[-1,0],right:[1,0],below:[0,1],belowleft:[-1,1],belowright:[1,1],a:[0,-1],al:[-1,-1],ar:[1,-1],l:[-1,0],r:[1,0],b:[0,1],bl:[-1,1],br:[1,1]};
-    for(const ob of p.obstacles){
-      const mx=oxf+ob.x, my=oyf+ob.y, sized=(ob.w>0&&ob.h>0), hw=sized?ob.w/2:0, hh=sized?ob.h/2:0;
+    const _obBoxes=[]; for(const pc of g.pieces){ _obBoxes.push([pc.x0/F-0.4,pc.y0/F-0.4,pc.x1/F+0.4,pc.y1/F+0.4]); }
+    p.obstacles.forEach(function(ob){ if(!ob.auto){ const r=Math.max(ob.w/2||0,ob.h/2||0,(ob.dia||0)/2,0.4); _obBoxes.push([ob.x-r,ob.y-r,ob.x+r,ob.y+r]); } });
+    for(let _oi=0;_oi<p.obstacles.length;_oi++){ const ob=p.obstacles[_oi];
+      if(ob.auto){ const rr=Math.max((ob.w||0)/2,(ob.h||0)/2,(ob.dia||0)/2,0.4)+0.3; let ok=false;
+        for(let yy=vbY+rr+0.6; yy<=vbY+vbH-rr-0.6 && !ok; yy+=0.5){ for(let xx=vbX+vbW-rr-0.6; xx>=vbX+rr+0.6 && !ok; xx-=0.5){
+          let c=true; for(const b of _obBoxes){ if(xx+rr+2.2>b[0]&&xx-rr-0.2<b[2]&&yy+rr+0.2>b[1]&&yy-rr-0.9<b[3]){ c=false; break; } }
+          if(c){ ob.x=xx; ob.y=yy; ok=true; } } }
+        if(!ok){ ob.x=vbX+vbW-1.5; ob.y=vbY+1.5+_oi*1.5; }
+        _obBoxes.push([ob.x-rr,ob.y-rr,ob.x+rr,ob.y+rr]); }
+      const mx=oxf+ob.x, my=oyf+ob.y, circ=(ob.dia>0), sized=(!circ&&ob.w>0&&ob.h>0), hw=sized?ob.w/2:(circ?ob.dia/2:0), hh=sized?ob.h/2:(circ?ob.dia/2:0);
+      s+='<g class="obMarker" data-idx="'+_oi+'" data-x="'+mx.toFixed(3)+'" data-y="'+my.toFixed(3)+'">';
+      s+='<circle cx="'+mx.toFixed(2)+'" cy="'+my.toFixed(2)+'" r="'+Math.max(1.3,hw+0.3).toFixed(2)+'" fill="#000" fill-opacity="0.001" pointer-events="all"/>';
+      if(circ){ s+='<circle cx="'+mx.toFixed(3)+'" cy="'+my.toFixed(3)+'" r="'+hw.toFixed(3)+'" fill="#8a4b2b" fill-opacity="0.22" stroke="#3f2010" stroke-width="0.05" stroke-dasharray="0.25 0.12"/><circle cx="'+mx.toFixed(2)+'" cy="'+my.toFixed(2)+'" r="0.06" fill="#3f2010"/>'; }
       const _szt=sized?(ftCompact(ob.w*12)+" \u00d7 "+ftCompact(ob.h*12)):"", _szf=Math.min(0.3,(ob.w-0.15)/(_szt.length*0.62+0.01));
       if(sized){ s+='<rect x="'+(mx-hw).toFixed(3)+'" y="'+(my-hh).toFixed(3)+'" width="'+ob.w.toFixed(3)+'" height="'+ob.h.toFixed(3)+'" fill="#8a4b2b" fill-opacity="0.22" stroke="#3f2010" stroke-width="0.05" stroke-dasharray="0.25 0.12"/>';
         s+='<text x="'+mx.toFixed(2)+'" y="'+(my+0.12).toFixed(2)+'" font-size="'+_szf.toFixed(3)+'" text-anchor="middle" fill="#3f2010">'+esc(_szt)+'</text>'; }
       else s+='<rect x="'+(mx-0.18).toFixed(2)+'" y="'+(my-0.18).toFixed(2)+'" width="0.36" height="0.36" fill="#8a4b2b" stroke="#3f2010" stroke-width="0.05"/>';
-      if(!sized){
+      if(!sized&&!circ){
       s+='<line x1="'+(mx-0.34).toFixed(2)+'" y1="'+my.toFixed(2)+'" x2="'+(mx+0.34).toFixed(2)+'" y2="'+my.toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
       s+='<line x1="'+mx.toFixed(2)+'" y1="'+(my-0.34).toFixed(2)+'" x2="'+mx.toFixed(2)+'" y2="'+(my+0.34).toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
       s+='<circle cx="'+mx.toFixed(2)+'" cy="'+my.toFixed(2)+'" r="0.07" fill="#3f2010"/>'; }
       let dv=dmap[(ob.dir||"").toLowerCase().replace(/[ \-]/g,"")]; if(!dv) dv=[0,(my<midYo)?-1:1];
       const len=Math.hypot(dv[0],dv[1])||1, ux=dv[0]/len, uy=dv[1]/len;
       const ex=(ux!==0&&uy!==0)?Math.min(Math.abs(hw/ux),Math.abs(hh/uy)):(ux!==0?hw:hh), D=1.7+ex, st=ex+0.25;
-      const cax=mx+ux*D, cay=my+uy*D, lab=esc(ob.label), lw=lab.length*0.264+0.5;
+      const _lt=ob.label+(circ?(", "+inFrac(ob.mval)+"\" "+(ob.meas==="circ"?"around":"dia")):""); const cax=mx+ux*D, cay=my+uy*D, lab=esc(_lt), lw=_lt.length*0.264+0.5;
       s+='<line x1="'+(mx+ux*st).toFixed(2)+'" y1="'+(my+uy*st).toFixed(2)+'" x2="'+cax.toFixed(2)+'" y2="'+cay.toFixed(2)+'" stroke="#3f2010" stroke-width="0.03"/>';
       let ta,bx0; if(dv[0]<0){ta="end";bx0=cax-lw+0.25;}else if(dv[0]>0){ta="start";bx0=cax-0.25;}else{ta="middle";bx0=cax-lw/2;}
       s+='<rect x="'+bx0.toFixed(2)+'" y="'+(cay-0.31).toFixed(2)+'" width="'+lw.toFixed(2)+'" height="0.62" rx="0.1" fill="#c0392b" stroke="#7a2518" stroke-width="0.05"/>';
       s+='<text x="'+cax.toFixed(2)+'" y="'+(cay+0.13).toFixed(2)+'" font-size="0.4" text-anchor="'+ta+'" fill="#fff" font-weight="700">'+lab+'</text>';
+      s+='</g>'; _obExt.push([Math.min(mx-hw,bx0)-0.6,Math.min(my-hh,cay-0.31)-0.5,Math.max(mx+hw,bx0+lw)+0.8,Math.max(my+hh,cay+0.31)+0.5]);
     }
   }
   var _PAD=0.25, obst=[];
   for(var _oi=0;_oi<g.pieces.length;_oi++){var _op=g.pieces[_oi];obst.push([_op.x0/F-_PAD,_op.y0/F-_PAD,_op.x1/F+_PAD,_op.y1/F+_PAD]);}
-  (p.obstacles||[]).forEach(function(ob){ if(ob.w>0&&ob.h>0) obst.push([ob.x-ob.w/2-_PAD,ob.y-ob.h/2-_PAD,ob.x+ob.w/2+_PAD,ob.y+ob.h/2+_PAD]); });
+  _obExt.forEach(function(b){ obst.push(b); });
   var _footStr="Deck height "+dimText(p.deckHeight)+"  ramp width "+dimText(p.width)+"  footprint "+ftCompact(g.footW)+"x"+ftCompact(g.footH);
   var _botW=Math.max(bw, _footStr.length*0.4*0.55, 6.0)+0.4;
   obst.push([vbX+0.1, y1f+0.45, vbX+0.1+_botW, vbY+vbH+0.2]);
@@ -1313,6 +1346,7 @@ function buildSVG(p,g){
   }
   var _noN=2.8, notePos={}, _placed=[];
   var _exp={x0:vbX,y0:vbY,x1:vbX+vbW,y1:vbY+vbH};
+  _obExt.forEach(function(b){ _exp.x0=Math.min(_exp.x0,b[0]); _exp.y0=Math.min(_exp.y0,b[1]); _exp.x1=Math.max(_exp.x1,b[2]); _exp.y1=Math.max(_exp.y1,b[3]); });
   var _dx1=x1f,_dy0=y0f,_dy1=y1f; for(var _oi=0;_oi<obst.length;_oi++){var _ob=obst[_oi]; if(_ob[2]>_dx1)_dx1=_ob[2]; if(_ob[1]<_dy0)_dy0=_ob[1]; if(_ob[3]>_dy1)_dy1=_ob[3];}
   function _ovD(bx,by,bw,bh){ var i,o; for(i=0;i<obst.length;i++){o=obst[i]; if(!(bx+bw<=o[0]||bx>=o[2]||by+bh<=o[1]||by>=o[3]))return true;} return false; }
   function _gut(w,h,fit,side){ if(fit && !_ovD(fit[0],fit[1],w,h)) return fit; var gx,gy;
@@ -1411,6 +1445,7 @@ function buildSVG(p,g){
   { var _dnOut = (_depRot ? ('<g transform="rotate('+(+_rotDeg.toFixed(4))+' '+_pivXf.toFixed(3)+' '+_pivYf.toFixed(3)+')">'+dn+'</g>') : dn);
     s=s.replace("@@DN@@", function(){return _dnOut;}); }
   { var _fvw=_exp.x1-_exp.x0, _fvh=_exp.y1-_exp.y0;
+    s=s.replace("@@GRID@@", function(){ return (_exp.x0<vbX-0.01||_exp.y0<vbY-0.01||_exp.x1>vbX+vbW+0.01||_exp.y1>vbY+vbH+0.01)?_gridFor(_exp.x0,_exp.y0,_fvw,_fvh):grid; });
     s=s.replace("@@VB@@", _exp.x0.toFixed(2)+" "+_exp.y0.toFixed(2)+" "+_fvw.toFixed(2)+" "+_fvh.toFixed(2));
     s=s.replace("@@W@@",(_fvw*cm).toFixed(2)); s=s.replace("@@H@@",(_fvh*cm).toFixed(2)); }
   s+='</svg>'; return s;
@@ -1427,12 +1462,14 @@ function parseOverrides(str){const m={};String(str).split(",").forEach(tok=>{con
 function parseObstacles(txt){
   const out=[];
   for(const line of String(txt).split(String.fromCharCode(10))){
-    const m=_uniFrac(line).match(/^\s*([-+]?\s*\d[^,:]*?)\s*,\s*([-+]?\s*\d[^,:]*?)\s*(?:,\s*([^:]+?)\s*)?:\s*(.+)$/);
-    if(!m) continue; const _ox=dimIn(m[1],true)/12, _oy=dimIn(m[2],true)/12; if(!isFinite(_ox)||!isFinite(_oy)) continue;
-    let rest=(m[3]||""), w=0, h=0;
+    const m=_uniFrac(line).match(/^\s*(\*|[-+]?\s*\d[^,:]*?)\s*,\s*(\*|[-+]?\s*\d[^,:]*?)\s*(?:,\s*([^:]+?)\s*)?:\s*(.+)$/);
+    if(!m) continue; const _auto=(m[1].trim()==="*"||m[2].trim()==="*"); const _ox=_auto?null:dimIn(m[1],true)/12, _oy=_auto?null:dimIn(m[2],true)/12; if(!_auto&&(!isFinite(_ox)||!isFinite(_oy))) continue;
+    let rest=(m[3]||""), w=0, h=0, dia=0, meas="", mval=0;
+    const cm=rest.match(/\b(circ|dia)\s+([\d][^,\s]*)/i);
+    if(cm){ const v=_extDim(cm[2]); if(v>0){ meas=cm[1].toLowerCase(); mval=v; dia=(meas==="circ"?v/Math.PI:v)/12; } rest=rest.replace(cm[0]," "); }
     const sz=rest.match(/(\d[\d'"\u2019\u201d\/.\- ]*?)\s*[x\u00d7]\s*(\d[\d'"\u2019\u201d\/.\-]*)/i);
     if(sz){ const a=_extDim(sz[1]), b=_extDim(sz[2]); if(a>0&&b>0){ w=a/12; h=b/12; rest=rest.replace(sz[0]," "); } }
-    out.push({x:_ox,y:_oy,dir:rest.replace(/,/g," ").trim(),label:m[4].trim(),w:w,h:h});
+    out.push({x:_ox,y:_oy,auto:_auto,dir:rest.replace(/,/g," ").trim(),label:m[4].trim(),w:w,h:h,dia:dia,meas:meas,mval:mval});
   }
   return out;
 }
@@ -1442,7 +1479,7 @@ function readParams(){
   const bnum=id=>{const v=document.getElementById(id).value; return v===""?null:parseFloat(v);};
   const blank=id=>!(num(id)>0);
   return {client:(document.getElementById("custFirst").value.trim()+" "+document.getElementById("custLast").value.trim()).trim(),custFirst:document.getElementById("custFirst").value.trim(),custLast:document.getElementById("custLast").value.trim(),custVer:document.getElementById("custVer").value.trim(),custAddress:document.getElementById("custAddress").value.trim(),custCity:document.getElementById("custCity").value.trim(),custState:document.getElementById("custState").value.trim(),custPhone:document.getElementById("custPhone").value.trim(),mapApp:document.getElementById("mapApp").value,projectType:document.getElementById("projectType").value.trim(),notes:document.getElementById("notes").value,obstacles:parseObstacles(document.getElementById("obstacles").value),layout:document.getElementById("layout").value,segments:document.getElementById("segments").value,hasTopLanding:(getVal("attachExisting")||getVal("hasTopLanding")),
-    deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(num("width")||40),startSide:document.getElementById("startSide").value,depAngle:(getVal("depAngleOn")==="yes"?(num("depAngle")||0):0),depSide:document.getElementById("depSide").value,
+    deckHeight:(num("deckHeight")||24),rampRun:(num("rampRun")||96),targetSlope:document.getElementById("targetSlope").value,width:(document.getElementById("layout").value==="compound"?40:(num("width")||40)),startSide:document.getElementById("startSide").value,depAngle:(getVal("depAngleOn")==="yes"?(num("depAngle")||0):0),depSide:document.getElementById("depSide").value,
     runs:Math.max(1,Math.round(num("runs"))),align:document.getElementById("align").value,rampOverrides:(getVal("useOverrides")?parseOverrides(document.getElementById("rampOverrides").value):{}),rampOffsets:(getVal("useOverrides")?parseOffsets(document.getElementById("rampOffsets").value):{}),sameSize:getVal("sameSize"),rampRuns:parseFloatList(document.getElementById("rampRuns").value),rampWidths:parseFloatList(document.getElementById("rampWidths").value),restWidths:parseFloatList(document.getElementById("restWidths").value),restDepths:parseFloatList(document.getElementById("restDepths").value),turnDepths:parseFloatList(document.getElementById("turnDepths").value),
     legs:parseList(document.getElementById("legs").value),gap:Math.max(16,(num("hairpinLen")||96)-2*(num("width")||40)),turnDepth:(num("turnDepth")||48),
     topW:(getVal("attachExisting")?num("existingLen")*12:(num("topW")||60)),topD:(getVal("attachExisting")?num("existingDepth")*12:(num("topD")||60)),topExt:(getVal("topExtOn")==="yes"?document.getElementById("topExt").value:""),restW:num("restW"),restD:num("restD"),restAfter:parseList(document.getElementById("restAfter").value),
@@ -1467,7 +1504,7 @@ function updateVisibility(){
   show(".only-depangle",getVal("depAngleOn")==="yes");
   show(".only-topexist",document.getElementById("topOnExistingDeck").checked);
   show(".only-topexistother",document.getElementById("topOnExistingDeck").checked&&getVal("topExistFrame")==="other");
-  extFromText(); segFromText(); svFromText(); show(".only-topext",document.getElementById("hasTopLanding").checked&&getVal("topExtOn")==="yes");
+  extFromText(); segFromText(); svFromText(); obFromText(); show(".only-topext",document.getElementById("hasTopLanding").checked&&getVal("topExtOn")==="yes");
   show(".only-persection",L!=="compound"&&!document.getElementById("sameSize").checked);
   show(".only-uniform",L!=="compound"&&document.getElementById("sameSize").checked);
   show(".ps-straight",document.getElementById("layout").value==="straight");
@@ -1685,6 +1722,8 @@ function render(){
   try{ extAfterRender(g,p); }catch(e){}
   try{ rampNeeded(p); }catch(e){}
   try{ svAfterRender(g,p); }catch(e){}
+  try{ segAfterRender(p); }catch(e){}
+  try{ obAfterRender(); }catch(e){}
 }
 ids.forEach(id=>{const el=document.getElementById(id);
   if(id==="topExistFrame"||id==="topOnExistingDeck"){ el.addEventListener("change",updateVisibility); return; }
@@ -1769,18 +1808,19 @@ function segFromText(){
   var box=document.getElementById("segUI"); if(!box) return;
   var t=document.getElementById("segments").value; if(t===_segTxt && box.childNodes.length) return;
   _segRows=parseSegments(t).map(function(sg){
-    if(sg.t==="ramp") return {type:"r:"+(sg.cut==="upd"?"up":sg.cut), a:_ftTxt(sg.len), b:"", align:sg.alignSet?sg.align:"", norail:!!sg.norail};
-    if(sg.t==="landing") return {type:"landing", a:_ftTxt(sg.along), b:_ftTxt(sg.across), align:(sg.align==="left"?"":sg.align), norail:!!sg.norail};
+    var _nd=sg.nudge>0?"right":(sg.nudge<0?"left":""), _nv=sg.nudge?inFrac(Math.abs(sg.nudge)):"";
+    if(sg.t==="ramp") return {type:"r:"+(sg.cut==="upd"?"up":sg.cut), a:_ftTxt(sg.len), b:"", align:sg.alignSet?sg.align:"", norail:!!sg.norail, nd:_nd, nv:_nv};
+    if(sg.t==="landing") return {type:"landing", a:_ftTxt(sg.along), b:_ftTxt(sg.across), align:(sg.align==="left"?"":sg.align), norail:!!sg.norail, nd:_nd, nv:_nv};
     if(sg.t==="turn") return {type:"turn:"+sg.dir};
     return {type:"hairpin", a:_ftTxt(sg.along), b:_ftTxt(sg.across)}; });
   _segTxt=t; segBuild();
 }
 function segToText(){
-  var out=_segRows.map(function(r){ var k=r.type, A=_ftVal(r.a), B=_ftVal(r.b);
+  var out=_segRows.map(function(r){ var k=r.type, A=_ftVal(r.a), B=_ftVal(r.b), nv=dimIn(r.nv||""), NU=(r.nd&&isFinite(nv)&&nv>0)?(" nudge"+(r.nd==="left"?"l":"r")+" "+inFrac(nv).replace(" ","-")+'"'):"";
     if(k.indexOf("turn:")===0) return "turn "+k.slice(5);
-    if(k.indexOf("r:")===0){ if(!(A>0)) return ""; return "ramp "+_ftTxt(A)+" "+k.slice(2)+(r.align?" "+r.align:"")+(r.norail?" norail":""); }
+    if(k.indexOf("r:")===0){ if(!(A>0)) return ""; return "ramp "+_ftTxt(A)+" "+k.slice(2)+(r.align?" "+r.align:"")+(r.norail?" norail":"")+NU; }
     if(!(A>0&&B>0)) return "";
-    if(k==="landing") return "landing "+_ftTxt(A)+"x"+_ftTxt(B)+(r.align?" "+r.align:"")+(r.norail?" norail":"");
+    if(k==="landing") return "landing "+_ftTxt(A)+"x"+_ftTxt(B)+(r.align?" "+r.align:"")+(r.norail?" norail":"")+NU;
     return "hairpin "+_ftTxt(A)+"x"+_ftTxt(B); }).filter(Boolean).join("\n");
   var ta=document.getElementById("segments"); ta.value=out; _segTxt=out; render();
 }
@@ -1794,9 +1834,12 @@ function segBuild(){
     if(isR) h+='<div class="row2"><label class="field"><span class="lab">Length <span class="u">(ft)</span></span><input data-k="a" type="text" autocomplete="off" value="'+esc(r.a||"")+'" placeholder="e.g. 8"></label>';
     if(isL||isH) h+='<div class="row2"><label class="field"><span class="lab">'+(isH?"Depth":"Along the run")+' <span class="u">(ft)</span></span><input data-k="a" type="text" autocomplete="off" value="'+esc(r.a||"")+'" placeholder="e.g. '+(isH?"4":"5")+'"></label><label class="field"><span class="lab">Across <span class="u">(ft)</span></span><input data-k="b" type="text" autocomplete="off" value="'+esc(r.b||"")+'" placeholder="e.g. '+(isH?"8":"5")+'"></label></div>';
     if(isR||isL){
-      var opts=(isR&&afterHP)?[["","Folds right (default)"],["left","Folds left"]]:[["","Flush left (default)"],["right","Flush right"],["center","Centered"]];
+      var opts=(isR&&afterHP)?[["","Folds right"],["left","Folds left"]]:[["","Flush left"],["right","Flush right"],["center","Centered"]];
       if(isR&&!afterHP&&r.align==="left") r.align="";
       h+=(isR?'':'<div class="row2">')+'<label class="field"><span class="lab">Side</span><select data-k="align">'+opts.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===(r.align||"")?' selected':'')+'>'+o[1]+'</option>'; }).join("")+'</select></label></div>';
+      h+='<div class="row2"><label class="field"><span class="lab">Nudge</span><select data-k="nd"><option value=""'+(!r.nd?' selected':'')+'></option><option value="left"'+(r.nd==="left"?' selected':'')+'>Toward left</option><option value="right"'+(r.nd==="right"?' selected':'')+'>Toward right</option></select></label>';
+      h+='<label class="field"><span class="lab">Distance <span class="u">(in)</span></span><input data-k="nv" type="text" autocomplete="off" placeholder="e.g. 6-1/2" value="'+esc(r.nv||"")+'"'+(r.nd?'':' disabled')+'></label></div>';
+      h+='<div data-k="warn" class="hint" style="display:none;font-weight:600;margin:-2px 0 4px"></div>';
       h+='<label class="checkrow" style="margin-bottom:2px"><input data-k="norail" type="checkbox"'+(r.norail?' checked':'')+'> No handrails on this '+(isR?"ramp":"landing")+'</label>';
     }
     card.innerHTML=h; box.appendChild(card);
@@ -1806,6 +1849,9 @@ function segBuild(){
       r.type=nk; segBuild(); segToText(); });
     ["a","b"].forEach(function(f){ var el=card.querySelector('[data-k="'+f+'"]'); if(el) el.addEventListener("input",function(){ r[f]=this.value; segToText(); }); });
     var al=card.querySelector('[data-k="align"]'); if(al) al.addEventListener("change",function(){ r.align=this.value; segToText(); });
+    var ndS=card.querySelector('[data-k="nd"]'), nvI=card.querySelector('[data-k="nv"]');
+    if(ndS) ndS.addEventListener("change",function(){ r.nd=this.value; nvI.disabled=!r.nd; if(r.nd&&!nvI.value){ nvI.focus(); } segToText(); });
+    if(nvI) nvI.addEventListener("input",function(){ r.nv=this.value; segToText(); });
     var nr=card.querySelector('[data-k="norail"]'); if(nr) nr.addEventListener("change",function(){ r.norail=this.checked; segToText(); });
     card.querySelector('[data-act="up"]').addEventListener("click",function(){ if(i>0){ _segRows.splice(i-1,0,_segRows.splice(i,1)[0]); segBuild(); segToText(); } });
     card.querySelector('[data-act="dn"]').addEventListener("click",function(){ if(i<_segRows.length-1){ _segRows.splice(i+1,0,_segRows.splice(i,1)[0]); segBuild(); segToText(); } });
@@ -1881,6 +1927,55 @@ function svBuild(){
   add.addEventListener("click",function(){ _svRows.push({label:_svNextLabel(),reading:"",where:"",dist:""}); svBuild(); svToText(); var ins=box.querySelectorAll('[data-k="reading"]'); if(ins.length) ins[ins.length-1].focus(); });
   box.appendChild(add);
 }
+function segAfterRender(p){ var cards=document.querySelectorAll("#segUI .segcard");
+  cards.forEach(function(card,i){ var w=card.querySelector('[data-k="warn"]'); if(!w) return; var sw=(p.layout==="compound")?_segWarn[_segIdx(i)]:null;
+    if(sw){ w.textContent=sw.msg; w.style.color=sw.bad?"#c0392b":"#9a6700"; w.style.display="block"; } else w.style.display="none"; }); }
+/* card i -> parsed segment index (rows with missing sizes are skipped in the text) */
+function _segIdx(i){ var n=-1; for(var k=0;k<=i&&k<_segRows.length;k++){ var r=_segRows[k], A=_ftVal(r.a), B=_ftVal(r.b), ok=r.type.indexOf("turn:")===0||(r.type.indexOf("r:")===0?A>0:(A>0&&B>0)); if(ok) n++; else if(k===i) return -1; } return n; }
+/* ---- Obstacles: cards <-> hidden #obstacles text; positions set by dragging on the plan ---- */
+var _obRows=[], _obTxt=null;
+var OB_DIRS=[["","Auto"],["above","Above"],["below","Below"],["left","Left"],["right","Right"],["above-left","Above-left"],["above-right","Above-right"],["below-left","Below-left"],["below-right","Below-right"]];
+function _inTxt(v){ return inFrac(v).replace(" ","-")+'"'; }
+function obFromText(){
+  var box=document.getElementById("obUI"); if(!box) return;
+  var t=document.getElementById("obstacles").value; if(t===_obTxt && box.childNodes.length) return;
+  _obRows=parseObstacles(t).map(function(o){ var d=(o.dir||"").toLowerCase().replace(/\s+/g,"-");
+    var dn={a:"above",b:"below",l:"left",r:"right",al:"above-left",ar:"above-right",bl:"below-left",br:"below-right",aboveleft:"above-left",aboveright:"above-right",belowleft:"below-left",belowright:"below-right"}; d=dn[d.replace(/-/g,"")]||d;
+    return {label:o.label, shape:(o.dia>0?"circle":(o.w>0&&o.h>0?"rect":"")), w:o.w>0?inFrac(o.w*12):"", d:o.h>0?inFrac(o.h*12):"", cm:o.meas||"circ", cv:o.mval>0?inFrac(o.mval):"", dir:d, x:o.auto?null:o.x, y:o.auto?null:o.y}; });
+  _obTxt=t; obBuild();
+}
+function obToText(quiet){
+  var out=_obRows.map(function(r){ var parts=[(r.x==null?"*":String(Math.round(r.x*1000)/1000)), (r.y==null?"*":String(Math.round(r.y*1000)/1000))];
+    if(r.shape==="rect"){ var W=dimIn(r.w), D=dimIn(r.d); if(W>0&&D>0) parts.push(_inTxt(W)+"x"+_inTxt(D)); }
+    if(r.shape==="circle"){ var C=dimIn(r.cv); if(C>0) parts.push((r.cm==="dia"?"dia ":"circ ")+_inTxt(C)); }
+    if(r.dir) parts.push(r.dir);
+    return parts.join(", ")+": "+(String(r.label||"").trim().replace(/[\r\n]+/g," ")||"Obstacle"); }).join("\n");
+  document.getElementById("obstacles").value=out; _obTxt=out; if(!quiet) render();
+}
+function obAfterRender(){ var ch=false; document.querySelectorAll("#paper .obMarker").forEach(function(el){ var i=+el.getAttribute("data-idx"), r=_obRows[i]; if(r&&r.x==null){ r.x=parseFloat(el.getAttribute("data-x")); r.y=parseFloat(el.getAttribute("data-y")); ch=true; } });
+  if(ch) obToText(true); }
+function setObPos(i,x,y){ if(!_obRows[i]) return; _obRows[i].x=x; _obRows[i].y=y; obToText(); }
+function obBuild(){
+  var box=document.getElementById("obUI"); if(!box) return; box.innerHTML="";
+  _obRows.forEach(function(r,i){
+    var card=document.createElement("div"); card.className="obcard"; card.style.cssText="border:1px solid #e7e4dc;border-radius:10px;padding:8px 10px;margin:6px 0";
+    var h='<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input data-k="label" type="text" autocomplete="off" placeholder="Name, e.g. Utility pole" value="'+esc(r.label||"")+'" style="flex:1;padding:8px 10px;font-size:16px;border:1px solid #d8d4ca;border-radius:8px"><button type="button" data-act="del" title="Remove" style="font-size:15px;padding:4px 9px;min-width:34px">&times;</button></div>';
+    h+='<div class="row2"><label class="field"><span class="lab">Shape</span><select data-k="shape"><option value=""'+(!r.shape?" selected":"")+'></option><option value="rect"'+(r.shape==="rect"?" selected":"")+'>Rectangle</option><option value="circle"'+(r.shape==="circle"?" selected":"")+'>Circle</option></select></label>';
+    h+='<label class="field"><span class="lab">Label direction</span><select data-k="dir">'+OB_DIRS.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===(r.dir||"")?" selected":"")+'>'+o[1]+'</option>'; }).join("")+'</select></label></div>';
+    if(r.shape==="rect") h+='<div class="row2"><label class="field"><span class="lab">Width <span class="u">(in)</span></span><input data-k="w" type="text" autocomplete="off" placeholder="e.g. 36" value="'+esc(r.w||"")+'"></label><label class="field"><span class="lab">Depth <span class="u">(in)</span></span><input data-k="d" type="text" autocomplete="off" placeholder="e.g. 24" value="'+esc(r.d||"")+'"></label></div>';
+    if(r.shape==="circle") h+='<div class="row2"><label class="field"><span class="lab">Measured by</span><select data-k="cm"><option value="circ"'+(r.cm!=="dia"?" selected":"")+'>Circumference</option><option value="dia"'+(r.cm==="dia"?" selected":"")+'>Diameter</option></select></label><label class="field"><span class="lab">Size <span class="u">(in)</span></span><input data-k="cv" type="text" autocomplete="off" placeholder="e.g. 38" value="'+esc(r.cv||"")+'"></label></div>';
+    card.innerHTML=h; box.appendChild(card);
+    card.querySelector('[data-k="label"]').addEventListener("input",function(){ r.label=this.value; obToText(); });
+    card.querySelector('[data-k="shape"]').addEventListener("change",function(){ r.shape=this.value; obBuild(); obToText(); });
+    card.querySelector('[data-k="dir"]').addEventListener("change",function(){ r.dir=this.value; obToText(); });
+    ["w","d","cv"].forEach(function(f){ var el=card.querySelector('[data-k="'+f+'"]'); if(el) el.addEventListener("input",function(){ r[f]=this.value; obToText(); }); });
+    var cm=card.querySelector('[data-k="cm"]'); if(cm) cm.addEventListener("change",function(){ r.cm=this.value; obToText(); });
+    card.querySelector('[data-act="del"]').addEventListener("click",function(){ _obRows.splice(i,1); obBuild(); obToText(); });
+  });
+  var add=document.createElement("button"); add.type="button"; add.textContent="+ Add obstacle"; add.style.cssText="margin:2px 0 4px;font-size:14px;padding:6px 12px";
+  add.addEventListener("click",function(){ _obRows.push({label:"",shape:"",w:"",d:"",cm:"circ",cv:"",dir:"",x:null,y:null}); obBuild(); obToText(); var ins=box.querySelectorAll('[data-k="label"]'); if(ins.length) ins[ins.length-1].focus(); });
+  box.appendChild(add);
+}
 /* Distance shots: place the marker beside the ramp path at that distance (same placement the app uses for a new marker). */
 function svAfterRender(g,p){
   if(_svBusy) return; var wm=_svWhereMap(), labs=Object.keys(wm).filter(function(k){ return wm[k].w==="dist" && isFinite(_ftVal(wm[k].d)||(String(wm[k].d).trim()==="0"?0:NaN)); });
@@ -1894,7 +1989,7 @@ function svAfterRender(g,p){
   if(changed){ el.value=JSON.stringify(m); _svBusy=true; try{ render(); } finally { _svBusy=false; } }
 }
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.149",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.153",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -1907,7 +2002,7 @@ function resetDesign(){
     if(el.type==="checkbox") el.checked=el.defaultChecked;
     else if(el.tagName==="SELECT"){ for(const o of el.options) o.selected=o.defaultSelected; }
     else { el.value=el.defaultValue; el.disabled=false; }});
-  _extTxt=null; _segTxt=null; _svTxt=null; updateVisibility();
+  _extTxt=null; _segTxt=null; _svTxt=null; _obTxt=null; updateVisibility();
 }
 function loadDesign(input){
   const file=input.files&&input.files[0]; if(!file)return;
