@@ -62,7 +62,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.158</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.160</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -292,7 +292,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.158</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.160</footer>
 
 <script>
 "use strict";
@@ -563,6 +563,40 @@ function projectDist(path,xF,yF){
     if(pd<best){ best=pd; bd=sg.d0+t*(sg.d1-sg.d0); } }
   return bd;
 }
+/* Minimum working grid on the plan: 51' wide x 30' high, grown away from the existing structure.
+   Input/output in plan feet; box = pieces bounding box. */
+var GRID_MIN_W=51, GRID_MIN_H=30;
+function _minGridBox(x0,y0,x1,y1,p){
+  var side=(p&&p.showDeckRef!==false)?(p.deckRefSide||"top"):"", w=x1-x0, h=y1-y0;
+  if(w<GRID_MIN_W){ var ex=GRID_MIN_W-w; if(side==="left") x1+=ex; else if(side==="right") x0-=ex; else { x0-=ex/2; x1+=ex/2; } }
+  if(h<GRID_MIN_H){ var ey=GRID_MIN_H-h; if(side==="top") y1+=ey; else if(side==="bottom") y0-=ey; else { y0-=ey/2; y1+=ey/2; } }
+  return {x0:x0,y0:y0,x1:x1,y1:y1};
+}
+/* The plan "window": at least 51' x 30' of grid (plus margins), placed with the existing structure at
+   the top-center (or the side it is on), then slid only as far as needed to keep everything on it:
+   ramp pieces + margins, survey shots, BM, reference points, and obstacles. Grows only if it can't fit.
+   C = content box {x0,y0,x1,y1} in plan feet (already including margins); anc = structure/top-landing box. */
+function _planWindow(p,C,anc){
+  var W=GRID_MIN_W+4.4, H=GRID_MIN_H+4.4, side=(p&&p.showDeckRef!==false)?(p.deckRefSide||"top"):"top";
+  var add=function(x,y,r){ if(x==null||y==null||!isFinite(x)||!isFinite(y)) return; if(Math.abs(x-(C.x0+C.x1)/2)>120||Math.abs(y-(C.y0+C.y1)/2)>120) return; C.x0=Math.min(C.x0,x-r); C.y0=Math.min(C.y0,y-r); C.x1=Math.max(C.x1,x+r); C.y1=Math.max(C.y1,y+r); };
+  C={x0:C.x0,y0:C.y0,x1:C.x1,y1:C.y1};
+  try{ var sp=p.shotPos||{}; Object.keys(sp).forEach(function(k){ var v=sp[k]; if(v&&v.length===2) add(+v[0],+v[1],3.0); }); }catch(_){}
+  if(p.bmX!=null) add(+p.bmX,+p.bmY,1.2);
+  (p.refPts||[]).forEach(function(r){ if(r&&r.show!==false) add(r.x,r.y,1.2); });
+  (p.obstacles||[]).forEach(function(o){ if(o.isLine){ (o.pts||[]).forEach(function(t){ add(t.x,t.y,1.2); }); } else if(!o.auto){ add(o.x,o.y,Math.max(1.2,(o.w||0)/2+0.6,(o.h||0)/2+0.6,(o.dia||0)/2+0.6)); } });
+  var ax=(anc.x0+anc.x1)/2, ay=(anc.y0+anc.y1)/2, A0x, A0y;
+  if(side==="left"){ A0x=C.x0; A0y=ay-H/2; } else if(side==="right"){ A0x=C.x1-W; A0y=ay-H/2; }
+  else if(side==="bottom"){ A0x=ax-W/2; A0y=C.y1-H; } else { A0x=ax-W/2; A0y=C.y0; }
+  var x0,x1,y0,y1;
+  if(C.x1-C.x0<=W){ x0=Math.max(C.x1-W,Math.min(C.x0,A0x)); x1=x0+W; } else { x0=C.x0; x1=C.x1; }
+  if(C.y1-C.y0<=H){ y0=Math.max(C.y1-H,Math.min(C.y0,A0y)); y1=y0+H; } else { y0=C.y0; y1=C.y1; }
+  return {x0:x0,y0:y0,x1:x1,y1:y1};
+}
+function _planMargins(p,g){ return {mL:3.8,mR:6.0,mT:(p.notchEnable?6.0:4.8),mB:Math.max(3.4,((g&&g.maxGroupRise>30)?5.0:3.8))}; }
+function _planWin(p,gp){ var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9, a=null;
+  gp.pieces.forEach(function(q){ x0=Math.min(x0,q.x0/12); y0=Math.min(y0,q.y0/12); x1=Math.max(x1,q.x1/12); y1=Math.max(y1,q.y1/12); if(q.ref&&!a) a=q; });
+  if(x0>1e8) return null; if(!a) a=gp.pieces[0]; var M=_planMargins(p,gp);
+  return _planWindow(p,{x0:x0-M.mL,y0:y0-M.mT,x1:x1+M.mR,y1:y1+M.mB},{x0:a.x0/12,y0:a.y0/12,x1:a.x1/12,y1:a.y1/12}); }
 function getSurvey(p,g,alreadyPlan){
   var parsed=parseSurveyRaw(p.survey);
   if(parsed.bm==null || !parsed.shots.length) return {ok:false,points:[],shots:[],bm:null};
@@ -571,6 +605,7 @@ function getSurvey(p,g,alreadyPlan){
   var pos=p.shotPos||{};
   var x0f=1e9,y0f=1e9,x1f=-1e9,y1f=-1e9; for(var i=0;i<gp.pieces.length;i++){var pc=gp.pieces[i]; if(pc.x0<x0f)x0f=pc.x0; if(pc.y0<y0f)y0f=pc.y0; if(pc.x1>x1f)x1f=pc.x1; if(pc.y1>y1f)y1f=pc.y1;}
   var xlo=x0f/12-2,xhi=x1f/12+2,ylo=y0f/12-2,yhi=y1f/12+2;
+  { var GB=_planWin(p,gp); if(GB){ xlo=Math.min(xlo,GB.x0+0.5); xhi=Math.max(xhi,GB.x1-0.5); ylo=Math.min(ylo,GB.y0+0.5); yhi=Math.max(yhi,GB.y1-0.5); } }
   var n=parsed.shots.length, shots=[];
   for(var k=0;k<n;k++){ var sh=parsed.shots[k]; var xy=pos[sh.label];
     if(!(xy&&xy.length===2)){ var dseed; var num=parseFloat(sh.label);
@@ -1072,7 +1107,11 @@ function buildSVG(p,g){
   }
   let mcE=0; { let cons=0; for(const pc of g.pieces){ if(pc.ramp){cons++;if(cons>mcE)mcE=cons;} else if(!pc.ref){cons=0;} } }
   const mB=Math.max(3.4, (g.maxGroupRise>30?5.0:3.8));
-  const mTn=mT; const vbX=x0f-mL,vbY=y0f-mTn,vbW=(x1f-x0f)+mL+mR,vbH=(y1f-y0f)+mTn+mB, cm=0.5,sc=slopeClass(g.slopeRatio);
+  const mTn=mT; let vbX=x0f-mL,vbY=y0f-mTn,vbW=(x1f-x0f)+mL+mR,vbH=(y1f-y0f)+mTn+mB; const cm=0.5,sc=slopeClass(g.slopeRatio);
+  { var _anc=null; g.pieces.forEach(function(q){ if(q.ref&&!_anc) _anc=q; }); if(!_anc) _anc=g.pieces[0];
+    if(_anc){ var GB=_planWindow(p,{x0:vbX,y0:vbY,x1:vbX+vbW,y1:vbY+vbH},{x0:_anc.x0/F,y0:_anc.y0/F,x1:_anc.x1/F,y1:_anc.y1/F});
+      var _gw=_planWin(p,g); if(_gw){ GB={x0:Math.min(GB.x0,_gw.x0),y0:Math.min(GB.y0,_gw.y0),x1:Math.max(GB.x1,_gw.x1),y1:Math.max(GB.y1,_gw.y1)}; }
+      vbX=GB.x0; vbY=GB.y0; vbW=GB.x1-GB.x0; vbH=GB.y1-GB.y0; } }
   let s='<svg viewBox="@@VB@@" width="@@W@@cm" height="@@H@@cm" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace,Menlo,Consolas,monospace">';
   let dn="";
   let grid="";
@@ -1481,7 +1520,7 @@ function buildSVG(p,g){
         for(var _di3=0; _di3<_dl.length && !_found; _di3++){ for(var _dk2=0; _dk2<_sweep.length && !_found; _dk2++){
           var _Lx2=cx+_sweep[_dk2][0]*_dl[_di3], _Ly2=cy+_sweep[_dk2][1]*_dl[_di3];
           if(_shotLabelClear(g,F,_Lx2,_Ly2,_avoid) && _segClearExc(g,F,cx,cy,_Lx2,_Ly2,_own)){ _lx=_Lx2; _ly=_Ly2; _found=true; } } }
-        _lx=Math.max(vbX+0.4,Math.min(vbX+vbW-0.4,_lx)); _ly=Math.max(vbY+0.4,Math.min(vbY+vbH-0.4,_ly));
+        _lx=Math.max(vbX+1.5,Math.min(vbX+vbW-1.5,_lx)); _ly=Math.max(vbY+0.4,Math.min(vbY+vbH-0.4,_ly));
         var _ldx=_lx-cx,_ldy=_ly-cy,_ln=Math.hypot(_ldx,_ldy)||1; _ldx/=_ln; _ldy/=_ln;
         if(_ln>0.6) s+='<line x1="'+(cx+_ldx*0.36).toFixed(2)+'" y1="'+(cy+_ldy*0.36).toFixed(2)+'" x2="'+(_lx-_ldx*0.5).toFixed(2)+'" y2="'+(_ly-_ldy*0.5).toFixed(2)+'" stroke="#c0392b" stroke-width="0.03"/>';
         s+='<g class="shotLabel" data-label="'+esc(sh.label)+'" data-x="'+_lx.toFixed(3)+'" data-y="'+_ly.toFixed(3)+'">';
@@ -2283,7 +2322,7 @@ function copyText(btn){
   function fallback(){ var ta=document.createElement("textarea"); ta.value=txt; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{ done(document.execCommand("copy")); }catch(e){ done(false); } ta.remove(); }
 }
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.158",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.160",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
