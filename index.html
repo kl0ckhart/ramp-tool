@@ -62,7 +62,7 @@
 </style>
 </head>
 <body>
-  <header><div class="brand">Care Construction</div><div class="ver">v0.8.157</div></header>
+  <header><div class="brand">Care Construction</div><div class="ver">v0.8.158</div></header>
   <div class="sub"><b id="clientLabel"><span class="ph">[client name]</span></b></div>
 
   <main>
@@ -71,6 +71,8 @@
       <div class="filebar">
         <button class="sec" onclick="saveDesign()">Save design</button>
         <button class="sec" onclick="document.getElementById('loadFile').click()">Open design</button>
+        <button class="sec" onclick="exportText()" title="Save every question and answer as a plain text file">Export inputs (text)</button>
+        <button class="sec" onclick="copyText(this)" title="Copy every question and answer to the clipboard">Copy as text</button>
         <button class="sec" onclick="resetDesign()">Reset</button>
         <button class="sec" onclick="expOpen()" title="Explain to a customer why the ramp is this long">Explain length</button>
         <input id="loadFile" type="file" accept=".json,application/json" style="display:none" onchange="loadDesign(this)">
@@ -290,7 +292,7 @@
       </div>
     </section>
   </main>
-  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.157</footer>
+  <footer>Runs entirely on this device — nothing you type is uploaded or saved anywhere. &middot; Care Construction Ramp Project v0.8.158</footer>
 
 <script>
 "use strict";
@@ -2217,8 +2219,71 @@ function svAfterRender(g,p){
     if(!(o&&o.length===2&&Math.abs(o[0]-nx)<0.01&&Math.abs(o[1]-ny)<0.01)){ m[L]=[nx,ny]; changed=true; } });
   if(changed){ el.value=JSON.stringify(m); _svBusy=true; try{ render(); } finally { _svBusy=false; } }
 }
+/* ---- Plain-text export of every visible question and answer ---- */
+function buildTextExport(){
+  var L=[], root=document.querySelector("section.inputs"), now=new Date();
+  var cust=[getVal("custFirst"),getVal("custLast")].filter(Boolean).join(" "), addr=[getVal("custAddress"),getVal("custCity"),getVal("custState")].filter(Boolean).join(", ");
+  L.push("CARE CONSTRUCTION "+String(getVal("projectType")||"Ramp Project").toUpperCase()+" \u2014 v"+(document.querySelector(".ver")||{textContent:""}).textContent.replace(/^v/,""));
+  if(cust) L.push("Customer: "+cust+(addr?", "+addr:"")); if(getVal("custPhone")) L.push("Phone: "+getVal("custPhone"));
+  L.push("Exported: "+now.toLocaleString()); L.push(""); L.push("CUSTOMER");
+  var DIMS={deckHeight:0,topW:0,topD:0,existingLen:1,existingDepth:1,doorWidth:0,doorOffset:0,stepDepth:0,stepWidth:0,notchWidth:0,notchDepth:0,notchOffset:0,rampRun:0,width:0,hairpinLen:0,turnDepth:0,restW:0,restD:0,handrailHeight:0,postSpacingMax:0,groundDrop:0,refDist:0};
+  var fmtDim=function(id,v){ var ft=DIMS[id]===1, x=dimIn(v,ft); if(!isFinite(x)) return v; var neg=x<0; x=Math.abs(Math.round(x*16)/16); var t=(x>=12&&!ft)?(inFrac(x)+'" ('+ftCompact(x)+')'):(ft?ftCompact(x):inFrac(x)+'"'); return (neg?"-":"")+t; };
+  var vis=function(el){ return !!(el && el.offsetParent!==null); };
+  var lab=function(f){ var l=f.querySelector(".lab"); var t=(l?l.textContent:f.textContent).replace(/\s+/g," ").trim(); return t.replace(/\s*\((in|ft|rev|rod readings)\)\s*$/i,function(m){ return " "+m.trim(); }); };
+  var val=function(c){ if(c.tagName==="SELECT") return (c.options[c.selectedIndex]||{text:""}).text.trim(); if(c.type==="checkbox") return c.checked?"Yes":"No"; return String(c.value||"").trim(); };
+  var skipSec=false, done={};
+  var nodes=root.querySelectorAll(".sechead, label.field, div.field, label.checkrow, #extUI, #segUI, #svUI, #refUI, #obUI, #rampNeed");
+  nodes.forEach(function(n){
+    if(n.closest("details")) return;
+    if(n.classList.contains("sechead")){ var h=n.textContent.trim(); skipSec=/freecad/i.test(h); if(!skipSec){ L.push(""); L.push(h.toUpperCase()); } return; }
+    if(skipSec) return;
+    var ui=n.closest("#extUI, #segUI, #svUI, #refUI, #obUI"); if(ui && ui!==n) return;
+    if(n.id==="rampNeed"){ if(vis(n)) n.innerText.split("\n").map(function(t){ return t.trim(); }).filter(Boolean).forEach(function(t,i){ L.push((i?"    ":"  ")+t); }); return; }
+    if(n.id==="extUI"){ if(!vis(n)) return; (_extRows||[]).forEach(function(r,i){ var sd={left:"left of",right:"right of",top:"above",bottom:"below"}[r.side]||r.side;
+        L.push("    Extension "+(i+1)+": "+(r.w||"?")+'" wide x '+(r.d||"?")+'" deep, '+sd+" the top landing"+(r.at?", slid "+r.at+'" from the '+((r.side==="left"||r.side==="right")?"top":"left")+" end":"")+(r.ramp?", first ramp comes off it":"")); }); return; }
+    if(n.id==="segUI"){ if(!vis(n)) return; (_segRows||[]).forEach(function(r,i){ var t=(SEG_TYPES.filter(function(o){ return o[0]===r.type; })[0]||["",r.type])[1], x=[];
+        if(r.type.indexOf("r:")===0) x.push((r.a||"?")+"'"); else if(r.type==="landing"||r.type==="hairpin") x.push((r.a||"?")+"' x "+(r.b||"?")+"'");
+        if(r.align) x.push({right:"flush right",center:"centered",left:(i>0&&_segRows[i-1].type==="hairpin")?"folds left":"flush left"}[r.align]||r.align);
+        if(r.nd&&r.nv) x.push("nudged "+r.nv+'" toward '+r.nd); if(r.norail) x.push("no handrails");
+        L.push("    "+(i+1)+". "+t+(x.length?", "+x.join(", "):"")); }); return; }
+    if(n.id==="svUI"){ if(!vis(n)) return; L.push("    Benchmark (BM): "+(String(_svBM||"").trim()||"(blank)"));
+      (_svRows||[]).forEach(function(r){ L.push("    Shot "+r.label+": "+(String(r.reading||"").trim()||"(blank)")+(r.where==="dist"?" ("+(r.dist||"?")+" from the deck)":(r.where==="drag"?" (dragged on the drawing)":""))); }); return; }
+    var where=function(m){ if(!m||!m.mode||m.mode==="drag") return "dragged on the drawing"; var P=measPoints(), nm=function(k){ return (P[k]&&P[k].name)||"(missing point)"; };
+      if(m.mode==="tapes") return (m.d1||"?")+" from "+nm(m.p1)+", "+(m.d2||"?")+" from "+nm(m.p2)+(m.side==="flip"?" (other side)":"");
+      return (m.d1||"?")+" along from "+nm(m.p1)+" toward "+nm(m.p2)+", "+(m.d2||"0")+" out to the "+(m.side==="left"?"left":"right"); };
+    if(n.id==="refUI"){ if(!vis(n)) return; if(!(_refRows||[]).length) L.push("    (none)"); (_refRows||[]).forEach(function(r,i){ L.push("    "+(r.name||("Reference point "+(i+1)))+": "+where(r.m)+(r.show===false?" (hidden on drawing)":"")); }); return; }
+    if(n.id==="obUI"){ if(!vis(n)) return; if(!(_obRows||[]).length) L.push("    (none)"); var st=window._lineStat||[];
+      (_obRows||[]).forEach(function(r,i){ var nm=r.label||("Obstacle "+(i+1)), d;
+        if(r.shape==="line"){ L.push("    "+nm+": line, "+(r.kind==="barrier"?"barrier":"driveway / walkway")+", "+((r.pts||[]).length)+" points"+((r.pts||[]).length>=3?(r.curve==="smooth"?", smooth curve":", straight segments"):""));
+          (r.pts||[]).forEach(function(t,k){ L.push("        Point "+(k+1)+": "+where(t.m)); }); if(st[i]&&st[i].msg) L.push("        Check: "+st[i].msg); return; }
+        d=r.shape==="rect"?("rectangle "+(r.w||"?")+'" x '+(r.d||"?")+'"'):(r.shape==="circle"?("circle, "+(r.cv||"?")+'" '+(r.cm==="dia"?"diameter":"around")):"marker");
+        L.push("    "+nm+": "+d+"; "+where(r.m)+(r.dir?"; label "+r.dir:"")); }); return; }
+    if(!vis(n)) return;
+    if(n.querySelector("#svUI, #refUI, #obUI, #segUI, #extUI")){ L.push("  "+lab(n).replace(/\s*\((rod readings|lengths in ft[^)]*)\)/i,"")+":"); return; }
+    var c=n.querySelector("input:not([type=hidden]), select, textarea"); if(!c || !c.id || c.id==="fcexport" || c.id==="loadFile") return; if(done[c.id]) return; done[c.id]=1;
+    if(c.type==="checkbox"){ L.push("  "+n.textContent.replace(/\s+/g," ").trim()+": "+(c.checked?"Yes":"No")); return; }
+    var v=val(c); if(!v) return;
+    var t=lab(n).replace(/:$/,"");
+    if(c.tagName==="TEXTAREA"){ L.push("  "+t+":"); v.split(/\n/).forEach(function(x){ L.push("    "+x); }); return; }
+    if(c.id in DIMS){ t=t.replace(/\s*\((in|ft)\)\s*$/i,""); v=fmtDim(c.id,v); }
+    L.push("  "+t+": "+v+(c.disabled?" (calculated)":""));
+  });
+  var plan=document.querySelector(".plan"), sl=plan?(plan.innerText.match(/Slope 1:[^\n]*/)||[""])[0]:"", cap=(document.getElementById("caption")||{innerText:""}).innerText.replace(/\s+/g," ").trim();
+  L.push(""); L.push("RESULT"); if(sl) L.push("  "+sl); if(cap) L.push("  "+cap);
+  return L.join("\n")+"\n";
+}
+function exportText(){
+  var txt=buildTextExport(), blob=new Blob([txt],{type:"text/plain"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+  var _ln=document.getElementById("custLast").value.trim(), _vv=document.getElementById("custVer").value.trim(); var name=((_ln||"ramp")+(_vv?"_v"+_vv:"")).replace(/[^\w-]+/g,"_");
+  a.href=url; a.download=name+"-inputs.txt"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(url); },1000);
+}
+function copyText(btn){
+  var txt=buildTextExport(), done=function(ok){ if(!btn) return; var o=btn.textContent; btn.textContent=ok?"Copied!":"Copy failed"; setTimeout(function(){ btn.textContent=o; },1500); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ done(true); },function(){ fallback(); }); } else fallback();
+  function fallback(){ var ta=document.createElement("textarea"); ta.value=txt; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{ done(document.execCommand("copy")); }catch(e){ done(false); } ta.remove(); }
+}
 function saveDesign(){
-  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.157",savedAt:new Date().toISOString(),params:{}};
+  const data={app:"CareConstructionRampProject",fileVersion:1,appVersion:"0.8.158",savedAt:new Date().toISOString(),params:{}};
   ids.forEach(id=>{data.params[id]=getVal(id);});
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
